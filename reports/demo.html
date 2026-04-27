@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traffic Simulation: demo / accident</title>
+  <style>
+    :root {
+      --bg: #f5f3ec;
+      --ink: #20242a;
+      --muted: #667071;
+      --panel: #ffffff;
+      --road: #74828f;
+      --road-hot: #d64737;
+      --road-mid: #df9c28;
+      --vehicle: #0969da;
+      --accent: #0f766e;
+      --line: #d8d4c8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(120deg, rgba(15, 118, 110, 0.08), transparent 35%),
+        linear-gradient(280deg, rgba(214, 71, 55, 0.08), transparent 42%),
+        var(--bg);
+      color: var(--ink);
+      font-family: Avenir Next, Trebuchet MS, Verdana, sans-serif;
+    }
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      min-height: 100vh;
+      padding: 18px;
+    }
+    .map-shell {
+      min-height: calc(100vh - 36px);
+      border: 1px solid var(--line);
+      background: #fbfaf6;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      min-height: calc(100vh - 38px);
+      display: block;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.86);
+      border-radius: 8px;
+      padding: 16px;
+      align-self: start;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+    .metric {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .metric span:first-child { color: var(--muted); }
+    .metric span:last-child { font-weight: 700; }
+    .controls {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 10px;
+      align-items: center;
+      margin: 14px 0 8px;
+    }
+    button {
+      height: 38px;
+      border: 1px solid #1f5f58;
+      background: var(--accent);
+      color: white;
+      border-radius: 8px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+    input[type="range"] { width: 100%; }
+    .legend {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .swatch {
+      width: 24px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--road);
+    }
+    .swatch.mid { background: var(--road-mid); }
+    .swatch.hot { background: var(--road-hot); }
+    .swatch.vehicle {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--vehicle);
+    }
+    .road {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.88;
+    }
+    .vehicle {
+      fill: var(--vehicle);
+      stroke: white;
+      stroke-width: 2;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
+    }
+    .time-badge {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+      .map-shell { min-height: 62vh; }
+      svg { min-height: 62vh; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="map-shell" aria-label="Traffic map">
+      <svg id="map" viewBox="0 0 1000 700" role="img" aria-label="Road network and vehicles"></svg>
+      <div class="time-badge" id="timeBadge">00:00</div>
+    </section>
+    <aside class="panel">
+      <h1>Traffic Simulation: demo / accident</h1>
+      <div class="controls">
+        <button id="playButton" title="Play or pause animation">></button>
+        <input id="frameSlider" type="range" min="0" value="0" step="1">
+      </div>
+      <div class="metric"><span>Tick</span><span id="tickValue">0</span></div>
+      <div class="metric"><span>Moving vehicles</span><span id="vehicleValue">0</span></div>
+      <div class="metric"><span>Arrived vehicles</span><span id="arrivedValue">0</span></div>
+      <div class="metric"><span>Average trip</span><span id="tripValue">0.00 min</span></div>
+      <div class="metric"><span>Max road load</span><span id="loadValue">0.00</span></div>
+      <div class="legend">
+        <div class="legend-row"><span class="swatch"></span><span>low road load</span></div>
+        <div class="legend-row"><span class="swatch mid"></span><span>medium road load</span></div>
+        <div class="legend-row"><span class="swatch hot"></span><span>high road load</span></div>
+        <div class="legend-row"><span class="swatch vehicle"></span><span>vehicle agents</span></div>
+      </div>
+    </aside>
+  </main>
+  <script>
+    const data = {"roads":[{"id":"abay_ab","points":[[48.0,350.0],[500.0,350.0]],"load":0.0,"isOpen":true},{"id":"abay_ba","points":[[500.0,350.0],[48.0,350.0]],"load":0.05555555555555555,"isOpen":true},{"id":"satpayev_ab","points":[[500.0,350.0],[952.0,350.0]],"load":0.0,"isOpen":true},{"id":"satpayev_ba","points":[[952.0,350.0],[500.0,350.0]],"load":0.0,"isOpen":true},{"id":"tole_bi_ab","points":[[48.0,652.0],[500.0,652.0]],"load":0.07142857142857142,"isOpen":true},{"id":"tole_bi_ba","points":[[500.0,652.0],[48.0,652.0]],"load":0.0,"isOpen":true},{"id":"ryskulov_ab","points":[[500.0,652.0],[952.0,652.0]],"load":0.0,"isOpen":true},{"id":"ryskulov_ba","points":[[952.0,652.0],[500.0,652.0]],"load":0.0,"isOpen":true},{"id":"seifullin_ab","points":[[500.0,48.0],[500.0,350.0]],"load":0.25,"isOpen":true},{"id":"seifullin_ba","points":[[500.0,350.0],[500.0,48.0]],"load":0.0,"isOpen":true},{"id":"nazarbayev_ab","points":[[500.0,350.0],[500.0,652.0]],"load":0.1,"isOpen":true},{"id":"nazarbayev_ba","points":[[500.0,652.0],[500.0,350.0]],"load":0.0,"isOpen":true},{"id":"outer_west_ab","points":[[48.0,48.0],[48.0,350.0]],"load":0.0,"isOpen":true},{"id":"outer_west_ba","points":[[48.0,350.0],[48.0,48.0]],"load":0.1,"isOpen":true},{"id":"outer_east_ab","points":[[952.0,48.0],[952.0,350.0]],"load":0.0,"isOpen":true},{"id":"outer_east_ba","points":[[952.0,350.0],[952.0,48.0]],"load":0.1,"isOpen":true},{"id":"outer_southwest_ab","points":[[48.0,350.0],[48.0,652.0]],"load":0.0,"isOpen":true},{"id":"outer_southwest_ba","points":[[48.0,652.0],[48.0,350.0]],"load":0.16666666666666666,"isOpen":true},{"id":"outer_southeast_ab","points":[[952.0,350.0],[952.0,652.0]],"load":0.0,"isOpen":true},{"id":"outer_southeast_ba","points":[[952.0,652.0],[952.0,350.0]],"load":0.08333333333333333,"isOpen":true},{"id":"ring_north_ab","points":[[48.0,48.0],[500.0,48.0]],"load":0.1,"isOpen":true},{"id":"ring_north_ba","points":[[500.0,48.0],[48.0,48.0]],"load":0.05,"isOpen":true},{"id":"ring_northeast_ab","points":[[500.0,48.0],[952.0,48.0]],"load":0.1,"isOpen":true},{"id":"ring_northeast_ba","points":[[952.0,48.0],[500.0,48.0]],"load":0.05,"isOpen":true},{"id":"diag_sw_ab","points":[[48.0,652.0],[500.0,350.0]],"load":0.0,"isOpen":true},{"id":"diag_sw_ba","points":[[500.0,350.0],[48.0,652.0]],"load":0.0,"isOpen":true},{"id":"diag_ne_ab","points":[[500.0,350.0],[952.0,48.0]],"load":0.125,"isOpen":true},{"id":"diag_ne_ba","points":[[952.0,48.0],[500.0,350.0]],"load":0.0,"isOpen":true},{"id":"diag_nw_ab","points":[[48.0,48.0],[500.0,350.0]],"load":0.0,"isOpen":true},{"id":"diag_nw_ba","points":[[500.0,350.0],[48.0,48.0]],"load":0.0,"isOpen":true},{"id":"diag_se_ab","points":[[500.0,350.0],[952.0,652.0]],"load":0.0,"isOpen":true},{"id":"diag_se_ba","points":[[952.0,652.0],[500.0,350.0]],"load":0.125,"isOpen":true}],"frames":[{"tick":0,"simTimeS":0.0,"vehicles":[{"id":"car-1","x":952.0,"y":350.0,"state":"moving"},{"id":"car-2","x":48.0,"y":652.0,"state":"moving"},{"id":"car-3","x":500.0,"y":48.0,"state":"moving"},{"id":"car-4","x":952.0,"y":350.0,"state":"moving"},{"id":"car-5","x":952.0,"y":652.0,"state":"moving"},{"id":"car-6","x":48.0,"y":48.0,"state":"moving"},{"id":"car-7","x":48.0,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":48.0,"state":"moving"},{"id":"car-9","x":500.0,"y":48.0,"state":"moving"},{"id":"car-10","x":48.0,"y":48.0,"state":"moving"},{"id":"car-11","x":48.0,"y":350.0,"state":"moving"},{"id":"car-12","x":48.0,"y":652.0,"state":"moving"},{"id":"car-13","x":48.0,"y":350.0,"state":"moving"},{"id":"car-14","x":952.0,"y":652.0,"state":"moving"},{"id":"car-15","x":500.0,"y":350.0,"state":"moving"},{"id":"car-16","x":952.0,"y":48.0,"state":"moving"},{"id":"car-17","x":500.0,"y":350.0,"state":"moving"},{"id":"car-18","x":500.0,"y":48.0,"state":"moving"}]},{"tick":1,"simTimeS":10.0,"vehicles":[{"id":"car-1","x":952.0,"y":311.62,"state":"moving"},{"id":"car-2","x":48.0,"y":623.2,"state":"moving"},{"id":"car-3","x":566.12,"y":48.0,"state":"moving"},{"id":"car-4","x":952.0,"y":311.62,"state":"moving"},{"id":"car-5","x":923.95,"y":633.26,"state":"moving"},{"id":"car-6","x":111.19,"y":48.0,"state":"moving"},{"id":"car-7","x":101.07,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":74.42,"state":"moving"},{"id":"car-9","x":500.0,"y":74.42,"state":"moving"},{"id":"car-10","x":111.19,"y":48.0,"state":"moving"},{"id":"car-11","x":48.0,"y":311.62,"state":"moving"},{"id":"car-12","x":48.0,"y":623.2,"state":"moving"},{"id":"car-13","x":48.0,"y":311.62,"state":"moving"},{"id":"car-14","x":952.0,"y":620.82,"state":"moving"},{"id":"car-15","x":500.0,"y":376.87,"state":"moving"},{"id":"car-16","x":885.88,"y":48.0,"state":"moving"},{"id":"car-17","x":528.05,"y":331.26,"state":"moving"},{"id":"car-18","x":500.0,"y":74.42,"state":"moving"}]},{"tick":2,"simTimeS":20.0,"vehicles":[{"id":"car-1","x":952.0,"y":273.24,"state":"moving"},{"id":"car-2","x":48.0,"y":594.4,"state":"moving"},{"id":"car-3","x":632.24,"y":48.0,"state":"moving"},{"id":"car-4","x":952.0,"y":273.24,"state":"moving"},{"id":"car-5","x":895.89,"y":614.51,"state":"moving"},{"id":"car-6","x":174.37,"y":48.0,"state":"moving"},{"id":"car-7","x":154.14,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":100.85,"state":"moving"},{"id":"car-9","x":500.0,"y":100.85,"state":"moving"},{"id":"car-10","x":174.37,"y":48.0,"state":"moving"},{"id":"car-11","x":48.0,"y":273.24,"state":"moving"},{"id":"car-12","x":48.0,"y":594.4,"state":"moving"},{"id":"car-13","x":48.0,"y":273.24,"state":"moving"},{"id":"car-14","x":952.0,"y":589.64,"state":"moving"},{"id":"car-15","x":500.0,"y":403.73,"state":"moving"},{"id":"car-16","x":819.76,"y":48.0,"state":"moving"},{"id":"car-17","x":556.11,"y":312.51,"state":"moving"},{"id":"car-18","x":500.0,"y":100.85,"state":"moving"}]},{"tick":3,"simTimeS":30.0,"vehicles":[{"id":"car-1","x":952.0,"y":234.86,"state":"moving"},{"id":"car-2","x":48.0,"y":565.59,"state":"moving"},{"id":"car-3","x":698.36,"y":48.0,"state":"moving"},{"id":"car-4","x":952.0,"y":234.86,"state":"moving"},{"id":"car-5","x":867.84,"y":595.77,"state":"moving"},{"id":"car-6","x":237.56,"y":48.0,"state":"moving"},{"id":"car-7","x":207.21,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":127.27,"state":"moving"},{"id":"car-9","x":500.0,"y":127.27,"state":"moving"},{"id":"car-10","x":237.56,"y":48.0,"state":"moving"},{"id":"car-11","x":48.0,"y":234.86,"state":"moving"},{"id":"car-12","x":48.0,"y":565.59,"state":"moving"},{"id":"car-13","x":48.0,"y":234.86,"state":"moving"},{"id":"car-14","x":952.0,"y":558.46,"state":"moving"},{"id":"car-15","x":500.0,"y":430.6,"state":"moving"},{"id":"car-16","x":753.64,"y":48.0,"state":"moving"},{"id":"car-17","x":584.16,"y":293.77,"state":"moving"},{"id":"car-18","x":500.0,"y":127.27,"state":"moving"}]},{"tick":4,"simTimeS":40.0,"vehicles":[{"id":"car-1","x":952.0,"y":196.48,"state":"moving"},{"id":"car-2","x":48.0,"y":536.79,"state":"moving"},{"id":"car-3","x":764.48,"y":48.0,"state":"moving"},{"id":"car-4","x":952.0,"y":196.48,"state":"moving"},{"id":"car-5","x":839.78,"y":577.02,"state":"moving"},{"id":"car-6","x":300.74,"y":48.0,"state":"moving"},{"id":"car-7","x":260.28,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":153.7,"state":"moving"},{"id":"car-9","x":500.0,"y":153.7,"state":"moving"},{"id":"car-10","x":300.74,"y":48.0,"state":"moving"},{"id":"car-11","x":48.0,"y":196.48,"state":"moving"},{"id":"car-12","x":48.0,"y":536.79,"state":"moving"},{"id":"car-13","x":48.0,"y":196.48,"state":"moving"},{"id":"car-14","x":952.0,"y":527.29,"state":"moving"},{"id":"car-15","x":500.0,"y":457.46,"state":"moving"},{"id":"car-16","x":687.52,"y":48.0,"state":"moving"},{"id":"car-17","x":612.22,"y":275.02,"state":"moving"},{"id":"car-18","x":500.0,"y":153.7,"state":"moving"}]},{"tick":5,"simTimeS":50.0,"vehicles":[{"id":"car-1","x":952.0,"y":158.1,"state":"moving"},{"id":"car-2","x":48.0,"y":507.99,"state":"moving"},{"id":"car-3","x":830.6,"y":48.0,"state":"moving"},{"id":"car-4","x":952.0,"y":158.1,"state":"moving"},{"id":"car-5","x":811.73,"y":558.28,"state":"moving"},{"id":"car-6","x":363.93,"y":48.0,"state":"moving"},{"id":"car-7","x":313.35,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":180.12,"state":"moving"},{"id":"car-9","x":500.0,"y":180.12,"state":"moving"},{"id":"car-10","x":363.93,"y":48.0,"state":"moving"},{"id":"car-11","x":48.0,"y":158.1,"state":"moving"},{"id":"car-12","x":48.0,"y":507.99,"state":"moving"},{"id":"car-13","x":48.0,"y":158.1,"state":"moving"},{"id":"car-14","x":952.0,"y":496.11,"state":"moving"},{"id":"car-15","x":500.0,"y":484.33,"state":"moving"},{"id":"car-16","x":621.4,"y":48.0,"state":"moving"},{"id":"car-17","x":640.27,"y":256.28,"state":"moving"},{"id":"car-18","x":500.0,"y":180.12,"state":"moving"}]},{"tick":6,"simTimeS":60.0,"vehicles":[{"id":"car-1","x":952.0,"y":119.73,"state":"moving"},{"id":"car-2","x":48.0,"y":479.19,"state":"moving"},{"id":"car-3","x":896.72,"y":48.0,"state":"moving"},{"id":"car-4","x":952.0,"y":119.73,"state":"moving"},{"id":"car-5","x":783.68,"y":539.54,"state":"moving"},{"id":"car-6","x":427.11,"y":48.0,"state":"moving"},{"id":"car-7","x":366.42,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":206.55,"state":"moving"},{"id":"car-9","x":500.0,"y":206.55,"state":"moving"},{"id":"car-10","x":427.11,"y":48.0,"state":"moving"},{"id":"car-11","x":48.0,"y":119.73,"state":"moving"},{"id":"car-12","x":48.0,"y":479.19,"state":"moving"},{"id":"car-13","x":48.0,"y":119.73,"state":"moving"},{"id":"car-14","x":952.0,"y":464.93,"state":"moving"},{"id":"car-15","x":500.0,"y":511.19,"state":"moving"},{"id":"car-16","x":555.28,"y":48.0,"state":"moving"},{"id":"car-17","x":668.32,"y":237.54,"state":"moving"},{"id":"car-18","x":500.0,"y":206.55,"state":"moving"}]},{"tick":7,"simTimeS":70.0,"vehicles":[{"id":"car-1","x":952.0,"y":81.35,"state":"moving"},{"id":"car-2","x":48.0,"y":450.39,"state":"moving"},{"id":"car-4","x":952.0,"y":81.35,"state":"moving"},{"id":"car-5","x":755.62,"y":520.79,"state":"moving"},{"id":"car-6","x":490.3,"y":48.0,"state":"moving"},{"id":"car-7","x":419.49,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":232.98,"state":"moving"},{"id":"car-9","x":500.0,"y":232.98,"state":"moving"},{"id":"car-10","x":490.3,"y":48.0,"state":"moving"},{"id":"car-11","x":48.0,"y":81.35,"state":"moving"},{"id":"car-12","x":48.0,"y":450.39,"state":"moving"},{"id":"car-13","x":48.0,"y":81.35,"state":"moving"},{"id":"car-14","x":952.0,"y":433.75,"state":"moving"},{"id":"car-15","x":500.0,"y":538.06,"state":"moving"},{"id":"car-17","x":696.38,"y":218.79,"state":"moving"},{"id":"car-18","x":500.0,"y":232.98,"state":"moving"}]},{"tick":8,"simTimeS":80.0,"vehicles":[{"id":"car-2","x":48.0,"y":421.59,"state":"moving"},{"id":"car-4","x":952.0,"y":48.0,"state":"moving"},{"id":"car-5","x":727.57,"y":502.05,"state":"moving"},{"id":"car-6","x":500.0,"y":48.0,"state":"moving"},{"id":"car-7","x":472.56,"y":652.0,"state":"moving"},{"id":"car-8","x":500.0,"y":259.4,"state":"moving"},{"id":"car-9","x":500.0,"y":259.4,"state":"moving"},{"id":"car-10","x":500.0,"y":48.0,"state":"moving"},{"id":"car-12","x":48.0,"y":421.59,"state":"moving"},{"id":"car-14","x":952.0,"y":402.57,"state":"moving"},{"id":"car-15","x":500.0,"y":564.92,"state":"moving"},{"id":"car-17","x":724.43,"y":200.05,"state":"moving"},{"id":"car-18","x":500.0,"y":259.4,"state":"moving"}]},{"tick":9,"simTimeS":90.0,"vehicles":[{"id":"car-2","x":48.0,"y":392.78,"state":"moving"},{"id":"car-4","x":885.88,"y":48.0,"state":"moving"},{"id":"car-5","x":699.52,"y":483.3,"state":"moving"},{"id":"car-6","x":563.19,"y":48.0,"state":"moving"},{"id":"car-8","x":500.0,"y":285.83,"state":"moving"},{"id":"car-9","x":500.0,"y":285.83,"state":"moving"},{"id":"car-10","x":563.19,"y":48.0,"state":"moving"},{"id":"car-12","x":48.0,"y":392.78,"state":"moving"},{"id":"car-14","x":952.0,"y":371.39,"state":"moving"},{"id":"car-15","x":500.0,"y":591.79,"state":"moving"},{"id":"car-17","x":752.48,"y":181.3,"state":"moving"},{"id":"car-18","x":500.0,"y":285.83,"state":"moving"}]},{"tick":10,"simTimeS":100.0,"vehicles":[{"id":"car-2","x":48.0,"y":363.98,"state":"moving"},{"id":"car-4","x":819.76,"y":48.0,"state":"moving"},{"id":"car-5","x":671.46,"y":464.56,"state":"moving"},{"id":"car-6","x":626.37,"y":48.0,"state":"moving"},{"id":"car-8","x":500.0,"y":312.25,"state":"moving"},{"id":"car-9","x":500.0,"y":312.25,"state":"moving"},{"id":"car-10","x":626.37,"y":48.0,"state":"moving"},{"id":"car-12","x":48.0,"y":363.98,"state":"moving"},{"id":"car-14","x":952.0,"y":350.0,"state":"moving"},{"id":"car-15","x":500.0,"y":618.65,"state":"moving"},{"id":"car-17","x":780.54,"y":162.56,"state":"moving"},{"id":"car-18","x":500.0,"y":312.25,"state":"moving"}]},{"tick":11,"simTimeS":110.0,"vehicles":[{"id":"car-2","x":48.0,"y":350.0,"state":"moving"},{"id":"car-4","x":753.64,"y":48.0,"state":"moving"},{"id":"car-5","x":643.41,"y":445.82,"state":"moving"},{"id":"car-6","x":689.56,"y":48.0,"state":"moving"},{"id":"car-8","x":500.0,"y":338.67,"state":"moving"},{"id":"car-9","x":500.0,"y":338.67,"state":"moving"},{"id":"car-10","x":689.56,"y":48.0,"state":"moving"},{"id":"car-12","x":48.0,"y":350.0,"state":"moving"},{"id":"car-14","x":952.0,"y":309.84,"state":"moving"},{"id":"car-15","x":500.0,"y":645.52,"state":"moving"},{"id":"car-17","x":808.59,"y":143.82,"state":"moving"},{"id":"car-18","x":500.0,"y":338.67,"state":"moving"}]},{"tick":12,"simTimeS":120.0,"vehicles":[{"id":"car-2","x":48.0,"y":311.62,"state":"moving"},{"id":"car-4","x":687.52,"y":48.0,"state":"moving"},{"id":"car-5","x":615.35,"y":427.07,"state":"moving"},{"id":"car-6","x":752.74,"y":48.0,"state":"moving"},{"id":"car-9","x":500.0,"y":350.0,"state":"moving"},{"id":"car-10","x":752.74,"y":48.0,"state":"moving"},{"id":"car-12","x":48.0,"y":311.62,"state":"moving"},{"id":"car-14","x":952.0,"y":269.68,"state":"moving"},{"id":"car-17","x":836.65,"y":125.07,"state":"moving"}]},{"tick":13,"simTimeS":130.0,"vehicles":[{"id":"car-2","x":48.0,"y":273.24,"state":"moving"},{"id":"car-4","x":621.4,"y":48.0,"state":"moving"},{"id":"car-5","x":587.3,"y":408.33,"state":"moving"},{"id":"car-6","x":815.93,"y":48.0,"state":"moving"},{"id":"car-9","x":500.0,"y":376.87,"state":"moving"},{"id":"car-10","x":815.93,"y":48.0,"state":"moving"},{"id":"car-12","x":48.0,"y":273.24,"state":"moving"},{"id":"car-14","x":952.0,"y":229.51,"state":"moving"},{"id":"car-17","x":864.7,"y":106.33,"state":"moving"}]},{"tick":14,"simTimeS":140.0,"vehicles":[{"id":"car-2","x":48.0,"y":234.86,"state":"moving"},{"id":"car-4","x":555.28,"y":48.0,"state":"moving"},{"id":"car-5","x":559.25,"y":389.59,"state":"moving"},{"id":"car-6","x":879.12,"y":48.0,"state":"moving"},{"id":"car-9","x":500.0,"y":403.73,"state":"moving"},{"id":"car-10","x":879.12,"y":48.0,"state":"moving"},{"id":"car-12","x":48.0,"y":234.86,"state":"moving"},{"id":"car-14","x":952.0,"y":189.35,"state":"moving"},{"id":"car-17","x":892.75,"y":87.59,"state":"moving"}]},{"tick":15,"simTimeS":150.0,"vehicles":[{"id":"car-2","x":48.0,"y":196.48,"state":"moving"},{"id":"car-4","x":500.0,"y":48.0,"state":"moving"},{"id":"car-5","x":531.19,"y":370.84,"state":"moving"},{"id":"car-6","x":942.3,"y":48.0,"state":"moving"},{"id":"car-9","x":500.0,"y":430.6,"state":"moving"},{"id":"car-10","x":942.3,"y":48.0,"state":"moving"},{"id":"car-12","x":48.0,"y":196.48,"state":"moving"},{"id":"car-14","x":952.0,"y":149.19,"state":"moving"},{"id":"car-17","x":920.81,"y":68.84,"state":"moving"}]},{"tick":16,"simTimeS":160.0,"vehicles":[{"id":"car-2","x":48.0,"y":158.1,"state":"moving"},{"id":"car-4","x":433.88,"y":48.0,"state":"moving"},{"id":"car-5","x":503.14,"y":352.1,"state":"moving"},{"id":"car-9","x":500.0,"y":457.46,"state":"moving"},{"id":"car-12","x":48.0,"y":158.1,"state":"moving"},{"id":"car-14","x":952.0,"y":109.03,"state":"moving"},{"id":"car-17","x":948.86,"y":50.1,"state":"moving"}]},{"tick":17,"simTimeS":170.0,"vehicles":[{"id":"car-2","x":48.0,"y":119.73,"state":"moving"},{"id":"car-4","x":367.76,"y":48.0,"state":"moving"},{"id":"car-5","x":500.0,"y":350.0,"state":"moving"},{"id":"car-9","x":500.0,"y":484.33,"state":"moving"},{"id":"car-12","x":48.0,"y":119.73,"state":"moving"},{"id":"car-14","x":952.0,"y":68.87,"state":"moving"}]},{"tick":18,"simTimeS":180.0,"vehicles":[{"id":"car-2","x":48.0,"y":81.35,"state":"moving"},{"id":"car-4","x":301.64,"y":48.0,"state":"moving"},{"id":"car-5","x":440.19,"y":350.0,"state":"moving"},{"id":"car-9","x":500.0,"y":511.19,"state":"moving"},{"id":"car-12","x":48.0,"y":81.35,"state":"moving"}]},{"tick":19,"simTimeS":190.0,"vehicles":[{"id":"car-4","x":235.52,"y":48.0,"state":"moving"},{"id":"car-5","x":380.37,"y":350.0,"state":"moving"},{"id":"car-9","x":500.0,"y":538.06,"state":"moving"}]},{"tick":20,"simTimeS":200.0,"vehicles":[{"id":"car-4","x":169.4,"y":48.0,"state":"moving"},{"id":"car-5","x":320.56,"y":350.0,"state":"moving"},{"id":"car-9","x":500.0,"y":564.92,"state":"moving"}]},{"tick":21,"simTimeS":210.0,"vehicles":[{"id":"car-4","x":103.28,"y":48.0,"state":"moving"},{"id":"car-5","x":260.75,"y":350.0,"state":"moving"},{"id":"car-9","x":500.0,"y":591.79,"state":"moving"}]},{"tick":22,"simTimeS":220.0,"vehicles":[{"id":"car-5","x":200.93,"y":350.0,"state":"moving"},{"id":"car-9","x":500.0,"y":618.65,"state":"moving"}]},{"tick":23,"simTimeS":230.0,"vehicles":[{"id":"car-5","x":141.12,"y":350.0,"state":"moving"},{"id":"car-9","x":500.0,"y":645.52,"state":"moving"}]},{"tick":24,"simTimeS":240.0,"vehicles":[{"id":"car-5","x":81.31,"y":350.0,"state":"moving"}]},{"tick":25,"simTimeS":250.0,"vehicles":[]},{"tick":26,"simTimeS":260.0,"vehicles":[]},{"tick":27,"simTimeS":270.0,"vehicles":[]},{"tick":28,"simTimeS":280.0,"vehicles":[]},{"tick":29,"simTimeS":290.0,"vehicles":[]},{"tick":30,"simTimeS":300.0,"vehicles":[]},{"tick":31,"simTimeS":310.0,"vehicles":[]},{"tick":32,"simTimeS":320.0,"vehicles":[]},{"tick":33,"simTimeS":330.0,"vehicles":[]},{"tick":34,"simTimeS":340.0,"vehicles":[]},{"tick":35,"simTimeS":350.0,"vehicles":[]},{"tick":36,"simTimeS":360.0,"vehicles":[]},{"tick":37,"simTimeS":370.0,"vehicles":[]},{"tick":38,"simTimeS":380.0,"vehicles":[]},{"tick":39,"simTimeS":390.0,"vehicles":[]},{"tick":40,"simTimeS":400.0,"vehicles":[]},{"tick":41,"simTimeS":410.0,"vehicles":[]},{"tick":42,"simTimeS":420.0,"vehicles":[]},{"tick":43,"simTimeS":430.0,"vehicles":[]},{"tick":44,"simTimeS":440.0,"vehicles":[]},{"tick":45,"simTimeS":450.0,"vehicles":[]},{"tick":46,"simTimeS":460.0,"vehicles":[]},{"tick":47,"simTimeS":470.0,"vehicles":[]},{"tick":48,"simTimeS":480.0,"vehicles":[]},{"tick":49,"simTimeS":490.0,"vehicles":[]},{"tick":50,"simTimeS":500.0,"vehicles":[]},{"tick":51,"simTimeS":510.0,"vehicles":[]},{"tick":52,"simTimeS":520.0,"vehicles":[]},{"tick":53,"simTimeS":530.0,"vehicles":[]},{"tick":54,"simTimeS":540.0,"vehicles":[]},{"tick":55,"simTimeS":550.0,"vehicles":[]},{"tick":56,"simTimeS":560.0,"vehicles":[]},{"tick":57,"simTimeS":570.0,"vehicles":[]},{"tick":58,"simTimeS":580.0,"vehicles":[]},{"tick":59,"simTimeS":590.0,"vehicles":[]},{"tick":60,"simTimeS":600.0,"vehicles":[]},{"tick":61,"simTimeS":610.0,"vehicles":[]},{"tick":62,"simTimeS":620.0,"vehicles":[]},{"tick":63,"simTimeS":630.0,"vehicles":[]},{"tick":64,"simTimeS":640.0,"vehicles":[]},{"tick":65,"simTimeS":650.0,"vehicles":[]},{"tick":66,"simTimeS":660.0,"vehicles":[]},{"tick":67,"simTimeS":670.0,"vehicles":[]},{"tick":68,"simTimeS":680.0,"vehicles":[]},{"tick":69,"simTimeS":690.0,"vehicles":[]},{"tick":70,"simTimeS":700.0,"vehicles":[]},{"tick":71,"simTimeS":710.0,"vehicles":[]},{"tick":72,"simTimeS":720.0,"vehicles":[]},{"tick":73,"simTimeS":730.0,"vehicles":[]},{"tick":74,"simTimeS":740.0,"vehicles":[]},{"tick":75,"simTimeS":750.0,"vehicles":[]},{"tick":76,"simTimeS":760.0,"vehicles":[]},{"tick":77,"simTimeS":770.0,"vehicles":[]},{"tick":78,"simTimeS":780.0,"vehicles":[]},{"tick":79,"simTimeS":790.0,"vehicles":[]},{"tick":80,"simTimeS":800.0,"vehicles":[]}],"stats":{"tick":80,"sim_time_s":800.0,"active_vehicles":0,"arrived_vehicles":18,"stuck_vehicles":0,"average_trip_time_s":143.88888888888889,"max_road_load":0.25,"average_road_load":0.006985367063492063},"bounds":{"minX":0.0,"minY":0.0,"maxX":2000.0,"maxY":2000.0}};
+    const svg = document.getElementById("map");
+    const slider = document.getElementById("frameSlider");
+    const playButton = document.getElementById("playButton");
+    const timeBadge = document.getElementById("timeBadge");
+    const tickValue = document.getElementById("tickValue");
+    const vehicleValue = document.getElementById("vehicleValue");
+    const arrivedValue = document.getElementById("arrivedValue");
+    const tripValue = document.getElementById("tripValue");
+    const loadValue = document.getElementById("loadValue");
+    let frameIndex = 0;
+    let timer = null;
+
+    slider.max = Math.max(data.frames.length - 1, 0);
+    renderRoads();
+    renderFrame(0);
+
+    playButton.addEventListener("click", () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        playButton.textContent = ">";
+        return;
+      }
+      playButton.textContent = "||";
+      timer = setInterval(() => {
+        frameIndex = (frameIndex + 1) % data.frames.length;
+        renderFrame(frameIndex);
+      }, 140);
+    });
+
+    slider.addEventListener("input", () => {
+      frameIndex = Number(slider.value);
+      renderFrame(frameIndex);
+    });
+
+    function renderRoads() {
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      group.setAttribute("id", "roads");
+      for (const road of data.roads) {
+        const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+        polyline.setAttribute("class", "road");
+        polyline.setAttribute("points", road.points.map(point => point.join(",")).join(" "));
+        polyline.setAttribute("stroke", roadColor(road.load, road.isOpen));
+        polyline.setAttribute("stroke-width", String(2.5 + Math.min(road.load, 1.5) * 5));
+        group.appendChild(polyline);
+      }
+      svg.appendChild(group);
+    }
+
+    function renderFrame(index) {
+      const frame = data.frames[index];
+      slider.value = String(index);
+      svg.querySelector("#vehicles")?.remove();
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      group.setAttribute("id", "vehicles");
+      for (const vehicle of frame.vehicles) {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("class", "vehicle");
+        circle.setAttribute("cx", vehicle.x);
+        circle.setAttribute("cy", vehicle.y);
+        circle.setAttribute("r", "6");
+        group.appendChild(circle);
+      }
+      svg.appendChild(group);
+      tickValue.textContent = frame.tick;
+      vehicleValue.textContent = frame.vehicles.length;
+      arrivedValue.textContent = data.stats.arrived_vehicles;
+      tripValue.textContent = `${(data.stats.average_trip_time_s / 60).toFixed(2)} min`;
+      loadValue.textContent = data.stats.max_road_load.toFixed(2);
+      timeBadge.textContent = formatTime(frame.simTimeS);
+    }
+
+    function roadColor(load, isOpen) {
+      if (!isOpen) return "#222";
+      if (load >= 0.65) return "#d64737";
+      if (load >= 0.25) return "#df9c28";
+      return "#74828f";
+    }
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const rest = Math.floor(seconds % 60);
+      return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+    }
+  </script>
+</body>
+</html>

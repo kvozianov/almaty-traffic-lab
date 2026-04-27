@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traffic-sim-almaty"
+version = "0.1.0"
+description = "MVP traffic simulation project for Almaty-style city road research"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Kirill" }
+]
+dependencies = [
+  "fastapi>=0.115",
+  "httpx>=0.28",
+  "uvicorn>=0.32"
+]
+
+[project.optional-dependencies]
+osm = [
+  "networkx>=3.2",
+  "osmnx>=1.9"
+]
+pygame = [
+  "pygame>=2.6"
+]
+
+[project.scripts]
+traffic-sim = "traffic_sim.cli:main"
+traffic-sim-map = "traffic_sim.visualize_cli:main"
+traffic-sim-live = "traffic_sim.live_cli:main"
+traffic-sim-web = "traffic_sim.web_cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

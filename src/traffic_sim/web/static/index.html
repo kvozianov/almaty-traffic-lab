@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Almaty Traffic Lab</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="map-zone">
+      <div id="map"></div>
+      <div class="map-status" id="mapStatus">Ready</div>
+    </section>
+
+    <aside class="control-panel">
+      <header>
+        <p class="eyebrow">Almaty Traffic Lab</p>
+        <h1>Scenario simulator</h1>
+      </header>
+
+      <section class="section">
+        <label for="presetSelect">Map preset</label>
+        <select id="presetSelect"></select>
+      </section>
+
+      <section class="grid-two">
+        <label>Vehicles
+          <input id="vehicleInput" type="number" min="1" max="1500" value="80">
+        </label>
+        <label>Steps
+          <input id="stepsInput" type="number" min="1" max="3000" value="240">
+        </label>
+      </section>
+
+      <section class="grid-two">
+        <label>Seed
+          <input id="seedInput" type="number" value="7">
+        </label>
+        <label>Speed
+          <input id="speedInput" type="range" min="200" max="2500" value="900">
+        </label>
+      </section>
+
+      <section class="section">
+        <label for="scenarioSelect">Scenario</label>
+        <select id="scenarioSelect">
+          <option value="none">None</option>
+          <option value="accident">Accident</option>
+          <option value="repair">Road repair</option>
+          <option value="signal">Signal delay</option>
+          <option value="demand_surge">Demand surge</option>
+          <option value="new-road">New bypass</option>
+        </select>
+      </section>
+
+      <section class="section">
+        <label class="check-row">
+          <input id="compareInput" type="checkbox">
+          Compare before/after
+        </label>
+      </section>
+
+      <section class="selected-road">
+        <span>Selected road</span>
+        <strong id="selectedRoad">auto</strong>
+      </section>
+
+      <section class="actions">
+        <button id="runButton" class="primary">Run</button>
+        <button id="quickButton">Quick</button>
+        <button id="playButton">Pause</button>
+        <button id="resetButton">Reset</button>
+      </section>
+
+      <section class="metrics">
+        <div><span>Tick</span><strong id="tickMetric">0</strong></div>
+        <div><span>Moving</span><strong id="movingMetric">0</strong></div>
+        <div><span>Arrived</span><strong id="arrivedMetric">0</strong></div>
+        <div><span>Avg trip</span><strong id="tripMetric">0.00 min</strong></div>
+        <div><span>Max load</span><strong id="loadMetric">0.00</strong></div>
+        <div><span>Delta trip</span><strong id="deltaMetric">0.00 min</strong></div>
+      </section>
+
+      <section class="actions">
+        <button id="exportMetrics">Export JSON</button>
+        <button id="exportRoads">Export CSV</button>
+      </section>
+
+      <section>
+        <h2>Hot roads</h2>
+        <ol id="hotRoads"></ol>
+      </section>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
