@@ -12,6 +12,7 @@ const state = {
   selectedRoadId: null,
   currentRunId: null,
   vehicleMarkers: new Map(),
+  activeRequest: null,
 };
 
 const els = {
@@ -72,7 +73,7 @@ async function loadPresets() {
 }
 
 function bindEvents() {
-  els.run.addEventListener("click", runSimulation);
+  els.run.addEventListener("click", runSmartSimulation);
   els.quick.addEventListener("click", runQuickPreview);
   els.play.addEventListener("click", togglePlayback);
   els.reset.addEventListener("click", () => {
@@ -82,6 +83,12 @@ function bindEvents() {
   });
   els.exportMetrics.addEventListener("click", () => exportRun("metrics"));
   els.exportRoads.addEventListener("click", () => exportRun("road-loads"));
+}
+
+async function runSmartSimulation() {
+  const isFullCity = els.preset.value === "full_almaty" || els.preset.value === "full_almaty_fast";
+  const endpoint = isFullCity && !els.compare.checked ? "/api/preview" : "/api/simulations";
+  await runSimulation(endpoint);
 }
 
 async function runQuickPreview() {
@@ -94,9 +101,15 @@ async function runQuickPreview() {
 
 async function runSimulation(endpoint = "/api/simulations") {
   stopPlayback();
-  setStatus("Running simulation...");
+  if (state.activeRequest) {
+    state.activeRequest.abort();
+  }
+  state.activeRequest = new AbortController();
+  setStatus(endpoint.includes("preview") ? "Running fast city-wide preview..." : "Running research simulation...");
   state.selectedRoadId = state.selectedRoadId || null;
   els.selectedRoad.textContent = state.selectedRoadId || "auto";
+  els.run.disabled = true;
+  els.quick.disabled = true;
 
   const payload = {
     preset_id: els.preset.value,
@@ -116,6 +129,7 @@ async function runSimulation(endpoint = "/api/simulations") {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: state.activeRequest.signal,
     });
     if (!response.ok) {
       const error = await response.json();
@@ -136,7 +150,13 @@ async function runSimulation(endpoint = "/api/simulations") {
     startPlayback();
     setStatus(`${endpoint.includes("preview") ? "Preview" : "Simulation"} ${metadata.id.slice(0, 8)} ready`);
   } catch (error) {
-    setStatus(error.message);
+    if (error.name !== "AbortError") {
+      setStatus(error.message);
+    }
+  } finally {
+    els.run.disabled = false;
+    els.quick.disabled = false;
+    state.activeRequest = null;
   }
 }
 
