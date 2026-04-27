@@ -4,6 +4,7 @@ from dataclasses import replace
 
 from .models import SimulationStats, Vehicle
 from .network import CityGraph
+from .time_profiles import TimeProfile, load_time_profile, parse_hhmm
 
 
 class TrafficSimulation:
@@ -13,11 +14,19 @@ class TrafficSimulation:
         tick_seconds: int = 10,
         routing_algorithm: str = "dijkstra",
         reroute_on_change: bool = True,
+        manual_time: str = "12:00",
+        auto_time: bool = False,
+        time_speed_multiplier: float = 1.0,
+        time_profile: TimeProfile | None = None,
     ) -> None:
         self.graph = graph
         self.tick_seconds = tick_seconds
         self.routing_algorithm = routing_algorithm
         self.reroute_on_change = reroute_on_change
+        self.minute_of_day = parse_hhmm(manual_time)
+        self.auto_time = auto_time
+        self.time_speed_multiplier = time_speed_multiplier
+        self.time_profile = time_profile or load_time_profile()
         self.tick = 0
         self.sim_time_s = 0.0
         self.vehicles: dict[str, Vehicle] = {}
@@ -34,6 +43,14 @@ class TrafficSimulation:
     def add_vehicle(self, vehicle: Vehicle) -> None:
         vehicle = replace(vehicle)
         self._assign_route(vehicle, vehicle.start_node, count_as_reroute=False)
+        if vehicle.spawn_road_id in self.graph.roads and vehicle.route_roads:
+            spawn_road = self.graph.roads[vehicle.spawn_road_id]
+            if spawn_road.end_node == vehicle.start_node and spawn_road.is_open:
+                vehicle.route_nodes = [spawn_road.start_node, *vehicle.route_nodes]
+                vehicle.route_roads = [spawn_road.road_id, *vehicle.route_roads]
+                vehicle.current_road_index = 0
+                vehicle.progress_m = max(0.0, min(vehicle.spawn_ratio, 0.98)) * spawn_road.length_m
+                vehicle.state = "moving"
         if vehicle.departure_time_s > self.sim_time_s and vehicle.route_roads:
             vehicle.state = "pending"
         self.vehicles[vehicle.vehicle_id] = vehicle
@@ -62,6 +79,8 @@ class TrafficSimulation:
     def _step_once(self) -> None:
         self.tick += 1
         self.sim_time_s += self.tick_seconds
+        if self.auto_time:
+            self.minute_of_day = int((self.minute_of_day + (self.tick_seconds * self.time_speed_multiplier / 60)) % (24 * 60))
 
         for vehicle in self.vehicles.values():
             if vehicle.state in {"arrived", "stuck"}:
@@ -83,7 +102,8 @@ class TrafficSimulation:
             road = self.graph.roads[road_id]
             vehicle.elapsed_s += self.tick_seconds
             vehicle_count = len(self.road_occupancy.get(road_id, set()))
-            speed_mps = road.effective_speed_kph(vehicle_count) * 1000 / 3600
+            time_multiplier = self.time_profile.speed_multiplier_for_road(road, self.minute_of_day)
+            speed_mps = road.effective_speed_kph(vehicle_count, time_multiplier=time_multiplier) * 1000 / 3600
             vehicle.progress_m += speed_mps * self.tick_seconds
 
             if vehicle.progress_m < road.length_m:

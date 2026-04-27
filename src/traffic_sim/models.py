@@ -19,6 +19,8 @@ class Road:
     length_m: float
     max_speed_kph: float
     capacity: int
+    lanes: int = 1
+    road_class: str = "road"
     signal_delay_s: float = 0.0
     is_open: bool = True
     speed_modifier: float = 1.0
@@ -28,13 +30,13 @@ class Road:
     def effective_capacity(self) -> int:
         return max(1, int(round(self.capacity * self.capacity_modifier)))
 
-    def effective_speed_kph(self, vehicle_count: int) -> float:
+    def effective_speed_kph(self, vehicle_count: int, time_multiplier: float = 1.0) -> float:
         load = vehicle_count / self.effective_capacity()
         congestion_factor = max(0.15, 1.0 - 0.85 * load)
-        return max(1.0, self.max_speed_kph * self.speed_modifier * congestion_factor)
+        return max(1.0, self.max_speed_kph * self.speed_modifier * time_multiplier * congestion_factor)
 
-    def travel_time_s(self, vehicle_count: int = 0) -> float:
-        speed_mps = self.effective_speed_kph(vehicle_count) * 1000 / 3600
+    def travel_time_s(self, vehicle_count: int = 0, time_multiplier: float = 1.0) -> float:
+        speed_mps = self.effective_speed_kph(vehicle_count, time_multiplier=time_multiplier) * 1000 / 3600
         return (self.length_m / speed_mps) + self.signal_delay_s
 
 
@@ -44,6 +46,9 @@ class Vehicle:
     start_node: str
     destination_node: str
     departure_time_s: float = 0.0
+    behavior: str = "normal"
+    spawn_road_id: str | None = None
+    spawn_ratio: float = 0.0
     route_nodes: list[str] = field(default_factory=list)
     route_roads: list[str] = field(default_factory=list)
     current_road_index: int = 0

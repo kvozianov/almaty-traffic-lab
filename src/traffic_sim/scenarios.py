@@ -16,6 +16,24 @@ def close_road_for_repair(graph: CityGraph, road_id: str) -> None:
     road.metadata["scenario"] = "repair"
 
 
+def close_road(graph: CityGraph, road_id: str) -> None:
+    road = graph.roads[road_id]
+    road.is_open = False
+    road.metadata["scenario"] = "closure"
+
+
+def reduce_capacity(graph: CityGraph, road_id: str, capacity_factor: float) -> None:
+    road = graph.roads[road_id]
+    road.capacity_modifier *= capacity_factor
+    road.metadata["scenario"] = "capacity_reduction"
+
+
+def apply_weather_speed_reduction(graph: CityGraph, speed_factor: float) -> None:
+    for road in graph.roads.values():
+        road.speed_modifier *= speed_factor
+        road.metadata["weather"] = "speed_reduction"
+
+
 def retime_traffic_signal(graph: CityGraph, road_id: str, new_delay_s: float) -> None:
     road = graph.roads[road_id]
     road.signal_delay_s = new_delay_s

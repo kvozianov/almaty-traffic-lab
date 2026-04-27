@@ -34,6 +34,8 @@ class CityGraph:
         length_m: float,
         max_speed_kph: float,
         capacity: int,
+        lanes: int = 1,
+        road_class: str = "road",
         signal_delay_s: float = 0.0,
         is_open: bool = True,
         metadata: dict[str, object] | None = None,
@@ -47,6 +49,8 @@ class CityGraph:
             length_m=length_m,
             max_speed_kph=max_speed_kph,
             capacity=capacity,
+            lanes=lanes,
+            road_class=road_class,
             signal_delay_s=signal_delay_s,
             is_open=is_open,
             metadata=metadata or {},
@@ -248,6 +252,9 @@ def _convert_osm_graph(osm_graph) -> CityGraph:
         except ValueError:
             lane_count_int = 1
         capacity = max(8, lane_count_int * 12)
+        highway = attrs.get("highway", "road")
+        if isinstance(highway, list):
+            highway = highway[0]
         geometry = attrs.get("geometry")
         geometry_points = None
         if geometry is not None:
@@ -259,6 +266,8 @@ def _convert_osm_graph(osm_graph) -> CityGraph:
             length_m=length_m,
             max_speed_kph=max_speed_kph,
             capacity=capacity,
-            metadata={"name": attrs.get("name"), "highway": attrs.get("highway"), "geometry": geometry_points},
+            lanes=lane_count_int,
+            road_class=str(highway),
+            metadata={"name": attrs.get("name"), "highway": highway, "geometry": geometry_points},
         )
     return graph

@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from collections import deque
 
+from .ai_policy import AIDriverPolicy, build_policy
 from .models import Vehicle
 from .network import CityGraph
 
@@ -14,8 +15,13 @@ def generate_vehicle_demand(
     horizon_s: float = 900.0,
     surge_node: str | None = None,
     surge_share: float = 0.35,
+    policy: AIDriverPolicy | None = None,
+    minute_of_day: int = 17 * 60,
+    road_loads: dict[str, float] | None = None,
 ) -> list[Vehicle]:
     rng = random.Random(seed)
+    policy = policy or build_policy("heuristic")
+    road_loads = road_loads or {}
     candidate_nodes = _largest_reachable_pool(graph)
     if len(candidate_nodes) < 2:
         raise ValueError("Graph must contain at least two routable nodes")
@@ -27,9 +33,19 @@ def generate_vehicle_demand(
     max_attempts = max(vehicle_count * 30, 120)
     while len(vehicles) < vehicle_count and attempts < max_attempts:
         attempts += 1
-        use_surge = surge_node in graph.nodes and rng.random() < surge_share
-        start = surge_node if use_surge else rng.choice(candidate_nodes)
-        destination = rng.choice(candidate_nodes)
+        if surge_node in graph.nodes and rng.random() < surge_share:
+            start = surge_node
+            destination = rng.choice(candidate_nodes)
+            behavior = "avoid_congestion"
+            spawn_road_id = None
+            spawn_ratio = 0.0
+        else:
+            decision = policy.choose_trip(graph, rng, road_loads=road_loads, minute_of_day=minute_of_day)
+            start = decision.start_node
+            destination = decision.destination_node
+            behavior = decision.behavior
+            spawn_road_id = decision.spawn_road_id
+            spawn_ratio = decision.spawn_ratio
         if start == destination:
             continue
         try:
@@ -43,6 +59,9 @@ def generate_vehicle_demand(
                 start_node=start,
                 destination_node=destination,
                 departure_time_s=departure_time_s,
+                behavior=behavior,
+                spawn_road_id=spawn_road_id,
+                spawn_ratio=spawn_ratio,
             )
         )
 

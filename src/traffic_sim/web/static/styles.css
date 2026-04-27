@@ -48,6 +48,13 @@ body {
   min-height: calc(100vh - 28px);
 }
 
+.vehicle-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 450;
+  pointer-events: none;
+}
+
 .map-status {
   position: absolute;
   z-index: 600;
@@ -60,6 +67,10 @@ body {
   background: rgba(255, 253, 248, 0.92);
   font-size: 13px;
   font-weight: 700;
+}
+
+.map-mode-3d #map {
+  background: #101820;
 }
 
 .control-panel {
@@ -152,6 +163,11 @@ select {
   padding: 0 10px;
 }
 
+input[type="range"] {
+  padding: 0;
+  accent-color: var(--green);
+}
+
 button {
   cursor: pointer;
   font-weight: 800;
@@ -186,6 +202,42 @@ button.primary {
 .selected-road strong {
   overflow-wrap: anywhere;
   font-size: 12px;
+}
+
+.selected-road p,
+.provider-state {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.provider-state {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.vehicle-car {
+  position: relative;
+  width: 17px;
+  height: 10px;
+  border: 1px solid #fff;
+  border-radius: 4px 4px 3px 3px;
+  background: var(--blue);
+  box-shadow: 0 2px 8px rgba(15, 111, 198, 0.38);
+}
+
+.vehicle-car::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 7px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .metrics {

@@ -1,0 +1,28 @@
+{
+  "corridors": [
+    {
+      "id": "al_farabi",
+      "name": "Al-Farabi Avenue",
+      "aliases": ["al-farabi", "al farabi", "alfarabi", "farabi"],
+      "notes": "High evening peak sensitivity around 17:00-19:30."
+    },
+    {
+      "id": "abay",
+      "name": "Abay Avenue",
+      "aliases": ["abay"],
+      "notes": "Central east-west corridor."
+    },
+    {
+      "id": "seifullin",
+      "name": "Seifullin Avenue",
+      "aliases": ["seifullin", "seyfullin"],
+      "notes": "North-south commuter corridor."
+    },
+    {
+      "id": "dostyk",
+      "name": "Dostyk Avenue",
+      "aliases": ["dostyk"],
+      "notes": "Important central corridor with mountain-side demand."
+    }
+  ]
+}

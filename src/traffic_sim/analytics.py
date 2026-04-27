@@ -35,6 +35,11 @@ def graph_to_leaflet_roads(
                 "load": loads.get(road_id, 0.0),
                 "isOpen": road.is_open,
                 "scenario": road.metadata.get("scenario"),
+                "capacity": road.capacity,
+                "effectiveCapacity": road.effective_capacity(),
+                "maxSpeedKph": road.max_speed_kph,
+                "speedModifier": road.speed_modifier,
+                "capacityModifier": road.capacity_modifier,
             }
         )
     return roads

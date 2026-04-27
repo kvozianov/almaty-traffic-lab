@@ -1,0 +1,26 @@
+{
+  "examples": [
+    {
+      "name": "Evening Al-Farabi congestion",
+      "time": "17:00",
+      "scenario": "capacity_reduction",
+      "corridor": "al_farabi",
+      "capacity_factor": 0.55,
+      "duration_minutes": 90
+    },
+    {
+      "name": "Road repair on central corridor",
+      "time": "09:00",
+      "scenario": "repair",
+      "capacity_factor": 0.25,
+      "duration_minutes": 180
+    },
+    {
+      "name": "Rain speed reduction",
+      "time": "18:00",
+      "scenario": "weather",
+      "speed_factor": 0.72,
+      "duration_minutes": 120
+    }
+  ]
+}

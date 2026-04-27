@@ -26,8 +26,23 @@
       </section>
 
       <section class="grid-two">
+        <label>Map mode
+          <select id="mapModeSelect">
+            <option value="leaflet">Leaflet 2D</option>
+            <option value="2gis">2GIS MapGL 3D</option>
+          </select>
+        </label>
+        <label>AI policy
+          <select id="policySelect">
+            <option value="heuristic">Heuristic AI</option>
+            <option value="llm">LLM adapter</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="grid-two">
         <label>Vehicles
-          <input id="vehicleInput" type="number" min="1" max="1500" value="80">
+          <input id="vehicleInput" type="number" min="1" max="100000" value="80">
         </label>
         <label>Steps
           <input id="stepsInput" type="number" min="1" max="3000" value="240">
@@ -38,8 +53,44 @@
         <label>Seed
           <input id="seedInput" type="number" value="7">
         </label>
-        <label>Speed
+        <label>Playback
           <input id="speedInput" type="range" min="200" max="2500" value="900">
+        </label>
+      </section>
+
+      <section class="grid-two">
+        <label>Sim time
+          <input id="timeInput" type="time" value="17:00">
+        </label>
+        <label>Day speed
+          <input id="timeSpeedInput" type="number" min="0.1" max="120" step="0.5" value="1">
+        </label>
+      </section>
+
+      <section class="grid-two">
+        <label>Vehicle speed
+          <input id="vehicleSpeedInput" type="range" min="0.25" max="5" step="0.25" value="1.75">
+        </label>
+        <label>Speed color
+          <select id="speedColorSelect">
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="grid-two">
+        <label class="check-row">
+          <input id="autoTimeInput" type="checkbox">
+          Auto time
+        </label>
+        <label>Traffic data
+          <select id="providerSelect">
+            <option value="synthetic">Synthetic</option>
+            <option value="csv">CSV</option>
+            <option value="yandex">Yandex API</option>
+            <option value="2gis">2GIS API</option>
+          </select>
         </label>
       </section>
 
@@ -49,10 +100,31 @@
           <option value="none">None</option>
           <option value="accident">Accident</option>
           <option value="repair">Road repair</option>
+          <option value="closure">Road closure</option>
+          <option value="capacity_reduction">Capacity reduction</option>
           <option value="signal">Signal delay</option>
           <option value="demand_surge">Demand surge</option>
+          <option value="weather">Weather speed drop</option>
           <option value="new-road">New bypass</option>
         </select>
+      </section>
+
+      <section class="grid-two">
+        <label>Capacity factor
+          <input id="capacityInput" type="range" min="0.05" max="1" step="0.05" value="0.3">
+        </label>
+        <label>Speed factor
+          <input id="speedFactorInput" type="range" min="0.1" max="1" step="0.05" value="0.45">
+        </label>
+      </section>
+
+      <section class="grid-two">
+        <label>Signal delay
+          <input id="signalDelayInput" type="number" min="0" max="300" value="60">
+        </label>
+        <label>Duration min
+          <input id="durationInput" type="number" min="1" max="1440" value="60">
+        </label>
       </section>
 
       <section class="section">
@@ -65,6 +137,7 @@
       <section class="selected-road">
         <span>Selected road</span>
         <strong id="selectedRoad">auto</strong>
+        <p id="roadDetails">Click a road to inspect capacity, speed and class.</p>
       </section>
 
       <section class="actions">
@@ -81,7 +154,17 @@
         <div><span>Avg trip</span><strong id="tripMetric">0.00 min</strong></div>
         <div><span>Max load</span><strong id="loadMetric">0.00</strong></div>
         <div><span>Delta trip</span><strong id="deltaMetric">0.00 min</strong></div>
+        <div><span>Time</span><strong id="timeMetric">17:00</strong></div>
+        <div><span>Demand</span><strong id="demandMetric">1.00x</strong></div>
+        <div><span>FPS</span><strong id="fpsMetric">0</strong></div>
+        <div><span>Visible / drawn</span><strong id="drawnMetric">0 / 0</strong></div>
+        <div><span>Mode</span><strong id="modeMetric">idle</strong></div>
+        <div><span>Roads</span><strong id="roadsMetric">0</strong></div>
+        <div><span>Avg speed</span><strong id="avgSpeedMetric">0 kph</strong></div>
+        <div><span>Max speed</span><strong id="maxSpeedMetric">0 kph</strong></div>
       </section>
+
+      <section class="provider-state" id="providerState">Traffic provider: synthetic</section>
 
       <section class="actions">
         <button id="exportMetrics">Export JSON</button>

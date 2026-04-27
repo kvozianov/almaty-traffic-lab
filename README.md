@@ -1,13 +1,16 @@
-# Traffic Simulation (Almaty MVP)
+# AI Traffic Digital Twin (Almaty)
 
-Research-oriented project for simulating city traffic on a road graph with scenario analysis:
+Research-oriented project for simulating Almaty traffic on a real road graph with scenario analysis:
 
 - accidents that reduce road capacity
 - road repairs that close roads
 - traffic light timing changes
 - bypass road additions
+- time-of-day demand and speed profiles
+- AI-style driver policy for trip choice and rerouting behavior
+- traffic data provider adapters for synthetic, CSV, Yandex, and 2GIS
 
-The first version is intentionally lightweight. Core simulation logic runs on the Python standard library, and OpenStreetMap integration is available as an optional next step through `osmnx`.
+The app runs locally with Python + FastAPI. OpenStreetMap is the default road graph source, Leaflet is the no-key map fallback, and 2GIS MapGL can be enabled for 3D visualization when a `2GIS_API_KEY` is available.
 
 ## Project goals
 
@@ -28,6 +31,10 @@ Main modules:
 - `traffic_sim.network`: road graph and routing
 - `traffic_sim.simulation`: tick-based traffic engine
 - `traffic_sim.scenarios`: road events and interventions
+- `traffic_sim.ai_policy`: driver policy layer
+- `traffic_sim.time_profiles`: time-of-day speed and demand profiles
+- `traffic_sim.traffic_providers`: synthetic/CSV/Yandex/2GIS traffic adapters
+- `traffic_sim.web_app`: FastAPI dashboard API
 - `traffic_sim.cli`: demo runner
 
 ## Quick start
@@ -94,6 +101,32 @@ Then open:
 http://127.0.0.1:8000
 ```
 
+Useful dashboard features:
+
+- city-wide fast preview for Full Almaty
+- smooth animated vehicle playback
+- route-based mass preview with procedural vehicles moving from road to road
+- adaptive canvas rendering with FPS and visible/drawn vehicle metrics
+- random road-based vehicle spawn points
+- AI policy mode: heuristic now, LLM adapter interface for later
+- manual or automatic time of day
+- scenario editor: accident, repair, closure, capacity reduction, signal delay, demand surge, weather, bypass road
+- road detail panel with capacity, lanes, speed, class, and provider observations
+- JSON metrics and CSV road-load exports
+
+Optional environment variables:
+
+```bash
+export TRAFFIC_SIM_MAP_PROVIDER=leaflet
+export TRAFFIC_DATA_PROVIDER=synthetic
+export TRAFFIC_SIM_DEFAULT_TIME=17:00
+export TRAFFIC_SIM_POLICY=heuristic
+export 2GIS_API_KEY=your_2gis_key
+export YANDEX_MAPS_API_KEY=your_yandex_key
+```
+
+Without API keys the project still works with Leaflet + synthetic traffic profiles. Yandex and 2GIS adapters intentionally do not scrape or store raw traffic data; use official APIs/layers or imported CSV data.
+
 ## Optional OSM integration
 
 To prepare the project for real city data:
@@ -146,7 +179,7 @@ Run the same real-map area in a live desktop window:
   --fps 12
 ```
 
-The web dashboard includes OSM tiles, road-load heat coloring, animated vehicles, clickable scenario roads, before/after comparison, and JSON/CSV exports.
+The web dashboard includes OSM tiles, road-load heat coloring, animated vehicles, clickable scenario roads, before/after comparison, time profiles, traffic data provider status, and JSON/CSV exports.
 
 The `--bbox` arguments are ordered as:
 
@@ -156,10 +189,18 @@ NORTH SOUTH EAST WEST
 
 This smaller bbox was verified during development and is a good first real-map run before scaling up to larger parts of Almaty.
 
+## Research data files
+
+- `data/time_profiles/almaty_weekday.json`: synthetic weekday demand/speed profile
+- `data/corridors/almaty_major_roads.json`: named Almaty corridors for statistics
+- `data/traffic_profiles/sample_almaty.csv`: sample traffic observations
+- `data/scenarios/examples.json`: reproducible demo scenarios
+- `docs/figma/dashboard_screens.md`: 5-screen Figma design brief
+
 ## Suggested next steps
 
-1. Load a bounded area of Almaty from OpenStreetMap.
-2. Add a simple map visualization.
-3. Introduce traffic demand from CSV or generated OD pairs.
-4. Calibrate road capacity and signal timing.
-5. Add analytics plots and scenario comparison reports.
+1. Add a real 2GIS API key and switch the dashboard to MapGL 3D.
+2. Import manually collected traffic CSVs for Al-Farabi, Abay, Tole Bi, and Ryskulov.
+3. Calibrate capacity and signal timing against known rush-hour behavior.
+4. Connect an OpenAI-compatible policy provider for zone-level destination choice.
+5. Create screenshots/GIFs and research scenarios for GitHub.
