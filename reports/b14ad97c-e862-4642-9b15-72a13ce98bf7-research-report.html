@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Almaty Traffic Research Report</title>
+  <style>
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #1f2729; }
+    h1 { margin-bottom: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { border: 1px solid #d8d1c4; border-radius: 8px; padding: 14px; }
+    .card span { display: block; color: #65706f; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .card strong { display: block; margin-top: 8px; font-size: 24px; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0 28px; }
+    th, td { border-bottom: 1px solid #e4ded2; padding: 9px; text-align: left; }
+    pre { background: #f5f1e8; padding: 16px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Almaty Traffic Research Report</h1>
+  <p>Run b14ad97c-e862-4642-9b15-72a13ce98bf7 | preset demo | time 17:00</p>
+  <section class="grid">
+    <div class="card"><span>Vehicles</span><strong>60</strong></div>
+    <div class="card"><span>Max load</span><strong>1.00</strong></div>
+    <div class="card"><span>Avg trip</span><strong>0.00 min</strong></div>
+    <div class="card"><span>Reroutes</span><strong>0</strong></div>
+    <div class="card"><span>Route coverage</span><strong>96.9%</strong></div>
+  </section>
+  <h2>Top Loaded Roads</h2>
+  <table><thead><tr><th>Road</th><th>Load</th></tr></thead><tbody><tr><td>abay_ab</td><td>1.00</td></tr>
+<tr><td>abay_ba</td><td>1.00</td></tr>
+<tr><td>diag_se_ab</td><td>0.92</td></tr>
+<tr><td>outer_southwest_ab</td><td>0.68</td></tr>
+<tr><td>nazarbayev_ab</td><td>0.57</td></tr>
+<tr><td>satpayev_ab</td><td>0.50</td></tr>
+<tr><td>diag_sw_ba</td><td>0.50</td></tr>
+<tr><td>outer_southwest_ba</td><td>0.45</td></tr>
+<tr><td>diag_nw_ba</td><td>0.42</td></tr>
+<tr><td>diag_ne_ba</td><td>0.38</td></tr></tbody></table>
+  <h2>Corridor Stats</h2>
+  <table><thead><tr><th>Corridor</th><th>Roads</th><th>Average load</th><th>Estimated speed</th></tr></thead><tbody><tr><td>Al-Farabi Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Abay Avenue</td><td>2</td><td>1.00</td><td>36.2</td></tr>
+<tr><td>Seifullin Avenue</td><td>2</td><td>0.15</td><td>40.0</td></tr>
+<tr><td>Dostyk Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr></tbody></table>
+  <h2>Top OD Flows</h2>
+  <table><thead><tr><th>Origin</th><th>Destination</th><th>Vehicles</th></tr></thead><tbody><tr><td>atakent</td><td>orbita</td><td>5</td></tr>
+<tr><td>center</td><td>orbita</td><td>4</td></tr>
+<tr><td>residential_north</td><td>center</td><td>3</td></tr>
+<tr><td>airport</td><td>center</td><td>3</td></tr>
+<tr><td>railway</td><td>orbita</td><td>3</td></tr>
+<tr><td>residential_west</td><td>atakent</td><td>2</td></tr>
+<tr><td>railway</td><td>center</td><td>2</td></tr>
+<tr><td>center</td><td>residential_north</td><td>2</td></tr>
+<tr><td>orbita</td><td>center</td><td>2</td></tr>
+<tr><td>residential_north</td><td>railway</td><td>2</td></tr></tbody></table>
+  <h2>Embedded Summary JSON</h2>
+  <pre>{
+  &quot;request&quot;: {
+    &quot;preset_id&quot;: &quot;demo&quot;,
+    &quot;vehicles&quot;: 60,
+    &quot;steps&quot;: 30,
+    &quot;tick_seconds&quot;: 10,
+    &quot;seed&quot;: 6,
+    &quot;refresh_cache&quot;: false,
+    &quot;compare&quot;: true,
+    &quot;manual_time&quot;: &quot;17:00&quot;,
+    &quot;time_preset&quot;: &quot;evening_peak&quot;,
+    &quot;auto_time&quot;: false,
+    &quot;time_speed_multiplier&quot;: 1.0,
+    &quot;policy&quot;: &quot;heuristic&quot;,
+    &quot;demand_mode&quot;: &quot;od_zones&quot;,
+    &quot;reroute_interval_ticks&quot;: 12,
+    &quot;random_events&quot;: true,
+    &quot;events&quot;: [
+      {
+        &quot;id&quot;: null,
+        &quot;type&quot;: &quot;accident&quot;,
+        &quot;road_id&quot;: &quot;abay_ab&quot;,
+        &quot;start_time&quot;: &quot;17:00&quot;,
+        &quot;duration_minutes&quot;: 30,
+        &quot;enabled&quot;: true,
+        &quot;capacity_factor&quot;: 0.35,
+        &quot;speed_factor&quot;: 0.45,
+        &quot;signal_delay_s&quot;: 60.0,
+        &quot;intensity&quot;: 1.0
+      }
+    ],
+    &quot;scenario&quot;: {
+      &quot;type&quot;: &quot;none&quot;,
+      &quot;road_id&quot;: null,
+      &quot;capacity_factor&quot;: 0.3,
+      &quot;speed_factor&quot;: 0.45,
+      &quot;signal_delay_s&quot;: 60.0,
+      &quot;demand_surge&quot;: false,
+      &quot;duration_minutes&quot;: 60,
+      &quot;start_time&quot;: null,
+      &quot;enabled&quot;: true
+    }
+  },
+  &quot;stats&quot;: {
+    &quot;tick&quot;: 30,
+    &quot;sim_time_s&quot;: 300,
+    &quot;active_vehicles&quot;: 60,
+    &quot;arrived_vehicles&quot;: 0,
+    &quot;stuck_vehicles&quot;: 0,
+    &quot;average_trip_time_s&quot;: 0.0,
+    &quot;max_road_load&quot;: 1.0,
+    &quot;average_road_load&quot;: 0.29399917140151516,
+    &quot;time&quot;: &quot;17:00&quot;,
+    &quot;demand_multiplier&quot;: 1.85,
+    &quot;reroutes&quot;: 0
+  },
+  &quot;analytics&quot;: {
+    &quot;runId&quot;: &quot;b14ad97c-e862-4642-9b15-72a13ce98bf7&quot;,
+    &quot;congestionOverTime&quot;: [
+      {
+        &quot;tick&quot;: 0,
+        &quot;value&quot;: 0.294
+      },
+      {
+        &quot;tick&quot;: 2,
+        &quot;value&quot;: 0.3036
+      },
+      {
+        &quot;tick&quot;: 5,
+        &quot;value&quot;: 0.3132
+      },
+      {
+        &quot;tick&quot;: 8,
+        &quot;value&quot;: 0.3229
+      },
+      {
+        &quot;tick&quot;: 10,
+        &quot;value&quot;: 0.3325
+      },
+      {
+        &quot;tick&quot;: 13,
+        &quot;value&quot;: 0.3421
+      },
+      {
+        &quot;tick&quot;: 16,
+        &quot;value&quot;: 0.3421
+      },
+      {
+        &quot;tick&quot;: 19,
+        &quot;value&quot;: 0.3325
+      },
+      {
+        &quot;tick&quot;: 21,
+        &quot;value&quot;: 0.3229
+      },
+      {
+        &quot;tick&quot;: 24,
+        &quot;value&quot;: 0.3132
+      },
+      {
+        &quot;tick&quot;: 27,
+        &quot;value&quot;: 0.3036
+      },
+      {
+        &quot;tick&quot;: 30,
+        &quot;value&quot;: 0.294
+      }
+    ],
+    &quot;averageSpeedOverTime&quot;: [
+      {
+        &quot;tick&quot;: 0,
+        &quot;value&quot;: 22.6083
+      },
+      {
+        &quot;tick&quot;: 2,
+        &quot;value&quot;: 23.1016
+      },
+      {
+        &quot;tick&quot;: 5,
+        &quot;value&quot;: 23.5949
+      },
+      {
+        &quot;tick&quot;: 8,
+        &quot;value&quot;: 24.0882
+      },
+      {
+        &quot;tick&quot;: 10,
+        &quot;value&quot;: 24.5814
+      },
+      {
+        &quot;tick&quot;: 13,
+        &quot;value&quot;: 25.0747
+      },
+      {
+        &quot;tick&quot;: 16,
+        &quot;value&quot;: 25.0747
+      },
+      {
+        &quot;tick&quot;: 19,
+        &quot;value&quot;: 24.5814
+      },
+      {
+        &quot;tick&quot;: 21,
+        &quot;value&quot;: 24.0882
+      },
+      {
+        &quot;tick&quot;: 24,
+        &quot;value&quot;: 23.5949
+      },
+      {
+        &quot;tick&quot;: 27,
+        &quot;value&quot;: 23.1016
+      },
+      {
+        &quot;tick&quot;: 30,
+        &quot;value&quot;: 22.6083
+      }
+    ],
+    &quot;topRoads&quot;: [
+      {
+        &quot;roadId&quot;: &quot;abay_ab&quot;,
+        &quot;name&quot;: &quot;abay_ab&quot;,
+        &quot;load&quot;: 1.0
+      },
+      {
+        &quot;roadId&quot;: &quot;abay_ba&quot;,
+        &quot;name&quot;: &quot;abay_ba&quot;,
+        &quot;load&quot;: 1.0
+      },
+      {
+        &quot;roadId&quot;: &quot;diag_se_ab&quot;,
+        &quot;name&quot;: &quot;diag_se_ab&quot;,
+        &quot;load&quot;: 0.9187
+      },
+      {
+        &quot;roadId&quot;: &quot;outer_southwest_ab&quot;,
+        &quot;name&quot;: &quot;outer_southwest_ab&quot;,
+        &quot;load&quot;: 0.675
+      },
+      {
+        &quot;roadId&quot;: &quot;nazarbayev_ab&quot;,
+        &quot;name&quot;: &quot;nazarbayev_ab&quot;,
+        &quot;load&quot;: 0.57
+      },
+      {
+        &quot;roadId&quot;: &quot;satpayev_ab&quot;,
+        &quot;name&quot;: &quot;satpayev_ab&quot;,
+        &quot;load&quot;: 0.5031
+      },
+      {
+        &quot;roadId&quot;: &quot;diag_sw_ba&quot;,
+        &quot;name&quot;: &quot;diag_sw_ba&quot;,
+        &quot;load&quot;: 0.5
+      },
+      {
+        &quot;roadId&quot;: &quot;outer_southwest_ba&quot;,
+        &quot;name&quot;: &quot;outer_southwest_ba&quot;,
+        &quot;load&quot;: 0.4542
+      },
+      {
+        &quot;roadId&quot;: &quot;diag_nw_ba&quot;,
+        &quot;name&quot;: &quot;diag_nw_ba&quot;,
+        &quot;load&quot;: 0.425
+      },
+      {
+        &quot;roadId&quot;: &quot;diag_ne_ba&quot;,
+        &quot;name&quot;: &quot;diag_ne_ba&quot;,
+        &quot;load&quot;: 0.375
+      }
+    ],
+    &quot;corridorStats&quot;: [
+      {
+        &quot;id&quot;: &quot;al_farabi&quot;,
+        &quot;name&quot;: &quot;Al-Farabi Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;abay&quot;,
+        &quot;name&quot;: &quot;Abay Avenue&quot;,
+        &quot;roadCount&quot;: 2,
+        &quot;averageLoad&quot;: 1.0,
+        &quot;maxLoad&quot;: 1.0,
+        &quot;estimatedSpeedKph&quot;: 36.2
+      },
+      {
+        &quot;id&quot;: &quot;seifullin&quot;,
+        &quot;name&quot;: &quot;Seifullin Avenue&quot;,
+        &quot;roadCount&quot;: 2,
+        &quot;averageLoad&quot;: 0.1542,
+        &quot;maxLoad&quot;: 0.1958,
+        &quot;estimatedSpeedKph&quot;: 40.0
+      },
+      {
+        &quot;id&quot;: &quot;dostyk&quot;,
+        &quot;name&quot;: &quot;Dostyk Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      }
+    ],
+    &quot;odPairs&quot;: [
+      {
+        &quot;origin&quot;: &quot;atakent&quot;,
+        &quot;destination&quot;: &quot;orbita&quot;,
+        &quot;vehicles&quot;: 5
+      },
+      {
+        &quot;origin&quot;: &quot;center&quot;,
+        &quot;destination&quot;: &quot;orbita&quot;,
+        &quot;vehicles&quot;: 4
+      },
+      {
+        &quot;origin&quot;: &quot;residential_north&quot;,
+        &quot;destination&quot;: &quot;center&quot;,
+        &quot;vehicles&quot;: 3
+      },
+      {
+        &quot;origin&quot;: &quot;airport&quot;,
+        &quot;destination&quot;: &quot;center&quot;,
+        &quot;vehicles&quot;: 3
+      },
+      {
+        &quot;origin&quot;: &quot;railway&quot;,
+        &quot;destination&quot;: &quot;orbita&quot;,
+        &quot;vehicles&quot;: 3
+      },
+      {
+        &quot;origin&quot;: &quot;residential_west&quot;,
+        &quot;destination&quot;: &quot;atakent&quot;,
+        &quot;vehicles&quot;: 2
+      },
+      {
+        &quot;origin&quot;: &quot;railway&quot;,
+        &quot;destination&quot;: &quot;center&quot;,
+        &quot;vehicles&quot;: 2
+      },
+      {
+        &quot;origin&quot;: &quot;center&quot;,
+        &quot;destination&quot;: &quot;residential_north&quot;,
+        &quot;vehicles&quot;: 2
+      },
+      {
+        &quot;origin&quot;: &quot;orbita&quot;,
+        &quot;destination&quot;: &quot;center&quot;,
+        &quot;vehicles&quot;: 2
+      },
+      {
+        &quot;origin&quot;: &quot;residential_north&quot;,
+        &quot;destination&quot;: &quot;railway&quot;,
+        &quot;vehicles&quot;: 2
+      }
+    ],
+    &quot;routeCoverage&quot;: {
+      &quot;coveredRoads&quot;: 31,
+      &quot;totalRoads&quot;: 32,
+      &quot;coverageRatio&quot;: 0.9688,
+      &quot;routedVehicles&quot;: 60,
+      &quot;averageRouteRoads&quot;: 2.82
+    },
+    &quot;beforeAfter&quot;: null,
+    &quot;heatmap&quot;: [
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.91875
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.6749999999999999
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.57
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.503125
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.5
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.4541666666666666
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.42500000000000004
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.375
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.34375
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.26999999999999996
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.22249999999999998
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.2041666666666667
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.19583333333333333
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.19250000000000003
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.17500000000000002
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.17
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.1409090909090909
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.125
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.125
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.12250000000000001
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.1125
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.10500000000000001
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.10250000000000001
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.08749999999999998
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.07727272727272728
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.07499999999999998
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.05249999999999999
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.05
+      }
+    ],
+    &quot;events&quot;: [
+      {
+        &quot;id&quot;: &quot;event-1&quot;,
+        &quot;type&quot;: &quot;accident&quot;,
+        &quot;roadId&quot;: &quot;abay_ab&quot;,
+        &quot;startTime&quot;: &quot;17:00&quot;,
+        &quot;durationMinutes&quot;: 30,
+        &quot;endTime&quot;: &quot;17:30&quot;,
+        &quot;enabled&quot;: true,
+        &quot;capacityFactor&quot;: 0.35,
+        &quot;speedFactor&quot;: 0.45,
+        &quot;signalDelayS&quot;: 60.0,
+        &quot;intensity&quot;: 1.0,
+        &quot;active&quot;: true
+      },
+      {
+        &quot;id&quot;: &quot;random-1&quot;,
+        &quot;type&quot;: &quot;capacity_reduction&quot;,
+        &quot;roadId&quot;: &quot;abay_ba&quot;,
+        &quot;startTime&quot;: &quot;17:06&quot;,
+        &quot;durationMinutes&quot;: 34,
+        &quot;endTime&quot;: &quot;17:40&quot;,
+        &quot;enabled&quot;: true,
+        &quot;capacityFactor&quot;: 0.378907258532278,
+        &quot;speedFactor&quot;: 0.28253194222723743,
+        &quot;signalDelayS&quot;: 88.12935636599997,
+        &quot;intensity&quot;: 1.0,
+        &quot;active&quot;: false
+      }
+    ],
+    &quot;zones&quot;: [
+      {
+        &quot;id&quot;: &quot;center&quot;,
+        &quot;name&quot;: &quot;Center&quot;,
+        &quot;lat&quot;: 43.2389,
+        &quot;lng&quot;: 76.9454,
+        &quot;radiusM&quot;: 2600.0,
+        &quot;kind&quot;: &quot;business&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.45,
+          &quot;lunch&quot;: 1.15,
+          &quot;evening&quot;: 1.25,
+          &quot;night&quot;: 0.7,
+          &quot;weekend&quot;: 1.0
+        }
+      },
+      {
+        &quot;id&quot;: &quot;orbita&quot;,
+        &quot;name&quot;: &quot;Orbita&quot;,
+        &quot;lat&quot;: 43.2047,
+        &quot;lng&quot;: 76.8759,
+        &quot;radiusM&quot;: 2300.0,
+        &quot;kind&quot;: &quot;residential&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.35,
+          &quot;lunch&quot;: 0.9,
+          &quot;evening&quot;: 1.55,
+          &quot;night&quot;: 1.0,
+          &quot;weekend&quot;: 1.1
+        }
+      },
+      {
+        &quot;id&quot;: &quot;samal&quot;,
+        &quot;name&quot;: &quot;Samal&quot;,
+        &quot;lat&quot;: 43.2326,
+        &quot;lng&quot;: 76.9578,
+        &quot;radiusM&quot;: 1900.0,
+        &quot;kind&quot;: &quot;mixed&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.15,
+          &quot;lunch&quot;: 1.2,
+          &quot;evening&quot;: 1.2,
+          &quot;night&quot;: 0.85,
+          &quot;weekend&quot;: 1.0
+        }
+      },
+      {
+        &quot;id&quot;: &quot;atakent&quot;,
+        &quot;name&quot;: &quot;Atakent&quot;,
+        &quot;lat&quot;: 43.2258,
+        &quot;lng&quot;: 76.9092,
+        &quot;radiusM&quot;: 2200.0,
+        &quot;kind&quot;: &quot;mixed&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.2,
+          &quot;lunch&quot;: 1.15,
+          &quot;evening&quot;: 1.2,
+          &quot;night&quot;: 0.8,
+          &quot;weekend&quot;: 1.05
+        }
+      },
+      {
+        &quot;id&quot;: &quot;airport&quot;,
+        &quot;name&quot;: &quot;Airport&quot;,
+        &quot;lat&quot;: 43.3521,
+        &quot;lng&quot;: 77.0405,
+        &quot;radiusM&quot;: 3000.0,
+        &quot;kind&quot;: &quot;transport&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.05,
+          &quot;lunch&quot;: 1.0,
+          &quot;evening&quot;: 1.1,
+          &quot;night&quot;: 1.25,
+          &quot;weekend&quot;: 1.15
+        }
+      },
+      {
+        &quot;id&quot;: &quot;railway&quot;,
+        &quot;name&quot;: &quot;Railway&quot;,
+        &quot;lat&quot;: 43.2711,
+        &quot;lng&quot;: 76.9398,
+        &quot;radiusM&quot;: 2300.0,
+        &quot;kind&quot;: &quot;transport&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.2,
+          &quot;lunch&quot;: 1.0,
+          &quot;evening&quot;: 1.15,
+          &quot;night&quot;: 1.05,
+          &quot;weekend&quot;: 1.05
+        }
+      },
+      {
+        &quot;id&quot;: &quot;residential_north&quot;,
+        &quot;name&quot;: &quot;Residential North&quot;,
+        &quot;lat&quot;: 43.304,
+        &quot;lng&quot;: 76.905,
+        &quot;radiusM&quot;: 4200.0,
+        &quot;kind&quot;: &quot;residential&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.55,
+          &quot;lunch&quot;: 0.85,
+          &quot;evening&quot;: 1.65,
+          &quot;night&quot;: 1.05,
+          &quot;weekend&quot;: 1.1
+        }
+      },
+      {
+        &quot;id&quot;: &quot;residential_west&quot;,
+        &quot;name&quot;: &quot;Residential West&quot;,
+        &quot;lat&quot;: 43.245,
+        &quot;lng&quot;: 76.835,
+        &quot;radiusM&quot;: 4200.0,
+        &quot;kind&quot;: &quot;residential&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.5,
+          &quot;lunch&quot;: 0.85,
+          &quot;evening&quot;: 1.6,
+          &quot;night&quot;: 1.05,
+          &quot;weekend&quot;: 1.1
+        }
+      },
+      {
+        &quot;id&quot;: &quot;medeu&quot;,
+        &quot;name&quot;: &quot;Medeu&quot;,
+        &quot;lat&quot;: 43.1585,
+        &quot;lng&quot;: 77.0587,
+        &quot;radiusM&quot;: 5200.0,
+        &quot;kind&quot;: &quot;leisure&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 0.75,
+          &quot;lunch&quot;: 0.95,
+          &quot;evening&quot;: 0.85,
+          &quot;night&quot;: 0.55,
+          &quot;weekend&quot;: 1.55
+        }
+      }
+    ]
+  }
+}</pre>
+</body>
+</html>

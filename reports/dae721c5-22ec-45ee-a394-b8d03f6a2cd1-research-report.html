@@ -1,0 +1,2713 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Almaty Traffic Research Report</title>
+  <style>
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #1f2729; }
+    h1 { margin-bottom: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { border: 1px solid #d8d1c4; border-radius: 8px; padding: 14px; }
+    .card span { display: block; color: #65706f; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .card strong { display: block; margin-top: 8px; font-size: 24px; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0 28px; }
+    th, td { border-bottom: 1px solid #e4ded2; padding: 9px; text-align: left; }
+    pre { background: #f5f1e8; padding: 16px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Almaty Traffic Research Report</h1>
+  <p>Run dae721c5-22ec-45ee-a394-b8d03f6a2cd1 | preset full_almaty_fast | time 17:00</p>
+  <section class="grid">
+    <div class="card"><span>Vehicles</span><strong>8000</strong></div>
+    <div class="card"><span>Max load</span><strong>1.50</strong></div>
+    <div class="card"><span>Avg trip</span><strong>0.00 min</strong></div>
+    <div class="card"><span>Reroutes</span><strong>0</strong></div>
+  </section>
+  <h2>Top Loaded Roads</h2>
+  <table><thead><tr><th>Road</th><th>Load</th></tr></thead><tbody><tr><td>Манас көшесі</td><td>1.50</td></tr>
+<tr><td>Желтоқсан көшесі</td><td>1.50</td></tr>
+<tr><td>Тузов көшесі</td><td>1.50</td></tr>
+<tr><td>Тузов көшесі</td><td>1.50</td></tr>
+<tr><td>Панфилов көшесі</td><td>1.50</td></tr>
+<tr><td>Рысқұлбеков көшесі</td><td>1.50</td></tr>
+<tr><td>улица Щепкина</td><td>1.50</td></tr>
+<tr><td>улица Губкина</td><td>1.50</td></tr>
+<tr><td>улица Щепкина</td><td>1.50</td></tr>
+<tr><td>улица Щепкина</td><td>1.50</td></tr></tbody></table>
+  <h2>Corridor Stats</h2>
+  <table><thead><tr><th>Corridor</th><th>Roads</th><th>Average load</th><th>Estimated speed</th></tr></thead><tbody><tr><td>Al-Farabi Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Abay Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Seifullin Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Dostyk Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr></tbody></table>
+  <h2>Embedded Summary JSON</h2>
+  <pre>{
+  &quot;request&quot;: {
+    &quot;preset_id&quot;: &quot;full_almaty_fast&quot;,
+    &quot;vehicles&quot;: 8000,
+    &quot;steps&quot;: 500,
+    &quot;tick_seconds&quot;: 10,
+    &quot;seed&quot;: 7,
+    &quot;refresh_cache&quot;: false,
+    &quot;compare&quot;: false,
+    &quot;manual_time&quot;: &quot;17:00&quot;,
+    &quot;time_preset&quot;: &quot;evening_peak&quot;,
+    &quot;auto_time&quot;: false,
+    &quot;time_speed_multiplier&quot;: 1.0,
+    &quot;policy&quot;: &quot;heuristic&quot;,
+    &quot;demand_mode&quot;: &quot;od_zones&quot;,
+    &quot;reroute_interval_ticks&quot;: 12,
+    &quot;random_events&quot;: false,
+    &quot;events&quot;: [],
+    &quot;scenario&quot;: {
+      &quot;type&quot;: &quot;none&quot;,
+      &quot;road_id&quot;: null,
+      &quot;capacity_factor&quot;: 0.3,
+      &quot;speed_factor&quot;: 0.45,
+      &quot;signal_delay_s&quot;: 60.0,
+      &quot;demand_surge&quot;: false,
+      &quot;duration_minutes&quot;: 60,
+      &quot;start_time&quot;: &quot;17:00&quot;,
+      &quot;enabled&quot;: true
+    }
+  },
+  &quot;stats&quot;: {
+    &quot;tick&quot;: 500,
+    &quot;sim_time_s&quot;: 5000,
+    &quot;active_vehicles&quot;: 8000,
+    &quot;arrived_vehicles&quot;: 0,
+    &quot;stuck_vehicles&quot;: 0,
+    &quot;average_trip_time_s&quot;: 0.0,
+    &quot;max_road_load&quot;: 1.5,
+    &quot;average_road_load&quot;: 0.00668380234597927,
+    &quot;time&quot;: &quot;17:00&quot;,
+    &quot;demand_multiplier&quot;: 1.85,
+    &quot;reroutes&quot;: 0
+  },
+  &quot;analytics&quot;: {
+    &quot;runId&quot;: &quot;dae721c5-22ec-45ee-a394-b8d03f6a2cd1&quot;,
+    &quot;congestionOverTime&quot;: [
+      {
+        &quot;tick&quot;: 0,
+        &quot;value&quot;: 0.0067
+      },
+      {
+        &quot;tick&quot;: 6,
+        &quot;value&quot;: 0.0067
+      },
+      {
+        &quot;tick&quot;: 12,
+        &quot;value&quot;: 0.0067
+      },
+      {
+        &quot;tick&quot;: 18,
+        &quot;value&quot;: 0.0068
+      },
+      {
+        &quot;tick&quot;: 25,
+        &quot;value&quot;: 0.0068
+      },
+      {
+        &quot;tick&quot;: 31,
+        &quot;value&quot;: 0.0068
+      },
+      {
+        &quot;tick&quot;: 37,
+        &quot;value&quot;: 0.0069
+      },
+      {
+        &quot;tick&quot;: 44,
+        &quot;value&quot;: 0.0069
+      },
+      {
+        &quot;tick&quot;: 50,
+        &quot;value&quot;: 0.0069
+      },
+      {
+        &quot;tick&quot;: 56,
+        &quot;value&quot;: 0.007
+      },
+      {
+        &quot;tick&quot;: 63,
+        &quot;value&quot;: 0.007
+      },
+      {
+        &quot;tick&quot;: 69,
+        &quot;value&quot;: 0.007
+      },
+      {
+        &quot;tick&quot;: 75,
+        &quot;value&quot;: 0.007
+      },
+      {
+        &quot;tick&quot;: 82,
+        &quot;value&quot;: 0.0071
+      },
+      {
+        &quot;tick&quot;: 88,
+        &quot;value&quot;: 0.0071
+      },
+      {
+        &quot;tick&quot;: 94,
+        &quot;value&quot;: 0.0071
+      },
+      {
+        &quot;tick&quot;: 101,
+        &quot;value&quot;: 0.0072
+      },
+      {
+        &quot;tick&quot;: 107,
+        &quot;value&quot;: 0.0072
+      },
+      {
+        &quot;tick&quot;: 113,
+        &quot;value&quot;: 0.0072
+      },
+      {
+        &quot;tick&quot;: 120,
+        &quot;value&quot;: 0.0073
+      },
+      {
+        &quot;tick&quot;: 126,
+        &quot;value&quot;: 0.0073
+      },
+      {
+        &quot;tick&quot;: 132,
+        &quot;value&quot;: 0.0073
+      },
+      {
+        &quot;tick&quot;: 139,
+        &quot;value&quot;: 0.0074
+      },
+      {
+        &quot;tick&quot;: 145,
+        &quot;value&quot;: 0.0074
+      },
+      {
+        &quot;tick&quot;: 151,
+        &quot;value&quot;: 0.0074
+      },
+      {
+        &quot;tick&quot;: 158,
+        &quot;value&quot;: 0.0074
+      },
+      {
+        &quot;tick&quot;: 164,
+        &quot;value&quot;: 0.0075
+      },
+      {
+        &quot;tick&quot;: 170,
+        &quot;value&quot;: 0.0075
+      },
+      {
+        &quot;tick&quot;: 177,
+        &quot;value&quot;: 0.0075
+      },
+      {
+        &quot;tick&quot;: 183,
+        &quot;value&quot;: 0.0076
+      },
+      {
+        &quot;tick&quot;: 189,
+        &quot;value&quot;: 0.0076
+      },
+      {
+        &quot;tick&quot;: 196,
+        &quot;value&quot;: 0.0076
+      },
+      {
+        &quot;tick&quot;: 202,
+        &quot;value&quot;: 0.0077
+      },
+      {
+        &quot;tick&quot;: 208,
+        &quot;value&quot;: 0.0077
+      },
+      {
+        &quot;tick&quot;: 215,
+        &quot;value&quot;: 0.0077
+      },
+      {
+        &quot;tick&quot;: 221,
+        &quot;value&quot;: 0.0077
+      },
+      {
+        &quot;tick&quot;: 227,
+        &quot;value&quot;: 0.0078
+      },
+      {
+        &quot;tick&quot;: 234,
+        &quot;value&quot;: 0.0078
+      },
+      {
+        &quot;tick&quot;: 240,
+        &quot;value&quot;: 0.0078
+      },
+      {
+        &quot;tick&quot;: 246,
+        &quot;value&quot;: 0.0079
+      },
+      {
+        &quot;tick&quot;: 253,
+        &quot;value&quot;: 0.0079
+      },
+      {
+        &quot;tick&quot;: 259,
+        &quot;value&quot;: 0.0078
+      },
+      {
+        &quot;tick&quot;: 265,
+        &quot;value&quot;: 0.0078
+      },
+      {
+        &quot;tick&quot;: 272,
+        &quot;value&quot;: 0.0078
+      },
+      {
+        &quot;tick&quot;: 278,
+        &quot;value&quot;: 0.0077
+      },
+      {
+        &quot;tick&quot;: 284,
+        &quot;value&quot;: 0.0077
+      },
+      {
+        &quot;tick&quot;: 291,
+        &quot;value&quot;: 0.0077
+      },
+      {
+        &quot;tick&quot;: 297,
+        &quot;value&quot;: 0.0077
+      },
+      {
+        &quot;tick&quot;: 303,
+        &quot;value&quot;: 0.0076
+      },
+      {
+        &quot;tick&quot;: 310,
+        &quot;value&quot;: 0.0076
+      },
+      {
+        &quot;tick&quot;: 316,
+        &quot;value&quot;: 0.0076
+      },
+      {
+        &quot;tick&quot;: 322,
+        &quot;value&quot;: 0.0075
+      },
+      {
+        &quot;tick&quot;: 329,
+        &quot;value&quot;: 0.0075
+      },
+      {
+        &quot;tick&quot;: 335,
+        &quot;value&quot;: 0.0075
+      },
+      {
+        &quot;tick&quot;: 341,
+        &quot;value&quot;: 0.0074
+      },
+      {
+        &quot;tick&quot;: 348,
+        &quot;value&quot;: 0.0074
+      },
+      {
+        &quot;tick&quot;: 354,
+        &quot;value&quot;: 0.0074
+      },
+      {
+        &quot;tick&quot;: 360,
+        &quot;value&quot;: 0.0074
+      },
+      {
+        &quot;tick&quot;: 367,
+        &quot;value&quot;: 0.0073
+      },
+      {
+        &quot;tick&quot;: 373,
+        &quot;value&quot;: 0.0073
+      },
+      {
+        &quot;tick&quot;: 379,
+        &quot;value&quot;: 0.0073
+      },
+      {
+        &quot;tick&quot;: 386,
+        &quot;value&quot;: 0.0072
+      },
+      {
+        &quot;tick&quot;: 392,
+        &quot;value&quot;: 0.0072
+      },
+      {
+        &quot;tick&quot;: 398,
+        &quot;value&quot;: 0.0072
+      },
+      {
+        &quot;tick&quot;: 405,
+        &quot;value&quot;: 0.0071
+      },
+      {
+        &quot;tick&quot;: 411,
+        &quot;value&quot;: 0.0071
+      },
+      {
+        &quot;tick&quot;: 417,
+        &quot;value&quot;: 0.0071
+      },
+      {
+        &quot;tick&quot;: 424,
+        &quot;value&quot;: 0.007
+      },
+      {
+        &quot;tick&quot;: 430,
+        &quot;value&quot;: 0.007
+      },
+      {
+        &quot;tick&quot;: 436,
+        &quot;value&quot;: 0.007
+      },
+      {
+        &quot;tick&quot;: 443,
+        &quot;value&quot;: 0.007
+      },
+      {
+        &quot;tick&quot;: 449,
+        &quot;value&quot;: 0.0069
+      },
+      {
+        &quot;tick&quot;: 455,
+        &quot;value&quot;: 0.0069
+      },
+      {
+        &quot;tick&quot;: 462,
+        &quot;value&quot;: 0.0069
+      },
+      {
+        &quot;tick&quot;: 468,
+        &quot;value&quot;: 0.0068
+      },
+      {
+        &quot;tick&quot;: 474,
+        &quot;value&quot;: 0.0068
+      },
+      {
+        &quot;tick&quot;: 481,
+        &quot;value&quot;: 0.0068
+      },
+      {
+        &quot;tick&quot;: 487,
+        &quot;value&quot;: 0.0067
+      },
+      {
+        &quot;tick&quot;: 493,
+        &quot;value&quot;: 0.0067
+      },
+      {
+        &quot;tick&quot;: 500,
+        &quot;value&quot;: 0.0067
+      }
+    ],
+    &quot;averageSpeedOverTime&quot;: [
+      {
+        &quot;tick&quot;: 0,
+        &quot;value&quot;: 26.6004
+      },
+      {
+        &quot;tick&quot;: 6,
+        &quot;value&quot;: 26.6812
+      },
+      {
+        &quot;tick&quot;: 12,
+        &quot;value&quot;: 26.762
+      },
+      {
+        &quot;tick&quot;: 18,
+        &quot;value&quot;: 26.8428
+      },
+      {
+        &quot;tick&quot;: 25,
+        &quot;value&quot;: 26.9236
+      },
+      {
+        &quot;tick&quot;: 31,
+        &quot;value&quot;: 27.0044
+      },
+      {
+        &quot;tick&quot;: 37,
+        &quot;value&quot;: 27.0852
+      },
+      {
+        &quot;tick&quot;: 44,
+        &quot;value&quot;: 27.166
+      },
+      {
+        &quot;tick&quot;: 50,
+        &quot;value&quot;: 27.2469
+      },
+      {
+        &quot;tick&quot;: 56,
+        &quot;value&quot;: 27.3277
+      },
+      {
+        &quot;tick&quot;: 63,
+        &quot;value&quot;: 27.4085
+      },
+      {
+        &quot;tick&quot;: 69,
+        &quot;value&quot;: 27.4893
+      },
+      {
+        &quot;tick&quot;: 75,
+        &quot;value&quot;: 27.5701
+      },
+      {
+        &quot;tick&quot;: 82,
+        &quot;value&quot;: 27.6509
+      },
+      {
+        &quot;tick&quot;: 88,
+        &quot;value&quot;: 27.7317
+      },
+      {
+        &quot;tick&quot;: 94,
+        &quot;value&quot;: 27.8125
+      },
+      {
+        &quot;tick&quot;: 101,
+        &quot;value&quot;: 27.8933
+      },
+      {
+        &quot;tick&quot;: 107,
+        &quot;value&quot;: 27.9742
+      },
+      {
+        &quot;tick&quot;: 113,
+        &quot;value&quot;: 28.055
+      },
+      {
+        &quot;tick&quot;: 120,
+        &quot;value&quot;: 28.1358
+      },
+      {
+        &quot;tick&quot;: 126,
+        &quot;value&quot;: 28.2166
+      },
+      {
+        &quot;tick&quot;: 132,
+        &quot;value&quot;: 28.2974
+      },
+      {
+        &quot;tick&quot;: 139,
+        &quot;value&quot;: 28.3782
+      },
+      {
+        &quot;tick&quot;: 145,
+        &quot;value&quot;: 28.459
+      },
+      {
+        &quot;tick&quot;: 151,
+        &quot;value&quot;: 28.5398
+      },
+      {
+        &quot;tick&quot;: 158,
+        &quot;value&quot;: 28.6206
+      },
+      {
+        &quot;tick&quot;: 164,
+        &quot;value&quot;: 28.7015
+      },
+      {
+        &quot;tick&quot;: 170,
+        &quot;value&quot;: 28.7823
+      },
+      {
+        &quot;tick&quot;: 177,
+        &quot;value&quot;: 28.8631
+      },
+      {
+        &quot;tick&quot;: 183,
+        &quot;value&quot;: 28.9439
+      },
+      {
+        &quot;tick&quot;: 189,
+        &quot;value&quot;: 29.0247
+      },
+      {
+        &quot;tick&quot;: 196,
+        &quot;value&quot;: 29.1055
+      },
+      {
+        &quot;tick&quot;: 202,
+        &quot;value&quot;: 29.1863
+      },
+      {
+        &quot;tick&quot;: 208,
+        &quot;value&quot;: 29.2671
+      },
+      {
+        &quot;tick&quot;: 215,
+        &quot;value&quot;: 29.3479
+      },
+      {
+        &quot;tick&quot;: 221,
+        &quot;value&quot;: 29.4288
+      },
+      {
+        &quot;tick&quot;: 227,
+        &quot;value&quot;: 29.5096
+      },
+      {
+        &quot;tick&quot;: 234,
+        &quot;value&quot;: 29.5904
+      },
+      {
+        &quot;tick&quot;: 240,
+        &quot;value&quot;: 29.6712
+      },
+      {
+        &quot;tick&quot;: 246,
+        &quot;value&quot;: 29.752
+      },
+      {
+        &quot;tick&quot;: 253,
+        &quot;value&quot;: 29.752
+      },
+      {
+        &quot;tick&quot;: 259,
+        &quot;value&quot;: 29.6712
+      },
+      {
+        &quot;tick&quot;: 265,
+        &quot;value&quot;: 29.5904
+      },
+      {
+        &quot;tick&quot;: 272,
+        &quot;value&quot;: 29.5096
+      },
+      {
+        &quot;tick&quot;: 278,
+        &quot;value&quot;: 29.4288
+      },
+      {
+        &quot;tick&quot;: 284,
+        &quot;value&quot;: 29.3479
+      },
+      {
+        &quot;tick&quot;: 291,
+        &quot;value&quot;: 29.2671
+      },
+      {
+        &quot;tick&quot;: 297,
+        &quot;value&quot;: 29.1863
+      },
+      {
+        &quot;tick&quot;: 303,
+        &quot;value&quot;: 29.1055
+      },
+      {
+        &quot;tick&quot;: 310,
+        &quot;value&quot;: 29.0247
+      },
+      {
+        &quot;tick&quot;: 316,
+        &quot;value&quot;: 28.9439
+      },
+      {
+        &quot;tick&quot;: 322,
+        &quot;value&quot;: 28.8631
+      },
+      {
+        &quot;tick&quot;: 329,
+        &quot;value&quot;: 28.7823
+      },
+      {
+        &quot;tick&quot;: 335,
+        &quot;value&quot;: 28.7015
+      },
+      {
+        &quot;tick&quot;: 341,
+        &quot;value&quot;: 28.6206
+      },
+      {
+        &quot;tick&quot;: 348,
+        &quot;value&quot;: 28.5398
+      },
+      {
+        &quot;tick&quot;: 354,
+        &quot;value&quot;: 28.459
+      },
+      {
+        &quot;tick&quot;: 360,
+        &quot;value&quot;: 28.3782
+      },
+      {
+        &quot;tick&quot;: 367,
+        &quot;value&quot;: 28.2974
+      },
+      {
+        &quot;tick&quot;: 373,
+        &quot;value&quot;: 28.2166
+      },
+      {
+        &quot;tick&quot;: 379,
+        &quot;value&quot;: 28.1358
+      },
+      {
+        &quot;tick&quot;: 386,
+        &quot;value&quot;: 28.055
+      },
+      {
+        &quot;tick&quot;: 392,
+        &quot;value&quot;: 27.9742
+      },
+      {
+        &quot;tick&quot;: 398,
+        &quot;value&quot;: 27.8933
+      },
+      {
+        &quot;tick&quot;: 405,
+        &quot;value&quot;: 27.8125
+      },
+      {
+        &quot;tick&quot;: 411,
+        &quot;value&quot;: 27.7317
+      },
+      {
+        &quot;tick&quot;: 417,
+        &quot;value&quot;: 27.6509
+      },
+      {
+        &quot;tick&quot;: 424,
+        &quot;value&quot;: 27.5701
+      },
+      {
+        &quot;tick&quot;: 430,
+        &quot;value&quot;: 27.4893
+      },
+      {
+        &quot;tick&quot;: 436,
+        &quot;value&quot;: 27.4085
+      },
+      {
+        &quot;tick&quot;: 443,
+        &quot;value&quot;: 27.3277
+      },
+      {
+        &quot;tick&quot;: 449,
+        &quot;value&quot;: 27.2469
+      },
+      {
+        &quot;tick&quot;: 455,
+        &quot;value&quot;: 27.166
+      },
+      {
+        &quot;tick&quot;: 462,
+        &quot;value&quot;: 27.0852
+      },
+      {
+        &quot;tick&quot;: 468,
+        &quot;value&quot;: 27.0044
+      },
+      {
+        &quot;tick&quot;: 474,
+        &quot;value&quot;: 26.9236
+      },
+      {
+        &quot;tick&quot;: 481,
+        &quot;value&quot;: 26.8428
+      },
+      {
+        &quot;tick&quot;: 487,
+        &quot;value&quot;: 26.762
+      },
+      {
+        &quot;tick&quot;: 493,
+        &quot;value&quot;: 26.6812
+      },
+      {
+        &quot;tick&quot;: 500,
+        &quot;value&quot;: 26.6004
+      }
+    ],
+    &quot;topRoads&quot;: [
+      {
+        &quot;roadId&quot;: &quot;256225049-&gt;6505316995:0&quot;,
+        &quot;name&quot;: &quot;\u041c\u0430\u043d\u0430\u0441 \u043a\u04e9\u0448\u0435\u0441\u0456&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;259988501-&gt;259988505:0&quot;,
+        &quot;name&quot;: &quot;\u0416\u0435\u043b\u0442\u043e\u049b\u0441\u0430\u043d \u043a\u04e9\u0448\u0435\u0441\u0456&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;260554190-&gt;2200691421:0&quot;,
+        &quot;name&quot;: &quot;\u0422\u0443\u0437\u043e\u0432 \u043a\u04e9\u0448\u0435\u0441\u0456&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;260554190-&gt;11603042830:0&quot;,
+        &quot;name&quot;: &quot;\u0422\u0443\u0437\u043e\u0432 \u043a\u04e9\u0448\u0435\u0441\u0456&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;260554352-&gt;2200689438:0&quot;,
+        &quot;name&quot;: &quot;\u041f\u0430\u043d\u0444\u0438\u043b\u043e\u0432 \u043a\u04e9\u0448\u0435\u0441\u0456&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;260706739-&gt;260706743:0&quot;,
+        &quot;name&quot;: &quot;\u0420\u044b\u0441\u049b\u04b1\u043b\u0431\u0435\u043a\u043e\u0432 \u043a\u04e9\u0448\u0435\u0441\u0456&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;260706739-&gt;260706741:0&quot;,
+        &quot;name&quot;: &quot;\u0443\u043b\u0438\u0446\u0430 \u0429\u0435\u043f\u043a\u0438\u043d\u0430&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;260706741-&gt;13617766351:0&quot;,
+        &quot;name&quot;: &quot;\u0443\u043b\u0438\u0446\u0430 \u0413\u0443\u0431\u043a\u0438\u043d\u0430&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;260706741-&gt;622927604:0&quot;,
+        &quot;name&quot;: &quot;\u0443\u043b\u0438\u0446\u0430 \u0429\u0435\u043f\u043a\u0438\u043d\u0430&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;260706741-&gt;260706739:0&quot;,
+        &quot;name&quot;: &quot;\u0443\u043b\u0438\u0446\u0430 \u0429\u0435\u043f\u043a\u0438\u043d\u0430&quot;,
+        &quot;load&quot;: 1.5
+      }
+    ],
+    &quot;corridorStats&quot;: [
+      {
+        &quot;id&quot;: &quot;al_farabi&quot;,
+        &quot;name&quot;: &quot;Al-Farabi Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;abay&quot;,
+        &quot;name&quot;: &quot;Abay Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;seifullin&quot;,
+        &quot;name&quot;: &quot;Seifullin Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;dostyk&quot;,
+        &quot;name&quot;: &quot;Dostyk Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      }
+    ],
+    &quot;beforeAfter&quot;: null,
+    &quot;heatmap&quot;: [
+      {
+        &quot;lat&quot;: 43.2261063,
+        &quot;lng&quot;: 76.9102574,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2700107,
+        &quot;lng&quot;: 76.9377988,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2724005,
+        &quot;lng&quot;: 76.9393881,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2723512,
+        &quot;lng&quot;: 76.9391344,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2713684,
+        &quot;lng&quot;: 76.9424721,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2052711,
+        &quot;lng&quot;: 76.8728776,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2064036,
+        &quot;lng&quot;: 76.8777215,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2069218,
+        &quot;lng&quot;: 76.8776467,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2070312,
+        &quot;lng&quot;: 76.8773353,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2064036,
+        &quot;lng&quot;: 76.8777215,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2055725,
+        &quot;lng&quot;: 76.8744683,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2282058,
+        &quot;lng&quot;: 76.9077914,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2449934,
+        &quot;lng&quot;: 76.8374363,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2446288,
+        &quot;lng&quot;: 76.8338744,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3019068,
+        &quot;lng&quot;: 76.904376,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2995868,
+        &quot;lng&quot;: 76.9044029,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3018892,
+        &quot;lng&quot;: 76.9045651,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2998182,
+        &quot;lng&quot;: 76.9030039,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2994001,
+        &quot;lng&quot;: 76.903617,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.299742,
+        &quot;lng&quot;: 76.9044176,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3020281,
+        &quot;lng&quot;: 76.9040565,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.302016,
+        &quot;lng&quot;: 76.9060247,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3020025,
+        &quot;lng&quot;: 76.9046711,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3075048,
+        &quot;lng&quot;: 76.9035351,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3019068,
+        &quot;lng&quot;: 76.904376,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.302016,
+        &quot;lng&quot;: 76.9060247,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2461936,
+        &quot;lng&quot;: 76.8359252,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3075048,
+        &quot;lng&quot;: 76.9035351,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2403237,
+        &quot;lng&quot;: 76.9449768,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2326506,
+        &quot;lng&quot;: 76.954707,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2326506,
+        &quot;lng&quot;: 76.954707,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2070312,
+        &quot;lng&quot;: 76.8773353,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2043913,
+        &quot;lng&quot;: 76.8784764,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2037315,
+        &quot;lng&quot;: 76.8787286,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2050614,
+        &quot;lng&quot;: 76.8782514,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.20566,
+        &quot;lng&quot;: 76.8780619,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2306815,
+        &quot;lng&quot;: 76.9611666,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2305006,
+        &quot;lng&quot;: 76.9601732,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2329462,
+        &quot;lng&quot;: 76.9611549,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2336949,
+        &quot;lng&quot;: 76.9607662,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2335601,
+        &quot;lng&quot;: 76.9601201,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2319325,
+        &quot;lng&quot;: 76.960784,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2335975,
+        &quot;lng&quot;: 76.9602954,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2337109,
+        &quot;lng&quot;: 76.9611124,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2309954,
+        &quot;lng&quot;: 76.962165,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2434916,
+        &quot;lng&quot;: 76.8372105,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.245006,
+        &quot;lng&quot;: 76.836344,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2459089,
+        &quot;lng&quot;: 76.8360557,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2463351,
+        &quot;lng&quot;: 76.8363082,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2461936,
+        &quot;lng&quot;: 76.8359252,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2456639,
+        &quot;lng&quot;: 76.8360513,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1595907,
+        &quot;lng&quot;: 77.0585892,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1609172,
+        &quot;lng&quot;: 77.0555215,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.160795,
+        &quot;lng&quot;: 77.0557987,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1612104,
+        &quot;lng&quot;: 77.0396285,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1604776,
+        &quot;lng&quot;: 77.0381486,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.154108,
+        &quot;lng&quot;: 77.0629044,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2305006,
+        &quot;lng&quot;: 76.9601732,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2333411,
+        &quot;lng&quot;: 76.9591069,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2393875,
+        &quot;lng&quot;: 76.9450186,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2393875,
+        &quot;lng&quot;: 76.9450186,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2403573,
+        &quot;lng&quot;: 76.9454132,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2394161,
+        &quot;lng&quot;: 76.9456102,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2449901,
+        &quot;lng&quot;: 76.8337369,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2454284,
+        &quot;lng&quot;: 76.8351428,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2713684,
+        &quot;lng&quot;: 76.9424721,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2725362,
+        &quot;lng&quot;: 76.9410762,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2725362,
+        &quot;lng&quot;: 76.9410762,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2733441,
+        &quot;lng&quot;: 76.9402309,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2731347,
+        &quot;lng&quot;: 76.9387588,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2724496,
+        &quot;lng&quot;: 76.939751,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3617881,
+        &quot;lng&quot;: 77.0443724,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3608719,
+        &quot;lng&quot;: 77.0235015,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3557571,
+        &quot;lng&quot;: 77.0330943,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2377043,
+        &quot;lng&quot;: 76.9417169,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2296583,
+        &quot;lng&quot;: 76.9573925,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2990299,
+        &quot;lng&quot;: 76.9037524,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2991798,
+        &quot;lng&quot;: 76.9032078,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3028509,
+        &quot;lng&quot;: 76.8972229,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3050552,
+        &quot;lng&quot;: 76.8983911,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2437239,
+        &quot;lng&quot;: 76.8345977,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2444338,
+        &quot;lng&quot;: 76.8372148,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2434916,
+        &quot;lng&quot;: 76.8372105,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2443591,
+        &quot;lng&quot;: 76.8375579,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2442572,
+        &quot;lng&quot;: 76.8368344,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2379579,
+        &quot;lng&quot;: 76.9419569,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2385791,
+        &quot;lng&quot;: 76.9491616,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2337166,
+        &quot;lng&quot;: 76.9610293,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3006369,
+        &quot;lng&quot;: 76.9006813,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3006369,
+        &quot;lng&quot;: 76.9006813,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3011413,
+        &quot;lng&quot;: 76.8998878,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3002496,
+        &quot;lng&quot;: 76.9003705,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.300962,
+        &quot;lng&quot;: 76.9008464,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2999688,
+        &quot;lng&quot;: 76.9016464,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3006369,
+        &quot;lng&quot;: 76.9006813,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.299165,
+        &quot;lng&quot;: 76.9009836,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3003975,
+        &quot;lng&quot;: 76.902,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2999688,
+        &quot;lng&quot;: 76.9016464,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2999688,
+        &quot;lng&quot;: 76.9016464,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3009116,
+        &quot;lng&quot;: 76.9010215,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2437931,
+        &quot;lng&quot;: 76.8350047,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2255007,
+        &quot;lng&quot;: 76.9059587,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2306755,
+        &quot;lng&quot;: 76.961135,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2319325,
+        &quot;lng&quot;: 76.960784,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2389487,
+        &quot;lng&quot;: 76.9490045,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2262585,
+        &quot;lng&quot;: 76.9103325,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.225692,
+        &quot;lng&quot;: 76.9056535,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2453402,
+        &quot;lng&quot;: 76.8337836,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2454284,
+        &quot;lng&quot;: 76.8351428,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2453402,
+        &quot;lng&quot;: 76.8337836,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2467289,
+        &quot;lng&quot;: 76.8335539,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2467289,
+        &quot;lng&quot;: 76.8335539,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3560619,
+        &quot;lng&quot;: 77.0320103,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3039199,
+        &quot;lng&quot;: 76.8983546,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2258388,
+        &quot;lng&quot;: 76.9048091,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2037315,
+        &quot;lng&quot;: 76.8787286,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2043913,
+        &quot;lng&quot;: 76.8784764,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2050614,
+        &quot;lng&quot;: 76.8782514,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2055719,
+        &quot;lng&quot;: 76.8780448,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.20566,
+        &quot;lng&quot;: 76.8780619,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.205713,
+        &quot;lng&quot;: 76.8779941,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2051406,
+        &quot;lng&quot;: 76.8779562,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3617686,
+        &quot;lng&quot;: 77.0443343,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2050555,
+        &quot;lng&quot;: 76.878199,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3604278,
+        &quot;lng&quot;: 77.024042,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.360938,
+        &quot;lng&quot;: 77.0196847,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3613788,
+        &quot;lng&quot;: 77.0200395,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3608109,
+        &quot;lng&quot;: 77.0176157,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.360938,
+        &quot;lng&quot;: 77.0196847,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3600841,
+        &quot;lng&quot;: 77.0162718,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3602722,
+        &quot;lng&quot;: 77.015353,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3604636,
+        &quot;lng&quot;: 77.0177847,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3613788,
+        &quot;lng&quot;: 77.0200395,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3602722,
+        &quot;lng&quot;: 77.015353,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3600841,
+        &quot;lng&quot;: 77.0162718,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3608109,
+        &quot;lng&quot;: 77.0176157,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3598974,
+        &quot;lng&quot;: 77.0155278,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3602722,
+        &quot;lng&quot;: 77.015353,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3598067,
+        &quot;lng&quot;: 77.015166,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2256195,
+        &quot;lng&quot;: 76.9055301,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3345566,
+        &quot;lng&quot;: 77.0254789,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3345566,
+        &quot;lng&quot;: 77.0254789,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3408061,
+        &quot;lng&quot;: 77.022469,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3368653,
+        &quot;lng&quot;: 77.0223386,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3408061,
+        &quot;lng&quot;: 77.022469,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3390643,
+        &quot;lng&quot;: 77.0235855,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2724978,
+        &quot;lng&quot;: 76.9404404,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2732752,
+        &quot;lng&quot;: 76.9401103,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2722031,
+        &quot;lng&quot;: 76.9392063,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2723512,
+        &quot;lng&quot;: 76.9391344,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2724228,
+        &quot;lng&quot;: 76.9392139,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2261504,
+        &quot;lng&quot;: 76.910259,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2394474,
+        &quot;lng&quot;: 76.9455558,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2333411,
+        &quot;lng&quot;: 76.9591069,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2335601,
+        &quot;lng&quot;: 76.9601201,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2069218,
+        &quot;lng&quot;: 76.8776467,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2466557,
+        &quot;lng&quot;: 76.836488,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2448296,
+        &quot;lng&quot;: 76.8367719,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1625789,
+        &quot;lng&quot;: 77.0401745,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1610921,
+        &quot;lng&quot;: 77.0556463,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3606288,
+        &quot;lng&quot;: 77.0151971,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3390643,
+        &quot;lng&quot;: 77.0235855,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2257607,
+        &quot;lng&quot;: 76.9048816,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2722891,
+        &quot;lng&quot;: 76.9388421,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3596889,
+        &quot;lng&quot;: 77.0146966,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1612104,
+        &quot;lng&quot;: 77.0396285,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2282058,
+        &quot;lng&quot;: 76.9077914,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2415235,
+        &quot;lng&quot;: 76.9450131,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1627381,
+        &quot;lng&quot;: 77.0657647,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1590415,
+        &quot;lng&quot;: 77.0584845,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1626323,
+        &quot;lng&quot;: 77.0403074,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1544967,
+        &quot;lng&quot;: 77.0626839,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2372369,
+        &quot;lng&quot;: 76.9419394,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2415235,
+        &quot;lng&quot;: 76.9450131,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1576489,
+        &quot;lng&quot;: 77.0538058,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1596586,
+        &quot;lng&quot;: 77.0585054,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2257469,
+        &quot;lng&quot;: 76.9046926,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1591219,
+        &quot;lng&quot;: 77.0586139,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.3372579,
+        &quot;lng&quot;: 77.0231581,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2710738,
+        &quot;lng&quot;: 76.9376275,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2403766,
+        &quot;lng&quot;: 76.9416166,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.1625969,
+        &quot;lng&quot;: 77.0462313,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.226239,
+        &quot;lng&quot;: 76.9114765,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 43.2457027,
+        &quot;lng&quot;: 76.8371016,
+        &quot;weight&quot;: 0.9166666666666666
+      },
+      {
+        &quot;lat&quot;: 43.237974,
+        &quot;lng&quot;: 76.941856,
+        &quot;weight&quot;: 0.9166666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2261504,
+        &quot;lng&quot;: 76.910259,
+        &quot;weight&quot;: 0.9166666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2359959,
+        &quot;lng&quot;: 76.9579038,
+        &quot;weight&quot;: 0.8958333333333334
+      },
+      {
+        &quot;lat&quot;: 43.16012,
+        &quot;lng&quot;: 77.0574562,
+        &quot;weight&quot;: 0.875
+      },
+      {
+        &quot;lat&quot;: 43.14846,
+        &quot;lng&quot;: 77.0577165,
+        &quot;weight&quot;: 0.875
+      },
+      {
+        &quot;lat&quot;: 43.1637923,
+        &quot;lng&quot;: 77.04176,
+        &quot;weight&quot;: 0.875
+      },
+      {
+        &quot;lat&quot;: 43.2035602,
+        &quot;lng&quot;: 76.8787104,
+        &quot;weight&quot;: 0.875
+      },
+      {
+        &quot;lat&quot;: 43.2381943,
+        &quot;lng&quot;: 76.9449783,
+        &quot;weight&quot;: 0.8666666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2342107,
+        &quot;lng&quot;: 76.9552383,
+        &quot;weight&quot;: 0.8541666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2045182,
+        &quot;lng&quot;: 76.8783186,
+        &quot;weight&quot;: 0.8541666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2258126,
+        &quot;lng&quot;: 76.905581,
+        &quot;weight&quot;: 0.8541666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2263622,
+        &quot;lng&quot;: 76.913347,
+        &quot;weight&quot;: 0.8333333333333334
+      },
+      {
+        &quot;lat&quot;: 43.2258409,
+        &quot;lng&quot;: 76.9059476,
+        &quot;weight&quot;: 0.8125
+      },
+      {
+        &quot;lat&quot;: 43.2337153,
+        &quot;lng&quot;: 76.9587671,
+        &quot;weight&quot;: 0.8125
+      },
+      {
+        &quot;lat&quot;: 43.2038589,
+        &quot;lng&quot;: 76.8785596,
+        &quot;weight&quot;: 0.8125
+      },
+      {
+        &quot;lat&quot;: 43.2258279,
+        &quot;lng&quot;: 76.9057728,
+        &quot;weight&quot;: 0.7916666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2710738,
+        &quot;lng&quot;: 76.9376275,
+        &quot;weight&quot;: 0.7916666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2258325,
+        &quot;lng&quot;: 76.9058386,
+        &quot;weight&quot;: 0.7916666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2259921,
+        &quot;lng&quot;: 76.9081105,
+        &quot;weight&quot;: 0.7708333333333334
+      },
+      {
+        &quot;lat&quot;: 43.2257921,
+        &quot;lng&quot;: 76.9053027,
+        &quot;weight&quot;: 0.7708333333333334
+      },
+      {
+        &quot;lat&quot;: 43.206324,
+        &quot;lng&quot;: 76.8783737,
+        &quot;weight&quot;: 0.75
+      },
+      {
+        &quot;lat&quot;: 43.2342107,
+        &quot;lng&quot;: 76.9552383,
+        &quot;weight&quot;: 0.75
+      },
+      {
+        &quot;lat&quot;: 43.1598559,
+        &quot;lng&quot;: 77.0582019,
+        &quot;weight&quot;: 0.75
+      },
+      {
+        &quot;lat&quot;: 43.1606854,
+        &quot;lng&quot;: 77.0547256,
+        &quot;weight&quot;: 0.75
+      },
+      {
+        &quot;lat&quot;: 43.162546,
+        &quot;lng&quot;: 77.0460932,
+        &quot;weight&quot;: 0.75
+      },
+      {
+        &quot;lat&quot;: 43.16202,
+        &quot;lng&quot;: 77.053458,
+        &quot;weight&quot;: 0.75
+      },
+      {
+        &quot;lat&quot;: 43.1630057,
+        &quot;lng&quot;: 77.0661288,
+        &quot;weight&quot;: 0.75
+      },
+      {
+        &quot;lat&quot;: 43.2264057,
+        &quot;lng&quot;: 76.9140033,
+        &quot;weight&quot;: 0.75
+      },
+      {
+        &quot;lat&quot;: 43.2381117,
+        &quot;lng&quot;: 76.941873,
+        &quot;weight&quot;: 0.7333333333333333
+      },
+      {
+        &quot;lat&quot;: 43.2715166,
+        &quot;lng&quot;: 76.9393601,
+        &quot;weight&quot;: 0.7291666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2062455,
+        &quot;lng&quot;: 76.8779669,
+        &quot;weight&quot;: 0.7291666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2303002,
+        &quot;lng&quot;: 76.960104,
+        &quot;weight&quot;: 0.7291666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2383436,
+        &quot;lng&quot;: 76.9488583,
+        &quot;weight&quot;: 0.7291666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2397271,
+        &quot;lng&quot;: 76.9414067,
+        &quot;weight&quot;: 0.7222222222222222
+      },
+      {
+        &quot;lat&quot;: 43.2263471,
+        &quot;lng&quot;: 76.9103214,
+        &quot;weight&quot;: 0.7083333333333334
+      },
+      {
+        &quot;lat&quot;: 43.1637923,
+        &quot;lng&quot;: 77.04176,
+        &quot;weight&quot;: 0.7083333333333334
+      },
+      {
+        &quot;lat&quot;: 43.2304753,
+        &quot;lng&quot;: 76.9600403,
+        &quot;weight&quot;: 0.7083333333333334
+      },
+      {
+        &quot;lat&quot;: 43.2038589,
+        &quot;lng&quot;: 76.8785596,
+        &quot;weight&quot;: 0.7083333333333334
+      },
+      {
+        &quot;lat&quot;: 43.2413748,
+        &quot;lng&quot;: 76.9484803,
+        &quot;weight&quot;: 0.7
+      },
+      {
+        &quot;lat&quot;: 43.2451556,
+        &quot;lng&quot;: 76.8376113,
+        &quot;weight&quot;: 0.6944444444444444
+      },
+      {
+        &quot;lat&quot;: 43.2060773,
+        &quot;lng&quot;: 76.8778218,
+        &quot;weight&quot;: 0.6875
+      },
+      {
+        &quot;lat&quot;: 43.2320356,
+        &quot;lng&quot;: 76.9594168,
+        &quot;weight&quot;: 0.6875
+      },
+      {
+        &quot;lat&quot;: 43.2035602,
+        &quot;lng&quot;: 76.8787104,
+        &quot;weight&quot;: 0.6875
+      },
+      {
+        &quot;lat&quot;: 43.2337153,
+        &quot;lng&quot;: 76.9587671,
+        &quot;weight&quot;: 0.6666666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2387627,
+        &quot;lng&quot;: 76.9491591,
+        &quot;weight&quot;: 0.6666666666666666
+      },
+      {
+        &quot;lat&quot;: 43.226077,
+        &quot;lng&quot;: 76.9092387,
+        &quot;weight&quot;: 0.6666666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2261652,
+        &quot;lng&quot;: 76.9104186,
+        &quot;weight&quot;: 0.6458333333333334
+      },
+      {
+        &quot;lat&quot;: 43.1597757,
+        &quot;lng&quot;: 77.0583441,
+        &quot;weight&quot;: 0.625
+      },
+      {
+        &quot;lat&quot;: 43.1576489,
+        &quot;lng&quot;: 77.0538058,
+        &quot;weight&quot;: 0.625
+      },
+      {
+        &quot;lat&quot;: 43.2060773,
+        &quot;lng&quot;: 76.8778218,
+        &quot;weight&quot;: 0.625
+      },
+      {
+        &quot;lat&quot;: 43.226239,
+        &quot;lng&quot;: 76.9114765,
+        &quot;weight&quot;: 0.625
+      },
+      {
+        &quot;lat&quot;: 43.2257859,
+        &quot;lng&quot;: 76.9052158,
+        &quot;weight&quot;: 0.625
+      },
+      {
+        &quot;lat&quot;: 43.2387627,
+        &quot;lng&quot;: 76.9491591,
+        &quot;weight&quot;: 0.6166666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2416899,
+        &quot;lng&quot;: 76.9484405,
+        &quot;weight&quot;: 0.6166666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2320356,
+        &quot;lng&quot;: 76.9594168,
+        &quot;weight&quot;: 0.6041666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2359959,
+        &quot;lng&quot;: 76.9579038,
+        &quot;weight&quot;: 0.6041666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2045182,
+        &quot;lng&quot;: 76.8783186,
+        &quot;weight&quot;: 0.6041666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2381265,
+        &quot;lng&quot;: 76.9420522,
+        &quot;weight&quot;: 0.6
+      },
+      {
+        &quot;lat&quot;: 43.2700196,
+        &quot;lng&quot;: 76.939587,
+        &quot;weight&quot;: 0.5833333333333334
+      },
+      {
+        &quot;lat&quot;: 43.160255,
+        &quot;lng&quot;: 77.0570834,
+        &quot;weight&quot;: 0.5833333333333334
+      },
+      {
+        &quot;lat&quot;: 43.2383436,
+        &quot;lng&quot;: 76.9488583,
+        &quot;weight&quot;: 0.5833333333333334
+      },
+      {
+        &quot;lat&quot;: 43.238988,
+        &quot;lng&quot;: 76.9487897,
+        &quot;weight&quot;: 0.5666666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2381003,
+        &quot;lng&quot;: 76.9416587,
+        &quot;weight&quot;: 0.5666666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2303002,
+        &quot;lng&quot;: 76.960104,
+        &quot;weight&quot;: 0.5625
+      },
+      {
+        &quot;lat&quot;: 43.2697476,
+        &quot;lng&quot;: 76.9376049,
+        &quot;weight&quot;: 0.5625
+      },
+      {
+        &quot;lat&quot;: 43.238988,
+        &quot;lng&quot;: 76.9487897,
+        &quot;weight&quot;: 0.55
+      },
+      {
+        &quot;lat&quot;: 43.1486753,
+        &quot;lng&quot;: 77.0579016,
+        &quot;weight&quot;: 0.5416666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2258325,
+        &quot;lng&quot;: 76.9058386,
+        &quot;weight&quot;: 0.5416666666666666
+      },
+      {
+        &quot;lat&quot;: 43.2444895,
+        &quot;lng&quot;: 76.8328063,
+        &quot;weight&quot;: 0.5138888888888888
+      },
+      {
+        &quot;lat&quot;: 43.2700196,
+        &quot;lng&quot;: 76.939587,
+        &quot;weight&quot;: 0.4791666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2701973,
+        &quot;lng&quot;: 76.9403257,
+        &quot;weight&quot;: 0.4791666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2700059,
+        &quot;lng&quot;: 76.9413286,
+        &quot;weight&quot;: 0.4583333333333333
+      },
+      {
+        &quot;lat&quot;: 43.2258126,
+        &quot;lng&quot;: 76.905581,
+        &quot;weight&quot;: 0.4583333333333333
+      },
+      {
+        &quot;lat&quot;: 43.2715166,
+        &quot;lng&quot;: 76.9393601,
+        &quot;weight&quot;: 0.4375
+      },
+      {
+        &quot;lat&quot;: 43.2268647,
+        &quot;lng&quot;: 76.9056967,
+        &quot;weight&quot;: 0.43333333333333335
+      },
+      {
+        &quot;lat&quot;: 43.2381365,
+        &quot;lng&quot;: 76.9421835,
+        &quot;weight&quot;: 0.43333333333333335
+      },
+      {
+        &quot;lat&quot;: 43.2273543,
+        &quot;lng&quot;: 76.9056325,
+        &quot;weight&quot;: 0.4166666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2703797,
+        &quot;lng&quot;: 76.9428647,
+        &quot;weight&quot;: 0.4166666666666667
+      },
+      {
+        &quot;lat&quot;: 43.245542,
+        &quot;lng&quot;: 76.83668,
+        &quot;weight&quot;: 0.4166666666666667
+      },
+      {
+        &quot;lat&quot;: 43.2382276,
+        &quot;lng&quot;: 76.9455983,
+        &quot;weight&quot;: 0.4
+      },
+      {
+        &quot;lat&quot;: 43.2699934,
+        &quot;lng&quot;: 76.9376004,
+        &quot;weight&quot;: 0.3958333333333333
+      },
+      {
+        &quot;lat&quot;: 43.2698243,
+        &quot;lng&quot;: 76.9386717,
+        &quot;weight&quot;: 0.3541666666666667
+      },
+      {
+        &quot;lat&quot;: 43.27006,
+        &quot;lng&quot;: 76.9385325,
+        &quot;weight&quot;: 0.3333333333333333
+      },
+      {
+        &quot;lat&quot;: 43.2459153,
+        &quot;lng&quot;: 76.8373978,
+        &quot;weight&quot;: 0.3194444444444444
+      },
+      {
+        &quot;lat&quot;: 43.2451942,
+        &quot;lng&quot;: 76.8349553,
+        &quot;weight&quot;: 0.2638888888888889
+      },
+      {
+        &quot;lat&quot;: 43.2722105,
+        &quot;lng&quot;: 76.9392936,
+        &quot;weight&quot;: 0.19444444444444445
+      },
+      {
+        &quot;lat&quot;: 43.217522,
+        &quot;lng&quot;: 76.8764202,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2166536,
+        &quot;lng&quot;: 76.8766137,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2153463,
+        &quot;lng&quot;: 76.8736162,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2173039,
+        &quot;lng&quot;: 76.8757507,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2289287,
+        &quot;lng&quot;: 76.8979032,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2311846,
+        &quot;lng&quot;: 76.8977465,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2310481,
+        &quot;lng&quot;: 76.8974005,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2402394,
+        &quot;lng&quot;: 76.916548,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2393065,
+        &quot;lng&quot;: 76.9153693,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2405466,
+        &quot;lng&quot;: 76.9210553,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2421873,
+        &quot;lng&quot;: 76.9430979,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2421729,
+        &quot;lng&quot;: 76.9449367,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2495987,
+        &quot;lng&quot;: 76.9438524,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2512177,
+        &quot;lng&quot;: 76.9419248,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2488051,
+        &quot;lng&quot;: 76.9422231,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2491574,
+        &quot;lng&quot;: 76.9381385,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2478982,
+        &quot;lng&quot;: 76.9371305,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.250382,
+        &quot;lng&quot;: 76.9368268,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2523869,
+        &quot;lng&quot;: 76.9347578,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2715845,
+        &quot;lng&quot;: 76.9609472,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2717229,
+        &quot;lng&quot;: 76.9610514,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2718537,
+        &quot;lng&quot;: 76.9608052,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2716866,
+        &quot;lng&quot;: 76.9605264,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2753705,
+        &quot;lng&quot;: 76.962078,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2767437,
+        &quot;lng&quot;: 76.9634529,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2759077,
+        &quot;lng&quot;: 76.9663472,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2774214,
+        &quot;lng&quot;: 76.9658903,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2775121,
+        &quot;lng&quot;: 76.9665224,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2772283,
+        &quot;lng&quot;: 76.9655017,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2754103,
+        &quot;lng&quot;: 76.9678205,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2777048,
+        &quot;lng&quot;: 76.9669369,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2774501,
+        &quot;lng&quot;: 76.9663373,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2863601,
+        &quot;lng&quot;: 76.9744035,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2862149,
+        &quot;lng&quot;: 76.9748197,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2864041,
+        &quot;lng&quot;: 76.9745363,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2855002,
+        &quot;lng&quot;: 76.9738912,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2841234,
+        &quot;lng&quot;: 76.9838525,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2837098,
+        &quot;lng&quot;: 76.9821366,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2889446,
+        &quot;lng&quot;: 76.9372502,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2924048,
+        &quot;lng&quot;: 76.9358215,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2909923,
+        &quot;lng&quot;: 76.936934,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2905719,
+        &quot;lng&quot;: 76.9374405,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2987321,
+        &quot;lng&quot;: 76.932243,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2998473,
+        &quot;lng&quot;: 76.9304063,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.2967004,
+        &quot;lng&quot;: 76.932655,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3042668,
+        &quot;lng&quot;: 76.9304531,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3026393,
+        &quot;lng&quot;: 76.9300323,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3045616,
+        &quot;lng&quot;: 76.9300361,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3540674,
+        &quot;lng&quot;: 76.938698,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3530316,
+        &quot;lng&quot;: 76.9351371,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3547696,
+        &quot;lng&quot;: 76.9372481,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3533921,
+        &quot;lng&quot;: 76.937135,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3528428,
+        &quot;lng&quot;: 76.9341058,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.351765,
+        &quot;lng&quot;: 76.9370644,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3537607,
+        &quot;lng&quot;: 76.9390146,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3540963,
+        &quot;lng&quot;: 76.9509419,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3538098,
+        &quot;lng&quot;: 76.9485989,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3548072,
+        &quot;lng&quot;: 76.9491769,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3548235,
+        &quot;lng&quot;: 76.9485128,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3574674,
+        &quot;lng&quot;: 76.9398843,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3552554,
+        &quot;lng&quot;: 76.9404478,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3544166,
+        &quot;lng&quot;: 76.9421426,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3531066,
+        &quot;lng&quot;: 76.9402891,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3531089,
+        &quot;lng&quot;: 76.9412979,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3546792,
+        &quot;lng&quot;: 76.9432485,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3541761,
+        &quot;lng&quot;: 76.9404391,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.343592,
+        &quot;lng&quot;: 76.9313151,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3425042,
+        &quot;lng&quot;: 76.9325553,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3410255,
+        &quot;lng&quot;: 76.9319716,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3404731,
+        &quot;lng&quot;: 76.9327662,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3537618,
+        &quot;lng&quot;: 76.9382552,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3591104,
+        &quot;lng&quot;: 76.9405394,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3400857,
+        &quot;lng&quot;: 76.8922713,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3409774,
+        &quot;lng&quot;: 76.8928457,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3435369,
+        &quot;lng&quot;: 76.8963823,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3483232,
+        &quot;lng&quot;: 76.9025802,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3470072,
+        &quot;lng&quot;: 76.9008194,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3465835,
+        &quot;lng&quot;: 76.9020597,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.351044,
+        &quot;lng&quot;: 76.9054481,
+        &quot;weight&quot;: 0.05
+      },
+      {
+        &quot;lat&quot;: 43.3503398,
+        &quot;lng&quot;: 76.9056473,
+        &quot;weight&quot;: 0.05
+      }
+    ],
+    &quot;events&quot;: [],
+    &quot;zones&quot;: [
+      {
+        &quot;id&quot;: &quot;center&quot;,
+        &quot;name&quot;: &quot;Center&quot;,
+        &quot;lat&quot;: 43.2389,
+        &quot;lng&quot;: 76.9454,
+        &quot;radiusM&quot;: 2600.0,
+        &quot;kind&quot;: &quot;business&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.45,
+          &quot;lunch&quot;: 1.15,
+          &quot;evening&quot;: 1.25,
+          &quot;night&quot;: 0.7,
+          &quot;weekend&quot;: 1.0
+        }
+      },
+      {
+        &quot;id&quot;: &quot;orbita&quot;,
+        &quot;name&quot;: &quot;Orbita&quot;,
+        &quot;lat&quot;: 43.2047,
+        &quot;lng&quot;: 76.8759,
+        &quot;radiusM&quot;: 2300.0,
+        &quot;kind&quot;: &quot;residential&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.35,
+          &quot;lunch&quot;: 0.9,
+          &quot;evening&quot;: 1.55,
+          &quot;night&quot;: 1.0,
+          &quot;weekend&quot;: 1.1
+        }
+      },
+      {
+        &quot;id&quot;: &quot;samal&quot;,
+        &quot;name&quot;: &quot;Samal&quot;,
+        &quot;lat&quot;: 43.2326,
+        &quot;lng&quot;: 76.9578,
+        &quot;radiusM&quot;: 1900.0,
+        &quot;kind&quot;: &quot;mixed&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.15,
+          &quot;lunch&quot;: 1.2,
+          &quot;evening&quot;: 1.2,
+          &quot;night&quot;: 0.85,
+          &quot;weekend&quot;: 1.0
+        }
+      },
+      {
+        &quot;id&quot;: &quot;atakent&quot;,
+        &quot;name&quot;: &quot;Atakent&quot;,
+        &quot;lat&quot;: 43.2258,
+        &quot;lng&quot;: 76.9092,
+        &quot;radiusM&quot;: 2200.0,
+        &quot;kind&quot;: &quot;mixed&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.2,
+          &quot;lunch&quot;: 1.15,
+          &quot;evening&quot;: 1.2,
+          &quot;night&quot;: 0.8,
+          &quot;weekend&quot;: 1.05
+        }
+      },
+      {
+        &quot;id&quot;: &quot;airport&quot;,
+        &quot;name&quot;: &quot;Airport&quot;,
+        &quot;lat&quot;: 43.3521,
+        &quot;lng&quot;: 77.0405,
+        &quot;radiusM&quot;: 3000.0,
+        &quot;kind&quot;: &quot;transport&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.05,
+          &quot;lunch&quot;: 1.0,
+          &quot;evening&quot;: 1.1,
+          &quot;night&quot;: 1.25,
+          &quot;weekend&quot;: 1.15
+        }
+      },
+      {
+        &quot;id&quot;: &quot;railway&quot;,
+        &quot;name&quot;: &quot;Railway&quot;,
+        &quot;lat&quot;: 43.2711,
+        &quot;lng&quot;: 76.9398,
+        &quot;radiusM&quot;: 2300.0,
+        &quot;kind&quot;: &quot;transport&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.2,
+          &quot;lunch&quot;: 1.0,
+          &quot;evening&quot;: 1.15,
+          &quot;night&quot;: 1.05,
+          &quot;weekend&quot;: 1.05
+        }
+      },
+      {
+        &quot;id&quot;: &quot;residential_north&quot;,
+        &quot;name&quot;: &quot;Residential North&quot;,
+        &quot;lat&quot;: 43.304,
+        &quot;lng&quot;: 76.905,
+        &quot;radiusM&quot;: 4200.0,
+        &quot;kind&quot;: &quot;residential&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.55,
+          &quot;lunch&quot;: 0.85,
+          &quot;evening&quot;: 1.65,
+          &quot;night&quot;: 1.05,
+          &quot;weekend&quot;: 1.1
+        }
+      },
+      {
+        &quot;id&quot;: &quot;residential_west&quot;,
+        &quot;name&quot;: &quot;Residential West&quot;,
+        &quot;lat&quot;: 43.245,
+        &quot;lng&quot;: 76.835,
+        &quot;radiusM&quot;: 4200.0,
+        &quot;kind&quot;: &quot;residential&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.5,
+          &quot;lunch&quot;: 0.85,
+          &quot;evening&quot;: 1.6,
+          &quot;night&quot;: 1.05,
+          &quot;weekend&quot;: 1.1
+        }
+      },
+      {
+        &quot;id&quot;: &quot;medeu&quot;,
+        &quot;name&quot;: &quot;Medeu&quot;,
+        &quot;lat&quot;: 43.1585,
+        &quot;lng&quot;: 77.0587,
+        &quot;radiusM&quot;: 5200.0,
+        &quot;kind&quot;: &quot;leisure&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 0.75,
+          &quot;lunch&quot;: 0.95,
+          &quot;evening&quot;: 0.85,
+          &quot;night&quot;: 0.55,
+          &quot;weekend&quot;: 1.55
+        }
+      }
+    ]
+  }
+}</pre>
+</body>
+</html>

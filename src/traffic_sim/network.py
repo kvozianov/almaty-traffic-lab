@@ -5,7 +5,8 @@ from heapq import heappop, heappush
 from math import dist
 from typing import Iterable
 
-from .models import Node, Road
+from .models import Node, Road, TrafficSignal
+from .road_attributes import normalize_road_attributes
 
 
 @dataclass(slots=True)
@@ -19,12 +20,37 @@ class CityGraph:
     def __init__(self) -> None:
         self.nodes: dict[str, Node] = {}
         self.roads: dict[str, Road] = {}
+        self.signals: dict[str, TrafficSignal] = {}
         self.outgoing: dict[str, list[str]] = {}
         self._max_speed_kph: float = 60.0
 
     def add_node(self, node_id: str, x: float = 0.0, y: float = 0.0, label: str | None = None) -> None:
         self.nodes[node_id] = Node(node_id=node_id, x=x, y=y, label=label)
         self.outgoing.setdefault(node_id, [])
+
+    def add_signal(
+        self,
+        signal_id: str,
+        node_id: str,
+        lat: float,
+        lng: float,
+        cycle_s: float = 74.0,
+        green_s: float = 35.0,
+        yellow_s: float = 4.0,
+        red_s: float = 35.0,
+        delay_s: float = 12.0,
+    ) -> None:
+        self.signals[signal_id] = TrafficSignal(
+            signal_id=signal_id,
+            node_id=node_id,
+            lat=lat,
+            lng=lng,
+            cycle_s=cycle_s,
+            green_s=green_s,
+            yellow_s=yellow_s,
+            red_s=red_s,
+            delay_s=delay_s,
+        )
 
     def add_road(
         self,
@@ -189,6 +215,14 @@ def build_demo_city_graph() -> CityGraph:
     add_bidirectional("diag_ne", "center", "northeast", length=1400, speed=35, capacity=8, delay=20)
     add_bidirectional("diag_nw", "northwest", "center", length=1400, speed=35, capacity=8, delay=20)
     add_bidirectional("diag_se", "center", "southeast", length=1400, speed=35, capacity=8, delay=20)
+    center = graph.nodes["center"]
+    graph.add_signal("signal-center", node_id="center", lat=center.y, lng=center.x, delay_s=18.0)
+    for road in graph.roads.values():
+        if road.start_node == "center" or road.end_node == "center":
+            road.metadata["signal_count"] = 1
+            road.metadata["signal_node_ids"] = ["center"]
+            road.metadata.setdefault("speed_source", "maxspeed_fallback")
+            road.metadata.setdefault("lanes_source", "lanes_fallback")
     return graph
 
 
@@ -201,6 +235,7 @@ def load_graph_from_osm_place(place_name: str, network_type: str = "drive") -> C
             "Install them with: pip install -e .[osm]"
         ) from exc
 
+    _ensure_osm_useful_tags(ox)
     osm_graph = ox.graph_from_place(place_name, network_type=network_type)
     return _convert_osm_graph(osm_graph)
 
@@ -220,8 +255,21 @@ def load_graph_from_osm_bbox(
             "Install them with: pip install -e .[osm]"
         ) from exc
 
+    _ensure_osm_useful_tags(ox)
     osm_graph = ox.graph_from_bbox((west, south, east, north), network_type=network_type)
     return _convert_osm_graph(osm_graph)
+
+
+def _ensure_osm_useful_tags(ox) -> None:
+    for collection_name, tags in {
+        "useful_tags_way": ["highway", "name", "maxspeed", "lanes", "oneway", "junction", "access"],
+        "useful_tags_node": ["highway", "traffic_signals", "crossing"],
+    }.items():
+        current = list(getattr(ox.settings, collection_name, []))
+        for tag in tags:
+            if tag not in current:
+                current.append(tag)
+        setattr(ox.settings, collection_name, current)
 
 
 def _convert_osm_graph(osm_graph) -> CityGraph:
@@ -234,40 +282,44 @@ def _convert_osm_graph(osm_graph) -> CityGraph:
             y=float(attrs.get("y", 0.0)),
             label=str(node_id),
         )
+        if attrs.get("highway") == "traffic_signals":
+            graph.add_signal(
+                signal_id=f"signal-{node_id}",
+                node_id=str(node_id),
+                lat=float(attrs.get("y", 0.0)),
+                lng=float(attrs.get("x", 0.0)),
+            )
 
     for start, end, key, attrs in osm_graph.edges(keys=True, data=True):
         length_m = float(attrs.get("length", 100.0))
-        maxspeed = attrs.get("maxspeed", 50)
-        if isinstance(maxspeed, list):
-            maxspeed = maxspeed[0]
-        try:
-            max_speed_kph = float(str(maxspeed).split()[0])
-        except ValueError:
-            max_speed_kph = 50.0
-        lane_count = attrs.get("lanes", 1)
-        if isinstance(lane_count, list):
-            lane_count = lane_count[0]
-        try:
-            lane_count_int = max(1, int(str(lane_count).split(";")[0]))
-        except ValueError:
-            lane_count_int = 1
-        capacity = max(8, lane_count_int * 12)
-        highway = attrs.get("highway", "road")
-        if isinstance(highway, list):
-            highway = highway[0]
+        normalized = normalize_road_attributes(attrs)
         geometry = attrs.get("geometry")
         geometry_points = None
         if geometry is not None:
             geometry_points = [(float(x), float(y)) for x, y in geometry.coords]
+        signal_node_ids = [str(node_id) for node_id in (start, end) if f"signal-{node_id}" in graph.signals]
+        signal_count = len(signal_node_ids)
+        signal_delay_s = signal_count * 12.0
         graph.add_road(
             road_id=f"{start}->{end}:{key}",
             start_node=str(start),
             end_node=str(end),
             length_m=length_m,
-            max_speed_kph=max_speed_kph,
-            capacity=capacity,
-            lanes=lane_count_int,
-            road_class=str(highway),
-            metadata={"name": attrs.get("name"), "highway": highway, "geometry": geometry_points},
+            max_speed_kph=normalized.max_speed_kph,
+            capacity=normalized.capacity,
+            lanes=normalized.lanes,
+            road_class=normalized.road_class,
+            signal_delay_s=signal_delay_s,
+            metadata={
+                "name": attrs.get("name"),
+                "highway": normalized.road_class,
+                "geometry": geometry_points,
+                "speed_source": normalized.speed_source,
+                "lanes_source": normalized.lanes_source,
+                "raw_maxspeed": normalized.raw_maxspeed,
+                "raw_lanes": normalized.raw_lanes,
+                "signal_count": signal_count,
+                "signal_node_ids": signal_node_ids,
+            },
         )
     return graph

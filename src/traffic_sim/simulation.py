@@ -18,6 +18,7 @@ class TrafficSimulation:
         auto_time: bool = False,
         time_speed_multiplier: float = 1.0,
         time_profile: TimeProfile | None = None,
+        reroute_interval_ticks: int = 0,
     ) -> None:
         self.graph = graph
         self.tick_seconds = tick_seconds
@@ -27,6 +28,7 @@ class TrafficSimulation:
         self.auto_time = auto_time
         self.time_speed_multiplier = time_speed_multiplier
         self.time_profile = time_profile or load_time_profile()
+        self.reroute_interval_ticks = max(0, int(reroute_interval_ticks))
         self.tick = 0
         self.sim_time_s = 0.0
         self.vehicles: dict[str, Vehicle] = {}
@@ -100,6 +102,7 @@ class TrafficSimulation:
                 continue
 
             road = self.graph.roads[road_id]
+            self._maybe_reroute_ahead(vehicle, road_id)
             vehicle.elapsed_s += self.tick_seconds
             vehicle_count = len(self.road_occupancy.get(road_id, set()))
             time_multiplier = self.time_profile.speed_multiplier_for_road(road, self.minute_of_day)
@@ -230,6 +233,50 @@ class TrafficSimulation:
 
         vehicle.state = "queued"
         vehicle.progress_m = self.graph.roads[current_road_id].length_m
+
+    def _maybe_reroute_ahead(self, vehicle: Vehicle, current_road_id: str) -> None:
+        if self.reroute_interval_ticks <= 0:
+            return
+        if self.tick % self.reroute_interval_ticks != 0:
+            return
+        if vehicle.behavior == "cautious" and self.tick % (self.reroute_interval_ticks * 2) != 0:
+            return
+        current_road = self.graph.roads[current_road_id]
+        upcoming = vehicle.route_roads[vehicle.current_road_index + 1 : vehicle.current_road_index + 5]
+        if not upcoming:
+            return
+        loads = self.road_loads()
+        blocked_or_hot = [
+            road_id
+            for road_id in upcoming
+            if road_id in self.graph.roads
+            and (not self.graph.roads[road_id].is_open or loads.get(road_id, 0.0) >= self._reroute_load_threshold(vehicle))
+        ]
+        if not blocked_or_hot:
+            return
+        try:
+            path = self.graph.shortest_path(
+                current_road.end_node,
+                vehicle.destination_node,
+                algorithm=self.routing_algorithm,
+                road_loads={road_id: len(occupancy) for road_id, occupancy in self.road_occupancy.items()},
+            )
+        except ValueError:
+            return
+        new_remaining = path.roads
+        if not new_remaining or new_remaining == upcoming[: len(new_remaining)]:
+            return
+        vehicle.route_nodes = [current_road.start_node, *path.nodes]
+        vehicle.route_roads = [current_road_id, *new_remaining]
+        vehicle.current_road_index = 0
+        vehicle.reroutes += 1
+
+    def _reroute_load_threshold(self, vehicle: Vehicle) -> float:
+        if vehicle.behavior == "aggressive_reroute":
+            return 0.55
+        if vehicle.behavior == "avoid_congestion":
+            return 0.65
+        return 0.82
 
     def _road_has_space(self, road_id: str) -> bool:
         road = self.graph.roads[road_id]

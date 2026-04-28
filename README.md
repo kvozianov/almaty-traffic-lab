@@ -111,7 +111,9 @@ Useful dashboard features:
 - AI policy mode: heuristic now, LLM adapter interface for later
 - manual or automatic time of day
 - scenario editor: accident, repair, closure, capacity reduction, signal delay, demand surge, weather, bypass road
-- road detail panel with capacity, lanes, speed, class, and provider observations
+- road detail panel with capacity, lanes, speed limit, source metadata, signals, and provider observations
+- OpenStreetMap speed/lanes normalization with fallback values by road class
+- synthetic traffic-light phases from OSM `highway=traffic_signals`
 - JSON metrics and CSV road-load exports
 
 Optional environment variables:

@@ -1,0 +1,85 @@
+{
+  "zones": [
+    {
+      "id": "center",
+      "name": "Center",
+      "lat": 43.2389,
+      "lng": 76.9454,
+      "radius_m": 2600,
+      "kind": "business",
+      "weights": {"morning": 1.45, "lunch": 1.15, "evening": 1.25, "night": 0.7, "weekend": 1.0}
+    },
+    {
+      "id": "orbita",
+      "name": "Orbita",
+      "lat": 43.2047,
+      "lng": 76.8759,
+      "radius_m": 2300,
+      "kind": "residential",
+      "weights": {"morning": 1.35, "lunch": 0.9, "evening": 1.55, "night": 1.0, "weekend": 1.1}
+    },
+    {
+      "id": "samal",
+      "name": "Samal",
+      "lat": 43.2326,
+      "lng": 76.9578,
+      "radius_m": 1900,
+      "kind": "mixed",
+      "weights": {"morning": 1.15, "lunch": 1.2, "evening": 1.2, "night": 0.85, "weekend": 1.0}
+    },
+    {
+      "id": "atakent",
+      "name": "Atakent",
+      "lat": 43.2258,
+      "lng": 76.9092,
+      "radius_m": 2200,
+      "kind": "mixed",
+      "weights": {"morning": 1.2, "lunch": 1.15, "evening": 1.2, "night": 0.8, "weekend": 1.05}
+    },
+    {
+      "id": "airport",
+      "name": "Airport",
+      "lat": 43.3521,
+      "lng": 77.0405,
+      "radius_m": 3000,
+      "kind": "transport",
+      "weights": {"morning": 1.05, "lunch": 1.0, "evening": 1.1, "night": 1.25, "weekend": 1.15}
+    },
+    {
+      "id": "railway",
+      "name": "Railway",
+      "lat": 43.2711,
+      "lng": 76.9398,
+      "radius_m": 2300,
+      "kind": "transport",
+      "weights": {"morning": 1.2, "lunch": 1.0, "evening": 1.15, "night": 1.05, "weekend": 1.05}
+    },
+    {
+      "id": "residential_north",
+      "name": "Residential North",
+      "lat": 43.304,
+      "lng": 76.905,
+      "radius_m": 4200,
+      "kind": "residential",
+      "weights": {"morning": 1.55, "lunch": 0.85, "evening": 1.65, "night": 1.05, "weekend": 1.1}
+    },
+    {
+      "id": "residential_west",
+      "name": "Residential West",
+      "lat": 43.245,
+      "lng": 76.835,
+      "radius_m": 4200,
+      "kind": "residential",
+      "weights": {"morning": 1.5, "lunch": 0.85, "evening": 1.6, "night": 1.05, "weekend": 1.1}
+    },
+    {
+      "id": "medeu",
+      "name": "Medeu",
+      "lat": 43.1585,
+      "lng": 77.0587,
+      "radius_m": 5200,
+      "kind": "leisure",
+      "weights": {"morning": 0.75, "lunch": 0.95, "evening": 0.85, "night": 0.55, "weekend": 1.55}
+    }
+  ]
+}

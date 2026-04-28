@@ -20,160 +20,242 @@
         <h1>Scenario simulator</h1>
       </header>
 
-      <section class="section">
-        <label for="presetSelect">Map preset</label>
-        <select id="presetSelect"></select>
+      <nav class="tabs" aria-label="Dashboard sections">
+        <button class="tab-button active" data-tab="run">Run</button>
+        <button class="tab-button" data-tab="scenario">Scenario</button>
+        <button class="tab-button" data-tab="analytics">Analytics</button>
+        <button class="tab-button" data-tab="road">Road</button>
+        <button class="tab-button" data-tab="export">Export</button>
+      </nav>
+
+      <section class="tab-panel active" data-panel="run">
+        <section class="section">
+          <label for="presetSelect">Map preset</label>
+          <select id="presetSelect"></select>
+        </section>
+
+        <section class="grid-two">
+          <label>Map mode
+            <select id="mapModeSelect">
+              <option value="leaflet">Leaflet 2D</option>
+              <option value="2gis">2GIS MapGL 3D</option>
+            </select>
+          </label>
+          <label>AI policy
+            <select id="policySelect">
+              <option value="heuristic">Heuristic AI</option>
+              <option value="llm">LLM adapter</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="grid-two">
+          <label>Vehicles
+            <input id="vehicleInput" type="number" min="1" max="100000" value="80">
+          </label>
+          <label>Steps
+            <input id="stepsInput" type="number" min="1" max="3000" value="240">
+          </label>
+        </section>
+
+        <section class="grid-two">
+          <label>Seed
+            <input id="seedInput" type="number" value="7">
+          </label>
+          <label>Playback
+            <input id="speedInput" type="range" min="200" max="2500" value="900">
+          </label>
+        </section>
+
+        <section class="grid-two">
+          <label>Time preset
+            <select id="timePresetSelect"></select>
+          </label>
+          <label>Sim time
+            <input id="timeInput" type="time" value="17:00">
+          </label>
+        </section>
+
+        <section class="grid-two">
+          <label>Demand mode
+            <select id="demandModeSelect">
+              <option value="random_roads">Random roads</option>
+              <option value="od_zones">OD zones</option>
+            </select>
+          </label>
+          <label>Reroute ticks
+            <input id="rerouteInput" type="number" min="0" max="1000" value="12">
+          </label>
+        </section>
+
+        <section class="grid-two">
+          <label>Vehicle speed
+            <input id="vehicleSpeedInput" type="range" min="0.25" max="5" step="0.25" value="1.75">
+          </label>
+          <label>Day speed
+            <input id="timeSpeedInput" type="number" min="0.1" max="120" step="0.5" value="1">
+          </label>
+        </section>
+
+        <section class="grid-two">
+          <label class="check-row">
+            <input id="autoTimeInput" type="checkbox">
+            Auto time
+          </label>
+          <label class="check-row">
+            <input id="heatmapInput" type="checkbox">
+            Heatmap
+          </label>
+          <label class="check-row">
+            <input id="showSignalsInput" type="checkbox" checked>
+            Show signals
+          </label>
+          <label class="check-row">
+            <input id="randomEventsInput" type="checkbox">
+            Random events
+          </label>
+        </section>
+
+        <section class="actions">
+          <button id="runButton" class="primary">Run</button>
+          <button id="quickButton">Quick</button>
+          <button id="playButton">Pause</button>
+          <button id="resetButton">Reset</button>
+        </section>
+
+        <section class="metrics">
+          <div><span>Tick</span><strong id="tickMetric">0</strong></div>
+          <div><span>Moving</span><strong id="movingMetric">0</strong></div>
+          <div><span>Time</span><strong id="timeMetric">17:00</strong></div>
+          <div><span>Avg speed</span><strong id="avgSpeedMetric">0 kph</strong></div>
+          <div><span>Max load</span><strong id="loadMetric">0.00</strong></div>
+          <div><span>FPS</span><strong id="fpsMetric">0</strong></div>
+        </section>
       </section>
 
-      <section class="grid-two">
-        <label>Map mode
-          <select id="mapModeSelect">
-            <option value="leaflet">Leaflet 2D</option>
-            <option value="2gis">2GIS MapGL 3D</option>
+      <section class="tab-panel" data-panel="scenario">
+        <section class="section">
+          <label for="scenarioSelect">Scenario</label>
+          <select id="scenarioSelect">
+            <option value="none">None</option>
+            <option value="accident">Accident</option>
+            <option value="repair">Road repair</option>
+            <option value="closure">Road closure</option>
+            <option value="capacity_reduction">Capacity reduction</option>
+            <option value="signal">Signal delay</option>
+            <option value="demand_surge">Demand surge</option>
+            <option value="weather">Weather speed drop</option>
+            <option value="new-road">New bypass</option>
           </select>
-        </label>
-        <label>AI policy
-          <select id="policySelect">
-            <option value="heuristic">Heuristic AI</option>
-            <option value="llm">LLM adapter</option>
-          </select>
-        </label>
+        </section>
+
+        <section class="grid-two">
+          <label>Capacity factor
+            <input id="capacityInput" type="range" min="0.05" max="1" step="0.05" value="0.3">
+          </label>
+          <label>Speed factor
+            <input id="speedFactorInput" type="range" min="0.1" max="1" step="0.05" value="0.45">
+          </label>
+        </section>
+
+        <section class="grid-two">
+          <label>Signal delay
+            <input id="signalDelayInput" type="number" min="0" max="300" value="60">
+          </label>
+          <label>Duration min
+            <input id="durationInput" type="number" min="1" max="1440" value="60">
+          </label>
+        </section>
+
+        <section class="grid-two">
+          <button id="addEventButton">Add event</button>
+          <button id="eventPresetButton">Add presets</button>
+        </section>
+        <section class="timeline-list" id="timelineList"></section>
+
+        <section class="section">
+          <label class="check-row">
+            <input id="compareInput" type="checkbox">
+            Compare before/after
+          </label>
+          <label class="check-row">
+            <input id="refreshCacheInput" type="checkbox">
+            Refresh OSM cache
+          </label>
+        </section>
       </section>
 
-      <section class="grid-two">
-        <label>Vehicles
-          <input id="vehicleInput" type="number" min="1" max="100000" value="80">
-        </label>
-        <label>Steps
-          <input id="stepsInput" type="number" min="1" max="3000" value="240">
-        </label>
+      <section class="tab-panel" data-panel="analytics">
+        <section class="metrics">
+          <div><span>Arrived</span><strong id="arrivedMetric">0</strong></div>
+          <div><span>Avg trip</span><strong id="tripMetric">0.00 min</strong></div>
+          <div><span>Delta trip</span><strong id="deltaMetric">0.00 min</strong></div>
+          <div><span>Demand</span><strong id="demandMetric">1.00x</strong></div>
+          <div><span>Visible / drawn</span><strong id="drawnMetric">0 / 0</strong></div>
+          <div><span>Max speed</span><strong id="maxSpeedMetric">0 kph</strong></div>
+          <div><span>Mode</span><strong id="modeMetric">idle</strong></div>
+          <div><span>Roads</span><strong id="roadsMetric">0</strong></div>
+        </section>
+        <section class="chart-card">
+          <h2>Congestion over time</h2>
+          <canvas id="congestionChart" width="320" height="90"></canvas>
+        </section>
+        <section class="chart-card">
+          <h2>Average speed over time</h2>
+          <canvas id="speedChart" width="320" height="90"></canvas>
+        </section>
+        <section>
+          <h2>Top roads</h2>
+          <ol id="hotRoads"></ol>
+        </section>
+        <section>
+          <h2>Corridors</h2>
+          <div id="corridorStats" class="mini-table"></div>
+        </section>
+        <section>
+          <h2>OD flows</h2>
+          <div id="odStats" class="mini-table"></div>
+        </section>
+        <section>
+          <h2>Route coverage</h2>
+          <div id="coverageStats" class="mini-table"></div>
+        </section>
       </section>
 
-      <section class="grid-two">
-        <label>Seed
-          <input id="seedInput" type="number" value="7">
-        </label>
-        <label>Playback
-          <input id="speedInput" type="range" min="200" max="2500" value="900">
-        </label>
+      <section class="tab-panel" data-panel="road">
+        <section class="selected-road">
+          <span>Selected road</span>
+          <strong id="selectedRoad">auto</strong>
+          <p id="roadDetails">Click a road to inspect capacity, speed and class.</p>
+        </section>
+        <section class="section">
+          <label>Speed color
+            <select id="speedColorSelect">
+              <option value="on">On</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+        </section>
+        <section class="provider-state" id="providerState">Traffic provider: synthetic</section>
+        <section class="section">
+          <label>Traffic data
+            <select id="providerSelect">
+              <option value="synthetic">Synthetic</option>
+              <option value="csv">CSV</option>
+              <option value="yandex">Yandex API</option>
+              <option value="2gis">2GIS API</option>
+            </select>
+          </label>
+        </section>
       </section>
 
-      <section class="grid-two">
-        <label>Sim time
-          <input id="timeInput" type="time" value="17:00">
-        </label>
-        <label>Day speed
-          <input id="timeSpeedInput" type="number" min="0.1" max="120" step="0.5" value="1">
-        </label>
-      </section>
-
-      <section class="grid-two">
-        <label>Vehicle speed
-          <input id="vehicleSpeedInput" type="range" min="0.25" max="5" step="0.25" value="1.75">
-        </label>
-        <label>Speed color
-          <select id="speedColorSelect">
-            <option value="on">On</option>
-            <option value="off">Off</option>
-          </select>
-        </label>
-      </section>
-
-      <section class="grid-two">
-        <label class="check-row">
-          <input id="autoTimeInput" type="checkbox">
-          Auto time
-        </label>
-        <label>Traffic data
-          <select id="providerSelect">
-            <option value="synthetic">Synthetic</option>
-            <option value="csv">CSV</option>
-            <option value="yandex">Yandex API</option>
-            <option value="2gis">2GIS API</option>
-          </select>
-        </label>
-      </section>
-
-      <section class="section">
-        <label for="scenarioSelect">Scenario</label>
-        <select id="scenarioSelect">
-          <option value="none">None</option>
-          <option value="accident">Accident</option>
-          <option value="repair">Road repair</option>
-          <option value="closure">Road closure</option>
-          <option value="capacity_reduction">Capacity reduction</option>
-          <option value="signal">Signal delay</option>
-          <option value="demand_surge">Demand surge</option>
-          <option value="weather">Weather speed drop</option>
-          <option value="new-road">New bypass</option>
-        </select>
-      </section>
-
-      <section class="grid-two">
-        <label>Capacity factor
-          <input id="capacityInput" type="range" min="0.05" max="1" step="0.05" value="0.3">
-        </label>
-        <label>Speed factor
-          <input id="speedFactorInput" type="range" min="0.1" max="1" step="0.05" value="0.45">
-        </label>
-      </section>
-
-      <section class="grid-two">
-        <label>Signal delay
-          <input id="signalDelayInput" type="number" min="0" max="300" value="60">
-        </label>
-        <label>Duration min
-          <input id="durationInput" type="number" min="1" max="1440" value="60">
-        </label>
-      </section>
-
-      <section class="section">
-        <label class="check-row">
-          <input id="compareInput" type="checkbox">
-          Compare before/after
-        </label>
-      </section>
-
-      <section class="selected-road">
-        <span>Selected road</span>
-        <strong id="selectedRoad">auto</strong>
-        <p id="roadDetails">Click a road to inspect capacity, speed and class.</p>
-      </section>
-
-      <section class="actions">
-        <button id="runButton" class="primary">Run</button>
-        <button id="quickButton">Quick</button>
-        <button id="playButton">Pause</button>
-        <button id="resetButton">Reset</button>
-      </section>
-
-      <section class="metrics">
-        <div><span>Tick</span><strong id="tickMetric">0</strong></div>
-        <div><span>Moving</span><strong id="movingMetric">0</strong></div>
-        <div><span>Arrived</span><strong id="arrivedMetric">0</strong></div>
-        <div><span>Avg trip</span><strong id="tripMetric">0.00 min</strong></div>
-        <div><span>Max load</span><strong id="loadMetric">0.00</strong></div>
-        <div><span>Delta trip</span><strong id="deltaMetric">0.00 min</strong></div>
-        <div><span>Time</span><strong id="timeMetric">17:00</strong></div>
-        <div><span>Demand</span><strong id="demandMetric">1.00x</strong></div>
-        <div><span>FPS</span><strong id="fpsMetric">0</strong></div>
-        <div><span>Visible / drawn</span><strong id="drawnMetric">0 / 0</strong></div>
-        <div><span>Mode</span><strong id="modeMetric">idle</strong></div>
-        <div><span>Roads</span><strong id="roadsMetric">0</strong></div>
-        <div><span>Avg speed</span><strong id="avgSpeedMetric">0 kph</strong></div>
-        <div><span>Max speed</span><strong id="maxSpeedMetric">0 kph</strong></div>
-      </section>
-
-      <section class="provider-state" id="providerState">Traffic provider: synthetic</section>
-
-      <section class="actions">
-        <button id="exportMetrics">Export JSON</button>
-        <button id="exportRoads">Export CSV</button>
-      </section>
-
-      <section>
-        <h2>Hot roads</h2>
-        <ol id="hotRoads"></ol>
+      <section class="tab-panel" data-panel="export">
+        <section class="actions export-actions">
+          <button id="exportMetrics">Export JSON</button>
+          <button id="exportRoads">Export CSV</button>
+          <button id="exportReport">Generate report</button>
+        </section>
+        <section class="provider-state" id="exportState">Report export creates a self-contained HTML research file.</section>
       </section>
     </aside>
   </main>

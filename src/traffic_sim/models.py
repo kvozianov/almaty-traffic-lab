@@ -12,6 +12,19 @@ class Node:
 
 
 @dataclass(slots=True)
+class TrafficSignal:
+    signal_id: str
+    node_id: str
+    lat: float
+    lng: float
+    cycle_s: float = 74.0
+    green_s: float = 35.0
+    yellow_s: float = 4.0
+    red_s: float = 35.0
+    delay_s: float = 12.0
+
+
+@dataclass(slots=True)
 class Road:
     road_id: str
     start_node: str
@@ -47,6 +60,8 @@ class Vehicle:
     destination_node: str
     departure_time_s: float = 0.0
     behavior: str = "normal"
+    origin_zone_id: str | None = None
+    destination_zone_id: str | None = None
     spawn_road_id: str | None = None
     spawn_ratio: float = 0.0
     route_nodes: list[str] = field(default_factory=list)

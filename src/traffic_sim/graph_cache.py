@@ -5,7 +5,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from .models import Node, Road
+from .models import Node, Road, TrafficSignal
 from .network import CityGraph, build_demo_city_graph, load_graph_from_osm_bbox, load_graph_from_osm_place
 
 
@@ -118,10 +118,15 @@ def reduce_graph_for_preview(graph: CityGraph, max_roads: int = 12000) -> CityGr
             length_m=road.length_m,
             max_speed_kph=road.max_speed_kph,
             capacity=road.capacity,
+            lanes=road.lanes,
+            road_class=road.road_class,
             signal_delay_s=road.signal_delay_s,
             is_open=road.is_open,
             metadata=road.metadata,
         )
+    for signal in graph.signals.values():
+        if signal.node_id in reduced.nodes:
+            reduced.add_signal(**asdict(signal))
     return reduced
 
 
@@ -136,6 +141,7 @@ def save_graph_json(graph: CityGraph, path: str | Path) -> Path:
     payload = {
         "nodes": [asdict(node) for node in graph.nodes.values()],
         "roads": [_road_to_dict(road) for road in graph.roads.values()],
+        "signals": [asdict(signal) for signal in graph.signals.values()],
     }
     output.write_text(json.dumps(payload, ensure_ascii=True), encoding="utf-8")
     return output
@@ -147,6 +153,9 @@ def load_graph_json(path: str | Path) -> CityGraph:
     for raw_node in payload["nodes"]:
         node = Node(**raw_node)
         graph.add_node(node.node_id, x=node.x, y=node.y, label=node.label)
+    for raw_signal in payload.get("signals", []):
+        signal = TrafficSignal(**raw_signal)
+        graph.add_signal(**asdict(signal))
     for raw_road in payload["roads"]:
         graph.add_road(
             road_id=raw_road["road_id"],
