@@ -3,6 +3,8 @@ const state = {
   providers: [],
   timePresets: [],
   zones: [],
+  scenarioPresets: [],
+  calibrationLayer: null,
   events: [],
   analytics: null,
   runStartMinute: 17 * 60,
@@ -13,6 +15,7 @@ const state = {
   leafletVehicleLayer: null,
   leafletSignalLayer: null,
   leafletZoneLayer: null,
+  leafletCalibrationLayer: null,
   mapglMap: null,
   mapglObjects: [],
   mapglVehicleMarkers: new Map(),
@@ -35,6 +38,9 @@ const state = {
   visibleVehicles: 0,
   drawnVehicles: 0,
   rerouteCount: 0,
+  dynamicRoadIds: new Set(),
+  dynamicRoadSummary: { maxLoad: 0, averageLoad: 0, activeRoads: 0 },
+  lastRoadRefreshSecond: -1,
   frameIndex: 0,
   animationId: null,
   lastTimestamp: null,
@@ -66,6 +72,7 @@ const els = {
   autoTime: document.getElementById("autoTimeInput"),
   heatmap: document.getElementById("heatmapInput"),
   showSignals: document.getElementById("showSignalsInput"),
+  showCalibration: document.getElementById("showCalibrationInput"),
   randomEvents: document.getElementById("randomEventsInput"),
   provider: document.getElementById("providerSelect"),
   scenario: document.getElementById("scenarioSelect"),
@@ -105,6 +112,8 @@ const els = {
   corridorStats: document.getElementById("corridorStats"),
   odStats: document.getElementById("odStats"),
   coverageStats: document.getElementById("coverageStats"),
+  calibrationSegments: document.getElementById("calibrationSegments"),
+  calibrationIntersections: document.getElementById("calibrationIntersections"),
   congestionChart: document.getElementById("congestionChart"),
   speedChart: document.getElementById("speedChart"),
   exportMetrics: document.getElementById("exportMetrics"),
@@ -120,6 +129,7 @@ async function boot() {
   await loadPresets();
   await loadTimePresets();
   await loadZones();
+  await loadScenarioPresets();
   await loadProviders();
   bindEvents();
   setStatus("Choose a preset, then press Run. Quick gives a smooth city-wide preview.");
@@ -172,6 +182,12 @@ async function loadZones() {
   state.zones = data.zones || [];
 }
 
+async function loadScenarioPresets() {
+  const response = await fetch("/api/scenario-presets");
+  const data = await response.json();
+  state.scenarioPresets = data.presets || [];
+}
+
 async function loadProviders() {
   const response = await fetch("/api/traffic/providers");
   const data = await response.json();
@@ -186,6 +202,7 @@ function bindEvents() {
   els.mapMode.addEventListener("change", () => setMapMode(els.mapMode.value));
   els.provider.addEventListener("change", renderProviderState);
   els.showSignals.addEventListener("change", drawSignals);
+  els.showCalibration.addEventListener("change", drawCalibrationLayer);
   els.heatmap.addEventListener("change", () => renderFrame(0));
   els.demandMode.addEventListener("change", drawZones);
   els.timePreset.addEventListener("change", applyTimePreset);
@@ -199,6 +216,9 @@ function bindEvents() {
     state.frameProgressMs = 0;
     state.proceduralElapsedSeconds = 0;
     state.lastProceduralRenderSeconds = 0;
+    state.dynamicRoadIds = new Set();
+    state.dynamicRoadSummary = { maxLoad: 0, averageLoad: 0, activeRoads: 0 };
+    state.lastRoadRefreshSecond = -1;
     renderFrame(0);
   });
   els.exportMetrics.addEventListener("click", () => exportRun("metrics"));
@@ -263,6 +283,7 @@ function initLeafletMap() {
   state.leafletVehicleLayer = L.layerGroup().addTo(state.leafletMap);
   state.leafletSignalLayer = L.layerGroup().addTo(state.leafletMap);
   state.leafletZoneLayer = L.layerGroup().addTo(state.leafletMap);
+  state.leafletCalibrationLayer = L.layerGroup().addTo(state.leafletMap);
   ensureVehicleCanvas();
   state.leafletMap.on("resize move zoomend", resizeVehicleCanvas);
   drawZones();
@@ -302,6 +323,7 @@ function destroyLeafletMap() {
   state.leafletVehicleLayer = null;
   state.leafletSignalLayer = null;
   state.leafletZoneLayer = null;
+  state.leafletCalibrationLayer = null;
   state.vehicleCanvas = null;
   state.vehicleCanvasContext = null;
   state.vehicleMarkers.clear();
@@ -399,10 +421,14 @@ async function runSimulation(endpoint = "/api/simulations") {
     const framePayload = await framesResponse.json();
     state.frames = framePayload.frames;
     state.events = mergeReturnedEvents(framePayload.events || metadata.events || []);
+    state.calibrationLayer = framePayload.calibrationLayer || null;
     renderTimeline();
     state.procedural = Boolean(framePayload.procedural);
     state.proceduralVehicles = framePayload.proceduralVehicles || [];
     state.rerouteCount = 0;
+    state.dynamicRoadIds = new Set();
+    state.dynamicRoadSummary = { maxLoad: 0, averageLoad: 0, activeRoads: 0 };
+    state.lastRoadRefreshSecond = -1;
     state.proceduralElapsedSeconds = 0;
     state.lastProceduralRenderSeconds = 0;
     state.baselineFrames = framePayload.baselineFrames || [];
@@ -431,6 +457,11 @@ async function runSimulation(endpoint = "/api/simulations") {
 function drawRoads(roads, scenarioRoads) {
   state.lastRoads = roads;
   state.lastScenarioRoads = scenarioRoads;
+  for (const road of roads) {
+    road.baseLoad = Number(road.baseLoad ?? road.load ?? 0);
+    road.load = Number(road.load ?? 0);
+    road.dynamicVehicles = 0;
+  }
   state.roadById = new Map(roads.map((road) => [road.id, road]));
   if (state.mapType === "2gis" && state.mapglMap) {
     drawMapglRoads(roads, scenarioRoads);
@@ -439,6 +470,7 @@ function drawRoads(roads, scenarioRoads) {
   }
   drawSignals();
   drawZones();
+  drawCalibrationLayer();
 }
 
 async function loadSignals() {
@@ -555,6 +587,37 @@ function drawZones() {
   }
 }
 
+function drawCalibrationLayer() {
+  if (!state.leafletCalibrationLayer) return;
+  state.leafletCalibrationLayer.clearLayers();
+  if (!els.showCalibration.checked || !state.calibrationLayer) return;
+  for (const segment of state.calibrationLayer.segments || []) {
+    const coords = Array.isArray(segment.coords) ? segment.coords : [];
+    if (coords.length >= 2) {
+      L.polyline(coords, {
+        color: "#0f6fc6",
+        weight: 3,
+        opacity: 0.8,
+        dashArray: "10 6",
+      })
+        .bindTooltip(`${segment.rank}. ${segment.name}<br>index ${Number(segment.congestion_index || 0).toFixed(1)}`)
+        .addTo(state.leafletCalibrationLayer);
+    }
+  }
+  for (const intersection of state.calibrationLayer.intersections || []) {
+    if (!intersection.matched || typeof intersection.lat !== "number" || typeof intersection.lng !== "number") continue;
+    L.circleMarker([intersection.lat, intersection.lng], {
+      radius: 6,
+      color: "#ffffff",
+      weight: 1.5,
+      fillColor: "#d89024",
+      fillOpacity: 0.95,
+    })
+      .bindTooltip(`${intersection.name}<br>priority ${Number(intersection.priority || 0).toFixed(1)}`)
+      .addTo(state.leafletCalibrationLayer);
+  }
+}
+
 async function selectRoad(roadId) {
   state.selectedRoadId = roadId;
   els.selectedRoad.textContent = roadId;
@@ -572,7 +635,9 @@ async function loadRoadDetails(roadId) {
     const liveLoad = liveRoad ? ` | live load ${Number(liveRoad.load || 0).toFixed(2)}` : "";
     const eventCount = liveRoad && Array.isArray(liveRoad.timelineEvents) ? liveRoad.timelineEvents.length : 0;
     const eventText = eventCount ? ` | timeline events ${eventCount}` : "";
-    els.roadDetails.textContent = `${road.name} | ${road.roadClass} | ${road.lanes} lanes (${road.lanesSource}) | cap ${road.effectiveCapacity} | limit ${road.maxSpeedKph.toFixed(0)} kph (${road.speedSource}) | est ${road.estimatedSpeedKph.toFixed(0)} kph | signals ${road.signalCount}${liveLoad}${eventText}`;
+    const calibrationHits = calibrationHitsForRoad(roadId);
+    const calibrationText = calibrationHits.length ? ` | calibration ${calibrationHits.slice(0, 2).join(", ")}` : "";
+    els.roadDetails.textContent = `${road.name} | ${road.roadClass} | ${road.lanes} lanes (${road.lanesSource}) | cap ${road.effectiveCapacity} | limit ${road.maxSpeedKph.toFixed(0)} kph (${road.speedSource}) | est ${road.estimatedSpeedKph.toFixed(0)} kph | signals ${road.signalCount}${liveLoad}${eventText}${calibrationText}`;
     const statsResponse = await fetch(`/api/statistics/road/${encodeURIComponent(roadId)}?provider_id=${encodeURIComponent(els.provider.value)}`);
     const stats = await statsResponse.json();
     if (stats.observations.length) {
@@ -656,6 +721,21 @@ function renderAnalytics() {
   coverageRow.className = "mini-row";
   coverageRow.innerHTML = `<strong>${Math.round(Number(coverage.coverageRatio || 0) * 100)}% road coverage</strong><span>${Number(coverage.coveredRoads || 0)} / ${Number(coverage.totalRoads || 0)} roads | avg route ${Number(coverage.averageRouteRoads || 0).toFixed(1)} roads</span>`;
   els.coverageStats.appendChild(coverageRow);
+  const calibration = analytics.calibration || {};
+  els.calibrationSegments.innerHTML = "";
+  for (const segment of calibration.segmentRows || []) {
+    const row = document.createElement("div");
+    row.className = "mini-row";
+    row.innerHTML = `<strong>${Number(segment.rank || 0)}. ${escapeHtml(segment.name)}</strong><span>load ${Number(segment.averageLoad || 0).toFixed(2)} | speed ${Number(segment.estimatedSpeedKph || 0).toFixed(0)} kph | roads ${Number(segment.matchedRoads || 0)}</span>`;
+    els.calibrationSegments.appendChild(row);
+  }
+  els.calibrationIntersections.innerHTML = "";
+  for (const item of calibration.intersectionRows || []) {
+    const row = document.createElement("div");
+    row.className = "mini-row";
+    row.innerHTML = `<strong>${escapeHtml(item.name)}</strong><span>load ${Number(item.averageLoad || 0).toFixed(2)} | priority ${Number(item.priority || 0).toFixed(1)}</span>`;
+    els.calibrationIntersections.appendChild(row);
+  }
 }
 
 function drawMiniChart(canvas, series, color) {
@@ -702,12 +782,31 @@ function addTimelineEvent() {
 }
 
 function addTimelinePresets() {
-  const roadId = state.selectedRoadId;
-  state.events.push(
-    { id: `preset-accident-${Date.now()}`, type: "accident", roadId, startTime: "17:10", durationMinutes: 35, enabled: true, capacityFactor: 0.35, speedFactor: 0.4, signalDelayS: 60 },
-    { id: `preset-repair-${Date.now()}`, type: "repair", roadId, startTime: "17:40", durationMinutes: 40, enabled: true, capacityFactor: 0.1, speedFactor: 0.2, signalDelayS: 60 },
-    { id: `preset-weather-${Date.now()}`, type: "weather", roadId: null, startTime: "18:00", durationMinutes: 45, enabled: true, capacityFactor: 0.75, speedFactor: 0.72, signalDelayS: 60 },
-  );
+  const presets = state.scenarioPresets.length ? state.scenarioPresets : [];
+  if (!presets.length) {
+    state.events.push(
+      { id: `preset-accident-${Date.now()}`, type: "accident", roadId: state.selectedRoadId, startTime: "17:10", durationMinutes: 35, enabled: true, capacityFactor: 0.35, speedFactor: 0.4, signalDelayS: 60 },
+      { id: `preset-weather-${Date.now()}`, type: "weather", roadId: null, startTime: "18:00", durationMinutes: 45, enabled: true, capacityFactor: 0.75, speedFactor: 0.72, signalDelayS: 60 },
+    );
+    renderTimeline();
+    return;
+  }
+  const preferredPreset =
+    presets.find((preset) => preset.id === (els.timePreset.value === "morning_peak" ? "weekday_morning_peak" : "weekday_evening_peak")) ||
+    presets[0];
+  const baseId = `${preferredPreset.id}-${Date.now()}`;
+  const mappedEvents = (preferredPreset.events || []).map((event, index) => ({
+    id: `${baseId}-${index + 1}`,
+    type: event.type || "accident",
+    roadId: choosePresetRoad(event.road_tags || [], state.selectedRoadId),
+    startTime: event.start_time || "17:00",
+    durationMinutes: Number(event.duration_minutes || 40),
+    enabled: event.enabled !== false,
+    capacityFactor: Number(event.capacity_factor || 0.35),
+    speedFactor: Number(event.speed_factor || 0.45),
+    signalDelayS: Number(event.signal_delay_s || 60),
+  }));
+  state.events.push(...mappedEvents);
   renderTimeline();
 }
 
@@ -756,6 +855,28 @@ function mergeReturnedEvents(events) {
     speedFactor: Number(event.speedFactor || event.speed_factor || 0.45),
     signalDelayS: Number(event.signalDelayS || event.signal_delay_s || 60),
   }));
+}
+
+function choosePresetRoad(tags, fallbackRoadId) {
+  const tagList = Array.isArray(tags) ? tags.map((tag) => String(tag).toLowerCase()) : [];
+  if (fallbackRoadId && state.roadById.has(fallbackRoadId)) {
+    return fallbackRoadId;
+  }
+  for (const road of state.lastRoads) {
+    const haystack = `${road.id} ${road.name || ""}`.toLowerCase();
+    if (tagList.some((tag) => haystack.includes(tag))) {
+      return road.id;
+    }
+  }
+  return fallbackRoadId || null;
+}
+
+function calibrationHitsForRoad(roadId) {
+  const layer = state.calibrationLayer || {};
+  return (layer.segments || [])
+    .filter((segment) => Array.isArray(segment.matchedRoadIds) && segment.matchedRoadIds.includes(roadId))
+    .slice(0, 3)
+    .map((segment) => `${segment.rank}. ${segment.name}`);
 }
 
 function renderFrame(progress = 0) {
@@ -829,13 +950,13 @@ function renderProceduralVehicles() {
   let visible = 0;
   let drawn = 0;
   let heatIndex = 0;
+  const renderPoints = [];
   ctx.globalAlpha = 0.92;
   for (const vehicle of state.proceduralVehicles) {
     const road = state.roadById.get(vehicle.roadId || vehicle.currentRoadId);
     if (!road || !road.isOpen || road.coords.length < 2) continue;
     const currentFlowFactor = roadFlowFactor(road);
     vehicle.offset += vehicle.speed * deltaSeconds * currentFlowFactor * Number(els.vehicleSpeed.value || 1);
-    vehicle.currentSpeedKph = Math.max(0, Number(vehicle.speedKph || road.maxSpeedKph || 30) * currentFlowFactor * Number(els.vehicleSpeed.value || 1));
     let activeRoad = road;
     let guard = 0;
     while (vehicle.offset >= 1 && guard < 8) {
@@ -844,6 +965,9 @@ function renderProceduralVehicles() {
       activeRoad = state.roadById.get(vehicle.roadId) || activeRoad;
       guard += 1;
     }
+    const activeFlowFactor = roadFlowFactor(activeRoad);
+    vehicle.currentSpeedKph = Math.max(0, Number(vehicle.speedKph || activeRoad.maxSpeedKph || 30) * activeFlowFactor * Number(els.vehicleSpeed.value || 1));
+    vehicle.state = activeFlowFactor <= 0.28 || Number(activeRoad.load || 0) >= 1 ? "queued" : "moving";
     const point = interpolateRoad(activeRoad.coords, vehicle.offset);
     const pixel = state.leafletMap.latLngToContainerPoint(point);
     if (pixel.x < -8 || pixel.y < -8 || pixel.x > state.vehicleCanvas.clientWidth + 8 || pixel.y > state.vehicleCanvas.clientHeight + 8) {
@@ -856,11 +980,16 @@ function renderProceduralVehicles() {
     if (drawn >= maxDraw) {
       continue;
     }
+    renderPoints.push({ pixel, vehicle, roadId: activeRoad.id || activeRoad.roadId });
+  }
+  recomputeProceduralRoadLoads();
+  for (const item of renderPoints) {
     heatIndex += 1;
+    const liveRoad = state.roadById.get(item.roadId);
     if (els.heatmap.checked && heatIndex % heatStride === 0) {
-      drawHeatPoint(ctx, pixel.x, pixel.y, Math.min(1, Number(activeRoad.load || 0.2) + 0.15));
+      drawHeatPoint(ctx, item.pixel.x, item.pixel.y, Math.min(1, Number(liveRoad?.load || 0.2) + 0.15));
     }
-    drawVehicleCircle(ctx, pixel.x, pixel.y, vehicle.state || "moving", radius, border, vehicle.currentSpeedKph || 0);
+    drawVehicleCircle(ctx, item.pixel.x, item.pixel.y, item.vehicle.state || "moving", radius, border, item.vehicle.currentSpeedKph || 0);
     drawn += 1;
   }
   ctx.globalAlpha = 1;
@@ -1098,6 +1227,7 @@ function roadFlowFactor(road) {
 }
 
 function advanceVehicleToNextRoad(road, vehicle) {
+  rememberVehicleRoad(vehicle, road.id || road.roadId);
   const route = Array.isArray(vehicle.routeRoadIds) ? vehicle.routeRoadIds : [];
   if (route.length > 1) {
     const nextRouteIndex = Number(vehicle.routeIndex || 0) + 1;
@@ -1115,8 +1245,13 @@ function advanceVehicleToNextRoad(road, vehicle) {
       return alternative;
     }
     if (nextRouteIndex >= route.length) {
-      vehicle.routeIndex = 0;
-      return route[0];
+      const continuation = chooseNextRoad(road, vehicle);
+      if (continuation) {
+        vehicle.reroutes = Number(vehicle.reroutes || 0) + 1;
+        state.rerouteCount += 1;
+      }
+      vehicle.routeIndex = Math.max(0, route.length - 1);
+      return continuation || plannedId || route[route.length - 1];
     }
   }
   return chooseNextRoad(road, vehicle);
@@ -1126,6 +1261,7 @@ function chooseNextRoad(road, vehicle) {
   const candidates = Array.isArray(road.nextRoadCandidates) && road.nextRoadCandidates.length ? road.nextRoadCandidates : [road.nextRoadId];
   let bestId = candidates[0] || road.nextRoadId;
   let bestScore = -Infinity;
+  const recentRoadIds = new Set(Array.isArray(vehicle.recentRoadIds) ? vehicle.recentRoadIds.slice(-4) : []);
   for (const roadId of candidates) {
     const candidate = state.roadById.get(roadId);
     if (!candidate || !candidate.isOpen) continue;
@@ -1133,13 +1269,82 @@ function chooseNextRoad(road, vehicle) {
     const factor = roadFlowFactor(candidate);
     const routeBonus = Array.isArray(vehicle.routeRoadIds) && vehicle.routeRoadIds.includes(roadId) ? 0.08 : 0;
     const behaviorBonus = vehicle.destinationZone ? 0.03 : 0;
-    const score = factor - load * 0.35 + behaviorBonus + routeBonus + deterministicJitter(`${vehicle.roadId}:${roadId}`);
+    const uTurnPenalty = roadId === vehicle.previousRoadId ? 0.55 : 0;
+    const repeatPenalty = recentRoadIds.has(roadId) ? 0.18 : 0;
+    const score = factor - load * 0.42 + behaviorBonus + routeBonus - uTurnPenalty - repeatPenalty + deterministicJitter(`${vehicle.roadId}:${roadId}`);
     if (score > bestScore) {
       bestScore = score;
       bestId = roadId;
     }
   }
   return bestId;
+}
+
+function rememberVehicleRoad(vehicle, roadId) {
+  if (!roadId) return;
+  const recent = Array.isArray(vehicle.recentRoadIds) ? vehicle.recentRoadIds.slice(-5) : [];
+  if (recent[recent.length - 1] !== roadId) {
+    recent.push(roadId);
+  }
+  vehicle.recentRoadIds = recent.slice(-6);
+  vehicle.previousRoadId = roadId;
+}
+
+function recomputeProceduralRoadLoads() {
+  const counts = new Map();
+  for (const vehicle of state.proceduralVehicles) {
+    const roadId = vehicle.roadId || vehicle.currentRoadId;
+    if (!roadId || !state.roadById.has(roadId)) continue;
+    counts.set(roadId, (counts.get(roadId) || 0) + 1);
+  }
+  const touched = new Set([...state.dynamicRoadIds, ...counts.keys()]);
+  let maxLoad = 0;
+  let totalLoad = 0;
+  let activeRoads = 0;
+  for (const roadId of touched) {
+    const road = state.roadById.get(roadId);
+    if (!road) continue;
+    const count = Number(counts.get(roadId) || 0);
+    const effectiveCapacity = Math.max(1, Number(road.effectiveCapacity || road.capacity || 1));
+    const targetLoad = Math.min(2.8, count / effectiveCapacity);
+    road.dynamicVehicles = count;
+    road.load = count > 0 ? Number(road.load || 0) * 0.35 + targetLoad * 0.65 : 0;
+    if (count > 0) {
+      maxLoad = Math.max(maxLoad, Number(road.load || 0));
+      totalLoad += Number(road.load || 0);
+      activeRoads += 1;
+    }
+  }
+  state.dynamicRoadIds = new Set(counts.keys());
+  state.dynamicRoadSummary = {
+    maxLoad,
+    averageLoad: activeRoads ? totalLoad / activeRoads : 0,
+    activeRoads,
+  };
+  els.load.textContent = maxLoad.toFixed(2);
+  const second = Math.floor(state.proceduralElapsedSeconds);
+  if (state.mapType === "leaflet" && second !== state.lastRoadRefreshSecond && second % 2 === 0) {
+    refreshRoadStyles();
+    state.lastRoadRefreshSecond = second;
+  }
+}
+
+function refreshRoadStyles() {
+  if (!state.leafletRoadsLayer) return;
+  const scenarioSet = new Set(state.lastScenarioRoads || []);
+  state.leafletRoadsLayer.eachLayer((layer) => {
+    const road = state.roadById.get(layer.trafficRoadId);
+    if (!road) return;
+    const isSelected = state.selectedRoadId && layer.trafficRoadId === state.selectedRoadId;
+    layer.setStyle({
+      color: roadColor(road.load, road.isOpen, scenarioSet.has(road.id)),
+      weight: (isSelected ? 5.5 : 2.5) + Math.min(Number(road.load || 0), 1.8) * 4.8,
+      opacity: isSelected ? 1 : scenarioSet.has(road.id) ? 0.95 : 0.62,
+    });
+    if (layer.getTooltip()) {
+      layer.setTooltipContent(`${road.name}<br>load ${Number(road.load || 0).toFixed(2)} | cars ${Number(road.dynamicVehicles || 0)}`);
+    }
+  });
 }
 
 function activeRoadEventFactor(road) {

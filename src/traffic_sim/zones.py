@@ -12,6 +12,7 @@ from .time_profiles import parse_hhmm
 
 
 DEFAULT_ZONES_PATH = Path("data/zones/almaty_zones.json")
+DEFAULT_OD_MATRIX_PATH = Path("data/zones/almaty_od_matrix.json")
 
 
 @dataclass(slots=True)
@@ -42,6 +43,15 @@ def load_zones(path: str | Path = DEFAULT_ZONES_PATH) -> list[TrafficZone]:
         )
         for item in payload.get("zones", [])
     ]
+
+
+def load_od_matrix(path: str | Path = DEFAULT_OD_MATRIX_PATH) -> dict[str, dict[str, float]]:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    matrix = payload.get("matrix", {})
+    return {
+        str(origin): {str(destination): float(weight) for destination, weight in dict(destinations).items()}
+        for origin, destinations in dict(matrix).items()
+    }
 
 
 def zones_payload(zones: list[TrafficZone]) -> list[dict[str, object]]:
@@ -115,6 +125,7 @@ def choose_od_zones(
     rng: random.Random,
     minute_of_day: int,
     preset: str | None = None,
+    od_matrix: dict[str, dict[str, float]] | None = None,
 ) -> tuple[TrafficZone, TrafficZone]:
     if len(zones) < 2:
         raise ValueError("At least two OD zones are required")
@@ -122,7 +133,7 @@ def choose_od_zones(
     origin_weights = [_origin_weight(zone, period) for zone in zones]
     origin = rng.choices(zones, weights=origin_weights, k=1)[0]
     destination_candidates = [zone for zone in zones if zone.zone_id != origin.zone_id]
-    destination_weights = [_destination_weight(origin, zone, period) for zone in destination_candidates]
+    destination_weights = [_destination_weight(origin, zone, period, od_matrix=od_matrix) for zone in destination_candidates]
     destination = rng.choices(destination_candidates, weights=destination_weights, k=1)[0]
     return origin, destination
 
@@ -138,14 +149,25 @@ def _origin_weight(zone: TrafficZone, period: str) -> float:
     return base
 
 
-def _destination_weight(origin: TrafficZone, zone: TrafficZone, period: str) -> float:
+def _destination_weight(
+    origin: TrafficZone,
+    zone: TrafficZone,
+    period: str,
+    od_matrix: dict[str, dict[str, float]] | None = None,
+) -> float:
     base = zone.weight_for_period(period)
+    if od_matrix:
+        base *= max(0.2, float(od_matrix.get(origin.zone_id, {}).get(zone.zone_id, 1.0)))
     if period == "morning" and zone.kind in {"business", "mixed", "transport"}:
         base *= 1.7
     if period == "evening" and zone.kind == "residential":
         base *= 1.8
     if period == "weekend" and zone.kind in {"leisure", "mixed"}:
         base *= 1.5
+    if period == "morning" and origin.kind in {"residential", "transport"} and zone.kind == "business":
+        base *= 1.35
+    if period == "evening" and origin.kind == "business" and zone.kind in {"residential", "transport"}:
+        base *= 1.45
     if origin.kind == zone.kind:
         base *= 0.75
     return base
@@ -174,4 +196,3 @@ def haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     d_lambda = math.radians(lng2 - lng1)
     a = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
     return 2 * radius * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-

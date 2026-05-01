@@ -5,10 +5,10 @@
   "periods": [
     {
       "name": "morning_peak",
-      "start": "07:30",
-      "end": "10:00",
-      "speed_multiplier": 0.72,
-      "demand_multiplier": 1.55
+      "start": "07:00",
+      "end": "09:00",
+      "speed_multiplier": 0.7,
+      "demand_multiplier": 1.65
     },
     {
       "name": "lunch",
@@ -19,10 +19,10 @@
     },
     {
       "name": "evening_peak",
-      "start": "16:30",
-      "end": "19:30",
-      "speed_multiplier": 0.62,
-      "demand_multiplier": 1.85
+      "start": "17:30",
+      "end": "20:30",
+      "speed_multiplier": 0.6,
+      "demand_multiplier": 1.95
     },
     {
       "name": "night",
@@ -37,10 +37,16 @@
       "aliases": ["al-farabi", "al farabi", "alfarabi", "farabi"],
       "periods": [
         {
-          "start": "16:30",
+          "start": "17:00",
           "end": "19:30",
-          "speed_multiplier": 0.52,
+          "speed_multiplier": 0.5,
           "load_multiplier": 1.8
+        },
+        {
+          "start": "07:00",
+          "end": "09:00",
+          "speed_multiplier": 0.72,
+          "load_multiplier": 1.35
         }
       ]
     },
@@ -48,9 +54,66 @@
       "aliases": ["abay"],
       "periods": [
         {
-          "start": "17:00",
-          "end": "19:00",
-          "speed_multiplier": 0.68,
+          "start": "07:15",
+          "end": "09:15",
+          "speed_multiplier": 0.56,
+          "load_multiplier": 1.75
+        },
+        {
+          "start": "17:30",
+          "end": "20:00",
+          "speed_multiplier": 0.54,
+          "load_multiplier": 1.45
+        }
+      ]
+    },
+    "tole_bi": {
+      "aliases": ["tole bi", "tolebi", "tole"],
+      "periods": [
+        {
+          "start": "07:20",
+          "end": "09:10",
+          "speed_multiplier": 0.57,
+          "load_multiplier": 1.7
+        },
+        {
+          "start": "17:30",
+          "end": "20:10",
+          "speed_multiplier": 0.55,
+          "load_multiplier": 1.5
+        }
+      ]
+    },
+    "raimbek": {
+      "aliases": ["raimbek", "rayymbek", "raim"],
+      "periods": [
+        {
+          "start": "07:00",
+          "end": "09:15",
+          "speed_multiplier": 0.58,
+          "load_multiplier": 1.7
+        },
+        {
+          "start": "17:20",
+          "end": "20:20",
+          "speed_multiplier": 0.56,
+          "load_multiplier": 1.52
+        }
+      ]
+    },
+    "ryskulov": {
+      "aliases": ["ryskulov", "rysk"],
+      "periods": [
+        {
+          "start": "07:00",
+          "end": "09:00",
+          "speed_multiplier": 0.7,
+          "load_multiplier": 1.4
+        },
+        {
+          "start": "17:30",
+          "end": "20:00",
+          "speed_multiplier": 0.65,
           "load_multiplier": 1.45
         }
       ]
@@ -59,10 +122,61 @@
       "aliases": ["seifullin", "seyfullin"],
       "periods": [
         {
-          "start": "08:00",
-          "end": "10:00",
-          "speed_multiplier": 0.7,
-          "load_multiplier": 1.35
+          "start": "07:00",
+          "end": "09:00",
+          "speed_multiplier": 0.62,
+          "load_multiplier": 1.5
+        },
+        {
+          "start": "17:30",
+          "end": "20:00",
+          "speed_multiplier": 0.62,
+          "load_multiplier": 1.45
+        }
+      ]
+    },
+    "saina": {
+      "aliases": ["saina"],
+      "periods": [
+        {
+          "start": "07:00",
+          "end": "09:00",
+          "speed_multiplier": 0.74,
+          "load_multiplier": 1.32
+        },
+        {
+          "start": "17:30",
+          "end": "20:30",
+          "speed_multiplier": 0.66,
+          "load_multiplier": 1.45
+        }
+      ]
+    },
+    "dostyk": {
+      "aliases": ["dostyk"],
+      "periods": [
+        {
+          "start": "17:30",
+          "end": "20:00",
+          "speed_multiplier": 0.66,
+          "load_multiplier": 1.38
+        }
+      ]
+    },
+    "rozybakiev": {
+      "aliases": ["rozybakiev", "rozybakieva", "rozy"],
+      "periods": [
+        {
+          "start": "07:15",
+          "end": "09:15",
+          "speed_multiplier": 0.62,
+          "load_multiplier": 1.46
+        },
+        {
+          "start": "17:30",
+          "end": "20:10",
+          "speed_multiplier": 0.6,
+          "load_multiplier": 1.44
         }
       ]
     }

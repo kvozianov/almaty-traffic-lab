@@ -6,7 +6,7 @@ from collections import deque
 from .ai_policy import AIDriverPolicy, build_policy
 from .models import Vehicle
 from .network import CityGraph
-from .zones import TrafficZone, build_zone_index, choose_od_zones, load_zones
+from .zones import TrafficZone, build_zone_index, choose_od_zones, load_od_matrix, load_zones
 
 
 def generate_vehicle_demand(
@@ -35,6 +35,9 @@ def generate_vehicle_demand(
     if demand_mode == "od_zones":
         zones = zones or load_zones()
         zone_index = build_zone_index(graph, zones, limit=96)
+        od_matrix = load_od_matrix()
+    else:
+        od_matrix = None
 
     vehicles: list[Vehicle] = []
     attempts = 0
@@ -44,7 +47,7 @@ def generate_vehicle_demand(
         origin_zone_id = None
         destination_zone_id = None
         if demand_mode == "od_zones" and zones and zone_index:
-            trip = _choose_zone_trip(graph, zones, zone_index, rng, minute_of_day, time_preset)
+            trip = _choose_zone_trip(graph, zones, zone_index, rng, minute_of_day, time_preset, od_matrix)
             if trip is None:
                 continue
             start, destination, behavior, spawn_road_id, spawn_ratio, origin_zone_id, destination_zone_id = trip
@@ -95,8 +98,9 @@ def _choose_zone_trip(
     rng: random.Random,
     minute_of_day: int,
     time_preset: str | None,
+    od_matrix: dict[str, dict[str, float]] | None,
 ) -> tuple[str, str, str, str | None, float, str, str] | None:
-    origin_zone, destination_zone = choose_od_zones(zones, rng, minute_of_day, preset=time_preset)
+    origin_zone, destination_zone = choose_od_zones(zones, rng, minute_of_day, preset=time_preset, od_matrix=od_matrix)
     origin_roads = list(zone_index.get(origin_zone.zone_id, {}).get("roads", []))
     destination_nodes = list(zone_index.get(destination_zone.zone_id, {}).get("nodes", []))
     if not origin_roads or not destination_nodes:

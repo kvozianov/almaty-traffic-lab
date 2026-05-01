@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import asdict
+import json
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -22,6 +23,7 @@ from .analytics import (
     simulation_frames_to_leaflet,
     top_loaded_roads,
 )
+from .calibration import match_calibration_to_graph
 from .config import app_config
 from .demand import generate_vehicle_demand
 from .graph_cache import list_presets, load_preset_graph
@@ -49,12 +51,14 @@ from .timeline import (
 from .traffic_providers import build_provider, list_provider_statuses
 from .visualization import record_frames
 from .zones import build_zone_index, load_zones, zones_payload
+from .zones import load_od_matrix
 
 
 STATIC_DIR = Path(__file__).parent / "web" / "static"
 RUNS: dict[str, dict[str, Any]] = {}
 SCENARIOS: dict[str, dict[str, Any]] = {}
 TRAFFIC_IMPORTS: dict[str, str] = {"csv": "data/traffic_profiles/sample_almaty.csv"}
+SCENARIO_PRESETS_PATH = Path("data/scenarios/almaty_report_scenarios.json")
 
 
 class ScenarioRequest(BaseModel):
@@ -144,6 +148,15 @@ def create_app() -> FastAPI:
     def zones() -> dict[str, object]:
         loaded = load_zones()
         return {"zones": zones_payload(loaded)}
+
+    @app.get("/api/scenario-presets")
+    def scenario_presets() -> dict[str, object]:
+        return {"presets": _load_scenario_presets()}
+
+    @app.get("/api/calibration-layer")
+    def calibration_layer(preset_id: str = "full_almaty_fast") -> dict[str, object]:
+        graph = load_preset_graph(preset_id)
+        return {"presetId": preset_id, "layer": match_calibration_to_graph(graph)}
 
     @app.post("/api/policies/select-destinations")
     def select_destinations(request: SimulationRequest) -> dict[str, object]:
@@ -273,6 +286,7 @@ def create_app() -> FastAPI:
             "scenarioRoads": run["scenario_roads"],
             "events": run.get("events", []),
             "zones": run.get("zones", []),
+            "calibrationLayer": run.get("calibrationLayer"),
             "frames": run["frames"],
             "procedural": run.get("procedural", False),
             "proceduralVehicles": run.get("procedural_vehicles", []),
@@ -349,6 +363,7 @@ def _run_request(request: SimulationRequest) -> dict[str, Any]:
     scenario_frames = record_frames(scenario_sim, request.steps)
     comparison = compare_simulations(baseline_sim, scenario_sim) if request.compare else None
     roads = graph_to_leaflet_roads(scenario_graph, scenario_sim.peak_road_loads(), max_roads=None)
+    calibration_layer = match_calibration_to_graph(scenario_graph)
     run_id = str(uuid4())
 
     stats = asdict(scenario_sim.summary())
@@ -376,6 +391,7 @@ def _run_request(request: SimulationRequest) -> dict[str, Any]:
         "scenario_sim": scenario_sim,
         "events": events_payload(events, minute),
         "zones": zones_payload(load_zones()) if request.demand_mode == "od_zones" else [],
+        "calibrationLayer": calibration_layer,
     }
     result["analytics"] = build_run_analytics(result)
     return result
@@ -393,6 +409,7 @@ def _run_preview(request: SimulationRequest) -> dict[str, Any]:
     selected_roads.sort(key=lambda road: road.road_id)
     zones = load_zones() if request.demand_mode == "od_zones" else []
     zone_index = build_zone_index(graph, zones, limit=120) if zones else None
+    od_matrix = load_od_matrix() if zones else None
     vehicle_paths = _build_preview_vehicle_paths(
         graph,
         selected_roads,
@@ -403,6 +420,7 @@ def _run_preview(request: SimulationRequest) -> dict[str, Any]:
         zones,
         zone_index,
         request.time_preset,
+        od_matrix,
     )
     run_id = str(uuid4())
     road_counts: dict[str, int] = {road.road_id: 0 for road in selected_roads}
@@ -418,6 +436,7 @@ def _run_preview(request: SimulationRequest) -> dict[str, Any]:
     for road_id in scenario_roads:
         road_loads[road_id] = 1.0
     leaflet_roads = graph_to_leaflet_roads(graph, road_loads, max_roads=None)
+    calibration_layer = match_calibration_to_graph(graph)
     _attach_preview_next_roads(graph, leaflet_roads, seed=request.seed)
     profile = load_time_profile()
     stats = {
@@ -453,6 +472,7 @@ def _run_preview(request: SimulationRequest) -> dict[str, Any]:
         "scenario_sim": None,
         "events": events_payload(events, minute),
         "zones": zones_payload(zones),
+        "calibrationLayer": calibration_layer,
     }
     result["analytics"] = build_run_analytics(result)
     return result
@@ -497,6 +517,7 @@ def _build_preview_vehicle_paths(
     zones: list[Any] | None = None,
     zone_index: dict[str, dict[str, list[str]]] | None = None,
     time_preset: str | None = None,
+    od_matrix: dict[str, dict[str, float]] | None = None,
 ) -> list[dict[str, object]]:
     import random
 
@@ -506,38 +527,33 @@ def _build_preview_vehicle_paths(
     usable_roads = [road for road in roads if road.is_open and len(graph.road_geometry(road.road_id)) >= 2]
     if not usable_roads:
         raise ValueError("No roads available for preview")
-    rng.shuffle(usable_roads)
+    min_route_roads = 4 if len(usable_roads) < 80 else 12 if len(usable_roads) < 5000 else 18
+    max_route_roads = 18 if len(usable_roads) < 80 else 48 if len(usable_roads) < 5000 else 72
+    template_count = min(len(usable_roads), max(128, min(vehicle_count, vehicle_count // 4 + 128, 2400)))
+    route_templates = _build_preview_route_templates(
+        graph,
+        usable_roads,
+        template_count,
+        rng,
+        demand_mode,
+        zones,
+        zone_index,
+        minute,
+        time_preset,
+        od_matrix,
+        min_route_roads,
+        max_route_roads,
+    )
+    if not route_templates:
+        raise ValueError("Could not generate route templates for preview")
     vehicles: list[dict[str, object]] = []
-    route_cache: dict[tuple[str, str], list[tuple[str, str, list[str]]]] = {}
     for index in range(vehicle_count):
-        origin_zone = None
-        destination_zone = None
-        road = usable_roads[index % len(usable_roads)]
-        route_road_ids: list[str] = []
-        destination_node = None
-        if demand_mode == "od_zones" and zones and zone_index:
-            from .zones import choose_od_zones
-
-            origin_zone, destination_zone = choose_od_zones(zones, rng, minute, preset=time_preset)
-            origin_roads = [
-                graph.roads[road_id]
-                for road_id in zone_index.get(origin_zone.zone_id, {}).get("roads", [])
-                if road_id in graph.roads and graph.roads[road_id].is_open
-            ]
-            if origin_roads:
-                pair_key = (origin_zone.zone_id, destination_zone.zone_id)
-                if pair_key not in route_cache:
-                    route_cache[pair_key] = _choose_preview_zone_routes(
-                        graph,
-                        origin_roads[: min(len(origin_roads), 36)],
-                        zone_index.get(destination_zone.zone_id, {}).get("nodes", [])[:36],
-                        rng,
-                    )
-                if route_cache[pair_key]:
-                    road_id, destination_node, route_road_ids = rng.choice(route_cache[pair_key])
-                    road = graph.roads[road_id]
-                else:
-                    road = rng.choice(origin_roads[: min(len(origin_roads), 30)])
+        template = route_templates[index % len(route_templates)]
+        road = graph.roads[str(template["roadId"])]
+        route_road_ids = list(template["routeRoadIds"])
+        destination_node = template.get("destinationNode")
+        origin_zone = template.get("originZone")
+        destination_zone = template.get("destinationZone")
         time_speed = profile.speed_multiplier_for_road(road, minute)
         visible_speed = max(0.00004, min(0.0012, (road.max_speed_kph / 50.0) * road.speed_modifier * time_speed * rng.uniform(0.00022, 0.00062)))
         speed_kph = max(3.0, road.max_speed_kph * road.speed_modifier * time_speed * rng.uniform(0.72, 1.08))
@@ -548,39 +564,188 @@ def _build_preview_vehicle_paths(
                 "speed": visible_speed,
                 "speedKph": round(speed_kph, 1),
                 "state": "moving",
-                "routeRoadIds": route_road_ids or [road.road_id],
+                "routeRoadIds": route_road_ids,
                 "routeIndex": 0,
                 "destinationNode": destination_node,
-                "originZone": getattr(origin_zone, "zone_id", None),
-                "destinationZone": getattr(destination_zone, "zone_id", None),
+                "originZone": origin_zone,
+                "destinationZone": destination_zone,
             }
         )
     return vehicles
 
 
-def _choose_preview_zone_routes(
+def _build_preview_route_templates(
     graph: CityGraph,
-    origin_roads: list[Any],
+    usable_roads: list[Any],
+    template_count: int,
+    rng: Any,
+    demand_mode: str,
+    zones: list[Any] | None,
+    zone_index: dict[str, dict[str, list[str]]] | None,
+    minute: int,
+    time_preset: str | None,
+    od_matrix: dict[str, dict[str, float]] | None,
+    min_route_roads: int,
+    max_route_roads: int,
+) -> list[dict[str, object]]:
+    start_roads = _distributed_start_roads(graph, usable_roads, max(template_count * 2, template_count + 48), rng)
+    templates: list[dict[str, object]] = []
+    for start_road in start_roads:
+        origin_zone_id = None
+        destination_zone_id = None
+        destination_nodes: list[str] = []
+        if demand_mode == "od_zones" and zones and zone_index:
+            origin_zone = _nearest_zone_for_road(graph, start_road, zones)
+            destination_zone = _choose_destination_zone_for_origin(origin_zone, zones, rng, minute, time_preset, od_matrix)
+            origin_zone_id = origin_zone.zone_id
+            destination_zone_id = destination_zone.zone_id
+            destination_nodes = list(zone_index.get(destination_zone.zone_id, {}).get("nodes", []))
+        else:
+            destination_nodes = _far_destination_nodes(graph, start_road, usable_roads, rng, limit=36)
+        destination_node, route_road_ids = _choose_long_route_from_road(
+            graph,
+            start_road,
+            destination_nodes,
+            rng,
+            min_route_roads=min_route_roads,
+            max_route_roads=max_route_roads,
+        )
+        if len(route_road_ids) < min_route_roads:
+            continue
+        templates.append(
+            {
+                "roadId": start_road.road_id,
+                "routeRoadIds": route_road_ids,
+                "destinationNode": destination_node,
+                "originZone": origin_zone_id,
+                "destinationZone": destination_zone_id,
+            }
+        )
+        if len(templates) >= template_count:
+            break
+    if len(templates) < template_count:
+        relaxed_min = max(4, min_route_roads // 2)
+        for start_road in start_roads:
+            if any(item["roadId"] == start_road.road_id for item in templates):
+                continue
+            destination_nodes = _far_destination_nodes(graph, start_road, usable_roads, rng, limit=24)
+            destination_node, route_road_ids = _choose_long_route_from_road(
+                graph,
+                start_road,
+                destination_nodes,
+                rng,
+                min_route_roads=relaxed_min,
+                max_route_roads=max_route_roads,
+            )
+            if len(route_road_ids) < relaxed_min:
+                continue
+            templates.append(
+                {
+                    "roadId": start_road.road_id,
+                    "routeRoadIds": route_road_ids,
+                    "destinationNode": destination_node,
+                    "originZone": None,
+                    "destinationZone": None,
+                }
+            )
+            if len(templates) >= template_count:
+                break
+    rng.shuffle(templates)
+    return templates
+
+
+def _choose_long_route_from_road(
+    graph: CityGraph,
+    start_road: Any,
     destination_nodes: list[str],
     rng: Any,
-) -> list[tuple[str, str, list[str]]]:
-    routes: list[tuple[str, str, list[str]]] = []
-    rng.shuffle(origin_roads)
+    min_route_roads: int,
+    max_route_roads: int,
+) -> tuple[str | None, list[str]]:
     nodes = [node_id for node_id in destination_nodes if node_id in graph.nodes]
+    if not nodes:
+        return None, [start_road.road_id]
     rng.shuffle(nodes)
-    for road in origin_roads[:10]:
-        if not road.is_open:
+    best_destination = None
+    best_route = [start_road.road_id]
+    for destination_node in nodes[:36]:
+        if destination_node == start_road.end_node:
             continue
-        for destination_node in nodes[:10]:
-            if road.end_node == destination_node:
-                continue
-            route_ids = _greedy_preview_route(graph, road.road_id, destination_node)
-            if len(route_ids) <= 1:
-                continue
-            routes.append((road.road_id, destination_node, route_ids))
-            if len(routes) >= 5:
-                return routes
-    return routes
+        route_ids = _greedy_preview_route(graph, start_road.road_id, destination_node, max_roads=max_route_roads)
+        if len(route_ids) > len(best_route):
+            best_destination = destination_node
+            best_route = route_ids
+        if len(route_ids) >= min_route_roads:
+            return destination_node, route_ids
+    return best_destination, best_route
+
+
+def _distributed_start_roads(graph: CityGraph, usable_roads: list[Any], template_count: int, rng: Any) -> list[Any]:
+    def key(road: Any) -> tuple[float, float, str]:
+        lng, lat = _road_midpoint(graph, road.road_id)
+        return lat, lng, road.road_id
+
+    sorted_roads = sorted(usable_roads, key=key)
+    if template_count >= len(sorted_roads):
+        shuffled = list(sorted_roads)
+        rng.shuffle(shuffled)
+        return shuffled
+    stride = max(1, len(sorted_roads) // template_count)
+    sampled = sorted_roads[::stride][:template_count]
+    if len(sampled) < template_count:
+        sampled = list(sampled)
+        remaining = [road for road in sorted_roads if road not in sampled]
+        rng.shuffle(remaining)
+        sampled.extend(remaining[: template_count - len(sampled)])
+    else:
+        alternating = sampled[::2] + sampled[1::2]
+        sampled = alternating[:template_count]
+    return sampled
+
+
+def _nearest_zone_for_road(graph: CityGraph, road: Any, zones: list[Any]) -> Any:
+    lng, lat = _road_midpoint(graph, road.road_id)
+    return min(zones, key=lambda zone: (zone.lat - lat) ** 2 + (zone.lng - lng) ** 2)
+
+
+def _choose_destination_zone_for_origin(
+    origin_zone: Any,
+    zones: list[Any],
+    rng: Any,
+    minute: int,
+    time_preset: str | None,
+    od_matrix: dict[str, dict[str, float]] | None,
+) -> Any:
+    from .zones import time_period_for_minute
+
+    period = time_period_for_minute(minute, time_preset)
+    candidates = [zone for zone in zones if zone.zone_id != origin_zone.zone_id]
+    weights = []
+    for zone in candidates:
+        base = zone.weight_for_period(period)
+        if od_matrix:
+            base *= float(od_matrix.get(origin_zone.zone_id, {}).get(zone.zone_id, 1.0))
+        weights.append(max(0.05, base))
+    return rng.choices(candidates, weights=weights, k=1)[0]
+
+
+def _far_destination_nodes(graph: CityGraph, start_road: Any, usable_roads: list[Any], rng: Any, limit: int = 36) -> list[str]:
+    start_lng, start_lat = _road_midpoint(graph, start_road.road_id)
+    ranked = sorted(
+        usable_roads,
+        key=lambda road: -((_road_midpoint(graph, road.road_id)[0] - start_lng) ** 2 + (_road_midpoint(graph, road.road_id)[1] - start_lat) ** 2),
+    )
+    candidates = [road.end_node for road in ranked if road.road_id != start_road.road_id]
+    shortlist = candidates[: max(limit * 2, limit)]
+    rng.shuffle(shortlist)
+    return shortlist[:limit]
+
+
+def _road_midpoint(graph: CityGraph, road_id: str) -> tuple[float, float]:
+    geometry = graph.road_geometry(road_id)
+    lng = sum(point[0] for point in geometry) / len(geometry)
+    lat = sum(point[1] for point in geometry) / len(geometry)
+    return lng, lat
 
 
 def _greedy_preview_route(graph: CityGraph, start_road_id: str, destination_node: str, max_roads: int = 24) -> list[str]:
@@ -754,6 +919,11 @@ def _time_presets() -> list[dict[str, object]]:
         {"id": "night", "name": "Night", "time": "23:00", "profile": "weekday"},
         {"id": "weekend", "name": "Weekend", "time": "11:00", "profile": "weekend"},
     ]
+
+
+def _load_scenario_presets() -> list[dict[str, object]]:
+    payload = json.loads(SCENARIO_PRESETS_PATH.read_text(encoding="utf-8"))
+    return list(payload.get("presets", []))
 
 
 def _pick_representative_road(graph: CityGraph) -> str:

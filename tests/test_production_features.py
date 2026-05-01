@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from traffic_sim.ai_policy import build_policy
+from traffic_sim.calibration import load_calibration_layer, match_calibration_to_graph
 from traffic_sim.demand import generate_vehicle_demand
 from traffic_sim.graph_cache import load_graph_json, save_graph_json
 from traffic_sim.network import build_demo_city_graph
@@ -17,7 +18,7 @@ from traffic_sim.time_profiles import load_time_profile, parse_hhmm
 from traffic_sim.timeline import generate_random_events, is_window_active
 from traffic_sim.traffic_providers import CsvTrafficProvider, SyntheticTrafficProvider
 from traffic_sim.web_app import app
-from traffic_sim.zones import build_zone_index, load_zones
+from traffic_sim.zones import build_zone_index, choose_od_zones, load_od_matrix, load_zones
 
 
 class ProductionFeatureTests(unittest.TestCase):
@@ -33,6 +34,13 @@ class ProductionFeatureTests(unittest.TestCase):
         self.assertEqual(loaded.roads["abay_ab"].lanes, graph.roads["abay_ab"].lanes)
         self.assertEqual(loaded.roads["abay_ab"].road_class, graph.roads["abay_ab"].road_class)
         self.assertEqual(len(loaded.signals), len(graph.signals))
+
+    def test_calibration_layer_matches_demo_graph(self) -> None:
+        graph = build_demo_city_graph()
+        matched = match_calibration_to_graph(graph)
+        self.assertEqual(len(load_calibration_layer()["segments"]), 50)
+        self.assertGreater(matched["summary"]["segmentsMatched"], 0)
+        self.assertGreater(matched["summary"]["intersectionsMatched"], 0)
 
     def test_road_attribute_parsers_support_osm_and_fallbacks(self) -> None:
         self.assertEqual(parse_maxspeed("50 km/h", "primary"), (50.0, "osm"))
@@ -60,9 +68,15 @@ class ProductionFeatureTests(unittest.TestCase):
     def test_zone_loader_and_od_demand_create_valid_zone_trips(self) -> None:
         graph = build_demo_city_graph()
         zones = load_zones()
+        od_matrix = load_od_matrix()
         index = build_zone_index(graph, zones, limit=8)
-        self.assertGreaterEqual(len(zones), 8)
+        self.assertEqual(len(zones), 7)
         self.assertTrue(all(index[zone.zone_id]["roads"] for zone in zones))
+        import random
+
+        origin, destination = choose_od_zones(zones, random.Random(7), parse_hhmm("08:00"), preset="morning_peak", od_matrix=od_matrix)
+        self.assertIn(origin.zone_id, od_matrix)
+        self.assertIn(destination.zone_id, od_matrix[origin.zone_id])
         vehicles = generate_vehicle_demand(
             graph,
             vehicle_count=8,
@@ -214,8 +228,14 @@ class ProductionFeatureTests(unittest.TestCase):
     def test_fastapi_zones_analytics_and_report_export(self) -> None:
         client = TestClient(app)
         self.assertEqual(client.get("/api/zones").status_code, 200)
-        self.assertGreaterEqual(len(client.get("/api/zones").json()["zones"]), 8)
+        self.assertEqual(len(client.get("/api/zones").json()["zones"]), 7)
         self.assertEqual(client.get("/api/time-presets").status_code, 200)
+        presets = client.get("/api/scenario-presets")
+        self.assertEqual(presets.status_code, 200)
+        self.assertGreaterEqual(len(presets.json()["presets"]), 3)
+        calibration = client.get("/api/calibration-layer?preset_id=demo")
+        self.assertEqual(calibration.status_code, 200)
+        self.assertGreater(calibration.json()["layer"]["summary"]["segmentsMatched"], 0)
         response = client.post(
             "/api/preview",
             json={
@@ -235,6 +255,7 @@ class ProductionFeatureTests(unittest.TestCase):
         self.assertIn("topRoads", analytics.json()["analytics"])
         self.assertIn("odPairs", analytics.json()["analytics"])
         self.assertIn("routeCoverage", analytics.json()["analytics"])
+        self.assertIn("calibration", analytics.json()["analytics"])
         report = client.get(f"/api/simulations/{run_id}/export/report")
         self.assertEqual(report.status_code, 200)
         self.assertTrue(Path(report.json()["path"]).exists())
@@ -259,7 +280,9 @@ class ProductionFeatureTests(unittest.TestCase):
         self.assertTrue(all("routeRoadIds" in vehicle for vehicle in payload["proceduralVehicles"]))
         self.assertTrue(any(road["signalDelayS"] > 0 for road in payload["roads"]))
         used_roads = {vehicle["roadId"] for vehicle in payload["proceduralVehicles"]}
+        route_lengths = [len(vehicle.get("routeRoadIds", [])) for vehicle in payload["proceduralVehicles"]]
         self.assertGreater(len(used_roads), 20)
+        self.assertGreater(sum(route_lengths) / len(route_lengths), 3.0)
 
     def test_od_preview_contains_graph_routes_between_zones(self) -> None:
         client = TestClient(app)
@@ -271,8 +294,11 @@ class ProductionFeatureTests(unittest.TestCase):
         run_id = response.json()["id"]
         payload = client.get(f"/api/simulations/{run_id}/frames").json()
         routed = [vehicle for vehicle in payload["proceduralVehicles"] if vehicle.get("originZone") and vehicle.get("destinationZone")]
+        unique_starts = {vehicle["roadId"] for vehicle in payload["proceduralVehicles"]}
         self.assertGreater(len(routed), 0)
         self.assertTrue(any(len(vehicle.get("routeRoadIds", [])) > 1 for vehicle in routed))
+        self.assertGreater(len(unique_starts), 12)
+        self.assertGreater(sum(len(vehicle.get("routeRoadIds", [])) for vehicle in routed) / len(routed), 2.5)
 
     def test_preview_scenario_changes_road_speed_and_load(self) -> None:
         client = TestClient(app)

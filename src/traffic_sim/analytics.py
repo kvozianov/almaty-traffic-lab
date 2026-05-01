@@ -6,6 +6,7 @@ import csv
 import html
 import json
 
+from .calibration import calibration_stats_from_roads
 from .network import CityGraph
 from .simulation import TrafficSimulation
 from .visualization import SimulationFrame, _vehicle_position
@@ -132,6 +133,7 @@ def build_run_analytics(run: dict[str, object]) -> dict[str, object]:
         average_speed_over_time = _synthetic_series(float(stats.get("average_trip_time_s", 0.0)) / 60 or 22.0, len(frames), wave=0.1, floor=1.0)
 
     comparison = run.get("comparison")
+    calibration_layer = run.get("calibrationLayer")
     return {
         "runId": run.get("id"),
         "congestionOverTime": congestion_over_time,
@@ -144,6 +146,7 @@ def build_run_analytics(run: dict[str, object]) -> dict[str, object]:
         "heatmap": heatmap_points_from_roads(roads, limit=350),
         "events": run.get("events", []),
         "zones": run.get("zones", []),
+        "calibration": calibration_stats_from_roads(roads, calibration_layer, limit=12) if isinstance(calibration_layer, dict) else {"segmentRows": [], "intersectionRows": [], "summary": {}},
     }
 
 
@@ -243,6 +246,11 @@ def export_research_report_html(path: str | Path, run: dict[str, object], analyt
         for item in analytics.get("odPairs", [])
     )
     coverage = dict(analytics.get("routeCoverage", {}))
+    calibration = dict(analytics.get("calibration", {}))
+    calibration_rows = "\n".join(
+        f"<tr><td>{html.escape(str(item.get('name')))}</td><td>{float(item.get('averageLoad', 0.0)):.2f}</td><td>{float(item.get('estimatedSpeedKph', 0.0)):.1f}</td></tr>"
+        for item in calibration.get("segmentRows", [])
+    )
     embedded = html.escape(json.dumps({"request": request, "stats": stats, "analytics": analytics}, ensure_ascii=True, indent=2))
     output.write_text(
         f"""<!doctype html>
@@ -278,6 +286,8 @@ def export_research_report_html(path: str | Path, run: dict[str, object], analyt
   <table><thead><tr><th>Corridor</th><th>Roads</th><th>Average load</th><th>Estimated speed</th></tr></thead><tbody>{corridor_rows}</tbody></table>
   <h2>Top OD Flows</h2>
   <table><thead><tr><th>Origin</th><th>Destination</th><th>Vehicles</th></tr></thead><tbody>{od_rows}</tbody></table>
+  <h2>Calibration Segments</h2>
+  <table><thead><tr><th>Segment</th><th>Average load</th><th>Estimated speed</th></tr></thead><tbody>{calibration_rows}</tbody></table>
   <h2>Embedded Summary JSON</h2>
   <pre>{embedded}</pre>
 </body>
