@@ -120,4 +120,15 @@ def generate_trips(num_trips=150):
     print(f"Saved trips to {out_file}")
 
 if __name__ == "__main__":
-    generate_trips()
+    num_trips = 150
+    if len(sys.argv) > 1:
+        try:
+            num_trips = int(sys.argv[1])
+        except ValueError:
+            pass
+    elif "NUM_TRIPS" in os.environ:
+        try:
+            num_trips = int(os.environ["NUM_TRIPS"])
+        except ValueError:
+            pass
+    generate_trips(num_trips)
