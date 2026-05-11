@@ -32,6 +32,11 @@ const INCIDENT_ICON = {
 
 const TRIP_TRAIL_LENGTH_SECONDS = 50;
 const DEFAULT_TRIP_ANIMATION_SPEED = 3;
+const DEFAULT_TRAFFIC_DENSITY = 100;
+const MIN_TRAFFIC_DENSITY = 100;
+const MAX_TRAFFIC_DENSITY = 5000;
+const DAY_SECONDS = 24 * 60 * 60;
+const TRIPS_LAYER_TARGET_OPACITY = 0.8;
 
 type Coordinate = [number, number];
 type IncidentSeverity = "low" | "medium" | "high" | "critical";
@@ -199,6 +204,9 @@ export default function TrafficMap({
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [simulationSpeed, setSimulationSpeed] = useState(DEFAULT_TRIP_ANIMATION_SPEED);
+  const [trafficDensity, setTrafficDensity] = useState(DEFAULT_TRAFFIC_DENSITY);
+  const [requestedTrafficDensity, setRequestedTrafficDensity] = useState(DEFAULT_TRAFFIC_DENSITY);
+  const [tripsLayerOpacity, setTripsLayerOpacity] = useState(TRIPS_LAYER_TARGET_OPACITY);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [trafficState, setTrafficState] = useState<LoadState>("idle");
   const [tripsState, setTripsState] = useState<LoadState>("idle");
@@ -210,6 +218,8 @@ export default function TrafficMap({
   const [hoveredRoad, setHoveredRoad] = useState<RoadProperties | null>(null);
   const [selectedItem, setSelectedItem] = useState<MapSelection | null>(null);
   const currentTimeRef = useRef(0);
+  const tripsOpacityRef = useRef(TRIPS_LAYER_TARGET_OPACITY);
+  const tripsOpacityFrameRef = useRef(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -281,15 +291,44 @@ export default function TrafficMap({
     return () => controller.abort();
   }, [trafficEndpoint]);
 
+  const animateTripsOpacity = useCallback((targetOpacity: number) => {
+    cancelAnimationFrame(tripsOpacityFrameRef.current);
+
+    const startOpacity = tripsOpacityRef.current;
+    const startTime = performance.now();
+    const durationMs = 420;
+
+    function animate(now: number) {
+      const progress = Math.min((now - startTime) / durationMs, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const nextOpacity = startOpacity + (targetOpacity - startOpacity) * easedProgress;
+
+      tripsOpacityRef.current = nextOpacity;
+      setTripsLayerOpacity(nextOpacity);
+
+      if (progress < 1) {
+        tripsOpacityFrameRef.current = requestAnimationFrame(animate);
+      }
+    }
+
+    tripsOpacityFrameRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  useEffect(() => {
+    return () => cancelAnimationFrame(tripsOpacityFrameRef.current);
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadTrips() {
       setTripsState("loading");
       setTripsError(null);
+      const shouldWaitForFade = tripsOpacityRef.current > 0.3;
+      animateTripsOpacity(0.2);
 
       try {
-        const response = await fetch(tripsEndpoint, {
+        const response = await fetch(buildTripsRequestUrl(tripsEndpoint, requestedTrafficDensity), {
           headers: { Accept: "application/json" },
           signal: controller.signal,
         });
@@ -301,10 +340,16 @@ export default function TrafficMap({
         const payload = (await response.json()) as unknown;
         const nextTrips = parseTripsPayload(payload).trips;
 
+        if (shouldWaitForFade) {
+          await delay(180);
+          if (controller.signal.aborted) return;
+        }
+
         setTrips(nextTrips);
         setCurrentTime(0);
         currentTimeRef.current = 0;
         setTripsState(nextTrips.length > 0 ? "ready" : "empty");
+        animateTripsOpacity(TRIPS_LAYER_TARGET_OPACITY);
       } catch (nextError) {
         if (controller.signal.aborted) return;
         setTrips([]);
@@ -312,13 +357,14 @@ export default function TrafficMap({
         currentTimeRef.current = 0;
         setTripsState("error");
         setTripsError(nextError instanceof Error ? nextError.message : "Could not load trips");
+        animateTripsOpacity(TRIPS_LAYER_TARGET_OPACITY);
       }
     }
 
     loadTrips();
 
     return () => controller.abort();
-  }, [tripsEndpoint]);
+  }, [animateTripsOpacity, requestedTrafficDensity, tripsEndpoint]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -574,16 +620,16 @@ export default function TrafficMap({
     }
 
     let frameId = 0;
-    let animationStart: number | null = null;
-    const startTime = currentTimeRef.current;
+    let previousFrameTime: number | null = null;
 
     function animateTrips(now: number) {
-      animationStart ??= now;
-      const elapsedSeconds = ((now - animationStart) / 1000) * simulationSpeed;
-      const nextTime = (startTime + elapsedSeconds) % maxTripTime;
+      previousFrameTime ??= now;
+      const elapsedSeconds = ((now - previousFrameTime) / 1000) * simulationSpeed;
+      const nextTime = (currentTimeRef.current + elapsedSeconds) % maxTripTime;
 
       currentTimeRef.current = nextTime;
       setCurrentTime(nextTime);
+      previousFrameTime = now;
       frameId = requestAnimationFrame(animateTrips);
     }
 
@@ -601,7 +647,7 @@ export default function TrafficMap({
         getTimestamps: (trip) => trip.timestamps,
         getColor: [255, 200, 0],
         getWidth: 5,
-        opacity: 0.8,
+        opacity: tripsLayerOpacity,
         widthMinPixels: 2.5,
         widthMaxPixels: 10,
         capRounded: true,
@@ -617,8 +663,13 @@ export default function TrafficMap({
           getTimestamps: [trips],
         },
       }),
-    [currentTime, trips],
+    [currentTime, trips, tripsLayerOpacity],
   );
+
+  const timeOfDaySeconds = useMemo(() => {
+    if (maxTripTime <= 0) return 0;
+    return Math.min(DAY_SECONDS - 1, Math.round((currentTime / maxTripTime) * (DAY_SECONDS - 1)));
+  }, [currentTime, maxTripTime]);
 
   const statusText = useMemo(() => {
     if (loadState === "loading") return "Loading road graph from /api/roads";
@@ -661,6 +712,23 @@ export default function TrafficMap({
     currentTimeRef.current = 0;
     setCurrentTime(0);
   }, []);
+
+  const handleTimeScrub = useCallback(
+    (timeOfDay: number) => {
+      if (maxTripTime <= 0) return;
+
+      const nextTime = (timeOfDay / (DAY_SECONDS - 1)) * maxTripTime;
+      currentTimeRef.current = nextTime;
+      setCurrentTime(nextTime);
+    },
+    [maxTripTime],
+  );
+
+  const handleTrafficDensityRefresh = useCallback(() => {
+    const nextDensity = clampInteger(trafficDensity, MIN_TRAFFIC_DENSITY, MAX_TRAFFIC_DENSITY);
+    setTrafficDensity(nextDensity);
+    setRequestedTrafficDensity(nextDensity);
+  }, [trafficDensity]);
 
   const handleExportCsv = useCallback(() => {
     const rows = [
@@ -788,30 +856,107 @@ export default function TrafficMap({
       </aside>
 
       <div className={styles.controls} aria-label="Simulation controls">
-        <button type="button" onClick={() => setIsPlaying((value) => !value)} aria-pressed={!isPlaying}>
-          {isPlaying ? "Pause" : "Run"}
-        </button>
-        <button type="button" onClick={handleReset}>
-          Reset
-        </button>
-        <label>
-          Speed
-          <input
-            type="range"
-            min="0.5"
-            max="8"
-            step="0.5"
-            value={simulationSpeed}
-            onChange={(event) => setSimulationSpeed(Number(event.target.value))}
-          />
-          <span>{simulationSpeed.toFixed(1)}x</span>
-        </label>
-        <button type="button" onClick={analyticsState === "ready" ? handleExportBackendCsv : handleExportCsv}>
-          CSV
-        </button>
-        <button type="button" onClick={handleExportPdf}>
-          PDF
-        </button>
+        <div className={styles.controlHeader}>
+          <div>
+            <p className={styles.eyebrow}>Level 5 controls</p>
+            <strong>Simulation deck</strong>
+          </div>
+          <span className={styles.controlTime}>{formatTimeOfDay(timeOfDaySeconds)}</span>
+        </div>
+
+        <div className={styles.playbackGroup} aria-label="Playback controls">
+          <button
+            type="button"
+            className={isPlaying ? styles.activeControl : undefined}
+            onClick={() => setIsPlaying(true)}
+            aria-pressed={isPlaying}
+          >
+            Play
+          </button>
+          <button
+            type="button"
+            className={!isPlaying ? styles.activeControl : undefined}
+            onClick={() => setIsPlaying(false)}
+            aria-pressed={!isPlaying}
+          >
+            Pause
+          </button>
+          <button type="button" onClick={handleReset}>
+            Reset
+          </button>
+        </div>
+
+        <div className={styles.controlGrid}>
+          <label className={styles.controlField}>
+            <span>
+              Speed
+              <b>{simulationSpeed.toFixed(1)}x</b>
+            </span>
+            <input
+              type="range"
+              min="0.1"
+              max="10"
+              step="0.1"
+              value={simulationSpeed}
+              onChange={(event) => setSimulationSpeed(Number(event.target.value))}
+            />
+          </label>
+
+          <label className={styles.controlField}>
+            <span>
+              Time machine
+              <b>{formatTimeOfDay(timeOfDaySeconds)}</b>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max={DAY_SECONDS - 1}
+              step="300"
+              value={timeOfDaySeconds}
+              disabled={maxTripTime <= 0}
+              onChange={(event) => handleTimeScrub(Number(event.target.value))}
+            />
+          </label>
+
+          <label className={styles.controlField}>
+            <span>
+              Количество машин
+              <b>{trafficDensity.toLocaleString("en-US")}</b>
+            </span>
+            <input
+              type="range"
+              min={MIN_TRAFFIC_DENSITY}
+              max={MAX_TRAFFIC_DENSITY}
+              step="100"
+              value={trafficDensity}
+              onChange={(event) => setTrafficDensity(Number(event.target.value))}
+            />
+          </label>
+        </div>
+
+        <div className={styles.controlFooter}>
+          <button
+            type="button"
+            className={styles.refreshButton}
+            onClick={handleTrafficDensityRefresh}
+            disabled={tripsState === "loading" || trafficDensity === requestedTrafficDensity}
+          >
+            {tripsState === "loading" ? "Updating" : "Обновить"}
+          </button>
+          <span>
+            {trips.length.toLocaleString("en-US")} active routes
+            {tripsState === "loading" ? " | refreshing" : ""}
+          </span>
+        </div>
+
+        <div className={styles.exportGroup} aria-label="Export controls">
+          <button type="button" onClick={analyticsState === "ready" ? handleExportBackendCsv : handleExportCsv}>
+            CSV
+          </button>
+          <button type="button" onClick={handleExportPdf}>
+            PDF
+          </button>
+        </div>
       </div>
 
       {selectedItem ? (
@@ -860,6 +1005,20 @@ function MiniBarChart({ points }: { points: TimeSeriesPoint[] }) {
       ))}
     </div>
   );
+}
+
+function buildTripsRequestUrl(endpoint: string, count: number): string {
+  const requestUrl = new URL(endpoint, window.location.origin);
+
+  requestUrl.searchParams.set("count", String(clampInteger(count, MIN_TRAFFIC_DENSITY, MAX_TRAFFIC_DENSITY)));
+
+  return requestUrl.toString();
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 }
 
 function parseTripsPayload(payload: unknown): TripsPayload {
@@ -1305,6 +1464,12 @@ function getTripEndTime(trip: Trip): number {
   return trip.timestamps[trip.timestamps.length - 1] ?? 0;
 }
 
+function clampInteger(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+
+  return Math.min(Math.max(Math.round(value), min), max);
+}
+
 function getTrafficDensityForRoad(properties: RoadProperties, densityById: Map<string, number>): number | undefined {
   for (const key of getRoadLookupKeys(properties)) {
     const density = densityById.get(key);
@@ -1464,6 +1629,14 @@ function hasAnalyticsData(analytics: Level4Analytics): boolean {
 
 function formatPercent(value: number): string {
   return `${Math.round(normalizeRatio(value) * 100)}%`;
+}
+
+function formatTimeOfDay(seconds: number): string {
+  const safeSeconds = clampInteger(seconds, 0, DAY_SECONDS - 1);
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 function formatMinutes(value: number | undefined): string {
