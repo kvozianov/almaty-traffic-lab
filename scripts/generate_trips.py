@@ -120,4 +120,9 @@ def generate_trips(num_trips=150):
     print(f"Saved trips to {out_file}")
 
 if __name__ == "__main__":
-    generate_trips()
+    try:
+        trip_count = int(sys.argv[1]) if len(sys.argv) > 1 else 150
+    except ValueError:
+        trip_count = 150
+
+    generate_trips(trip_count)
