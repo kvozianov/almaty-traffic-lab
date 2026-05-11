@@ -1,4 +1,4 @@
-import "mapbox-gl/dist/mapbox-gl.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import type { Metadata } from "next";
 
