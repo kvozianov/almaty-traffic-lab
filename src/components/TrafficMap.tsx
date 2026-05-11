@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { TripsLayer } from "@deck.gl/geo-layers";
 import { Map as MapLibre } from "@vis.gl/react-maplibre";
 import type { PickingInfo } from "@deck.gl/core";
 import styles from "./TrafficMap.module.css";
@@ -64,7 +65,7 @@ type RoadsPayload =
 
 type TrafficLight = {
   coordinates: Coordinate;
-  color: "red" | "green";
+  color: "red" | "yellow" | "green";
 };
 
 type TrafficRoad = {
@@ -77,27 +78,45 @@ type TrafficPayload = {
   roads: TrafficRoad[];
 };
 
+type Trip = {
+  path: Coordinate[];
+  timestamps: number[];
+};
+
+type TripsPayload = {
+  trips: Trip[];
+};
+
 type TrafficMapProps = {
   className?: string;
   mapStyle?: string;
   roadsEndpoint?: string;
   trafficEndpoint?: string;
+  tripsEndpoint?: string;
 };
 
 type LoadState = "idle" | "loading" | "ready" | "empty" | "error";
+
+const TRIP_TRAIL_LENGTH_SECONDS = 35;
+const TRIP_ANIMATION_SPEED = 3;
 
 export default function TrafficMap({
   className,
   mapStyle = CARTO_DARK_MATTER_STYLE,
   roadsEndpoint = "/api/roads",
   trafficEndpoint = "/api/traffic",
+  tripsEndpoint = "/api/trips",
 }: TrafficMapProps) {
   const [roads, setRoads] = useState<RoadFeatureCollection>({ type: "FeatureCollection", features: [] });
   const [traffic, setTraffic] = useState<TrafficPayload>({ lights: [], roads: [] });
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [currentTime, setCurrentTime] = useState(0);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [trafficState, setTrafficState] = useState<LoadState>("idle");
+  const [tripsState, setTripsState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [trafficError, setTrafficError] = useState<string | null>(null);
+  const [tripsError, setTripsError] = useState<string | null>(null);
   const [hoveredRoad, setHoveredRoad] = useState<RoadProperties | null>(null);
 
   useEffect(() => {
@@ -170,6 +189,43 @@ export default function TrafficMap({
     return () => controller.abort();
   }, [trafficEndpoint]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadTrips() {
+      setTripsState("loading");
+      setTripsError(null);
+
+      try {
+        const response = await fetch(tripsEndpoint, {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Trips request failed: ${response.status}`);
+        }
+
+        const payload = (await response.json()) as unknown;
+        const nextTrips = parseTripsPayload(payload).trips;
+
+        setTrips(nextTrips);
+        setCurrentTime(0);
+        setTripsState(nextTrips.length > 0 ? "ready" : "empty");
+      } catch (nextError) {
+        if (controller.signal.aborted) return;
+        setTrips([]);
+        setCurrentTime(0);
+        setTripsState("error");
+        setTripsError(nextError instanceof Error ? nextError.message : "Could not load trips");
+      }
+    }
+
+    loadTrips();
+
+    return () => controller.abort();
+  }, [tripsEndpoint]);
+
   const roadDensityById = useMemo(() => {
     const densityById = new Map<string, number>();
 
@@ -236,7 +292,7 @@ export default function TrafficMap({
         data: traffic.lights,
         pickable: true,
         getPosition: (light) => light.coordinates,
-        getFillColor: (light) => (light.color === "red" ? [232, 73, 59, 240] : [60, 204, 124, 240]),
+        getFillColor: (light) => trafficLightColor(light.color),
         getLineColor: [255, 253, 248, 230],
         getRadius: 28,
         radiusMinPixels: 5,
@@ -250,6 +306,93 @@ export default function TrafficMap({
     [traffic.lights],
   );
 
+  const maxTripTime = useMemo(() => {
+    let maxTime = 0;
+
+    for (const trip of trips) {
+      for (const timestamp of trip.timestamps) {
+        maxTime = Math.max(maxTime, timestamp);
+      }
+    }
+
+    return maxTime;
+  }, [trips]);
+
+  useEffect(() => {
+    if (maxTripTime <= 0) {
+      return;
+    }
+
+    let frameId = 0;
+    let animationStart: number | null = null;
+
+    function animateTrips(now: number) {
+      animationStart ??= now;
+      const elapsedSeconds = ((now - animationStart) / 1000) * TRIP_ANIMATION_SPEED;
+
+      setCurrentTime(elapsedSeconds % maxTripTime);
+      frameId = requestAnimationFrame(animateTrips);
+    }
+
+    frameId = requestAnimationFrame(animateTrips);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [maxTripTime]);
+
+  const tripGlowLayer = useMemo(
+    () =>
+      new TripsLayer<Trip>({
+        id: "agent-vehicle-trip-glow",
+        data: trips,
+        getPath: (trip) => trip.path,
+        getTimestamps: (trip) => trip.timestamps,
+        getColor: [72, 219, 255, 90],
+        getWidth: 11,
+        widthMinPixels: 5,
+        widthMaxPixels: 18,
+        capRounded: true,
+        jointRounded: true,
+        fadeTrail: true,
+        trailLength: TRIP_TRAIL_LENGTH_SECONDS,
+        currentTime,
+        parameters: {
+          depthWriteEnabled: false,
+        },
+        updateTriggers: {
+          getPath: [trips],
+          getTimestamps: [trips],
+        },
+      }),
+    [currentTime, trips],
+  );
+
+  const tripCoreLayer = useMemo(
+    () =>
+      new TripsLayer<Trip>({
+        id: "agent-vehicle-trip-core",
+        data: trips,
+        getPath: (trip) => trip.path,
+        getTimestamps: (trip) => trip.timestamps,
+        getColor: [164, 246, 255, 245],
+        getWidth: 4,
+        widthMinPixels: 2,
+        widthMaxPixels: 8,
+        capRounded: true,
+        jointRounded: true,
+        fadeTrail: true,
+        trailLength: TRIP_TRAIL_LENGTH_SECONDS,
+        currentTime,
+        parameters: {
+          depthWriteEnabled: false,
+        },
+        updateTriggers: {
+          getPath: [trips],
+          getTimestamps: [trips],
+        },
+      }),
+    [currentTime, trips],
+  );
+
   const statusText = useMemo(() => {
     if (loadState === "loading") return "Loading road graph from /api/roads";
     if (loadState === "empty") return "No road features returned by /api/roads";
@@ -258,17 +401,36 @@ export default function TrafficMap({
     if (trafficState === "error") {
       return `${roads.features.length.toLocaleString("en-US")} road segments loaded | ${trafficError ?? "traffic unavailable"}`;
     }
+    if (tripsState === "loading") {
+      return `${roads.features.length.toLocaleString("en-US")} road segments | loading trips`;
+    }
+    if (tripsState === "error") {
+      return `${roads.features.length.toLocaleString("en-US")} road segments | ${tripsError ?? "trips unavailable"}`;
+    }
     return `${roads.features.length.toLocaleString("en-US")} road segments | ${traffic.lights.length.toLocaleString(
       "en-US",
-    )} lights | ${traffic.roads.length.toLocaleString("en-US")} density updates`;
-  }, [error, loadState, roads.features.length, traffic.lights.length, traffic.roads.length, trafficError, trafficState]);
+    )} lights | ${traffic.roads.length.toLocaleString("en-US")} density updates | ${trips.length.toLocaleString(
+      "en-US",
+    )} trips`;
+  }, [
+    error,
+    loadState,
+    roads.features.length,
+    traffic.lights.length,
+    traffic.roads.length,
+    trafficError,
+    trafficState,
+    trips.length,
+    tripsError,
+    tripsState,
+  ]);
 
   return (
     <section className={[styles.shell, className].filter(Boolean).join(" ")} aria-label="Almaty traffic map">
       <DeckGL
         initialViewState={ALMATY_VIEW_STATE}
         controller
-        layers={[roadLayer, trafficLightLayer]}
+        layers={[roadLayer, tripGlowLayer, tripCoreLayer, trafficLightLayer]}
         getTooltip={({ object }) => {
           if (isTrafficLight(object)) {
             return { text: `Traffic light\n${object.color}` };
@@ -307,6 +469,49 @@ export default function TrafficMap({
       </div>
     </section>
   );
+}
+
+function parseTripsPayload(payload: unknown): TripsPayload {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Trips payload must be an object");
+  }
+
+  const candidate = payload as Partial<TripsPayload>;
+  if (!Array.isArray(candidate.trips)) {
+    throw new Error("Trips payload must include trips array");
+  }
+
+  return {
+    trips: candidate.trips.map(parseTrip),
+  };
+}
+
+function parseTrip(trip: unknown): Trip {
+  if (!trip || typeof trip !== "object") {
+    throw new Error("Trip must be an object");
+  }
+
+  const candidate = trip as Partial<Trip>;
+  if (!Array.isArray(candidate.path) || !Array.isArray(candidate.timestamps)) {
+    throw new Error("Trip must include path and timestamps arrays");
+  }
+
+  if (candidate.path.length < 2 || candidate.path.length !== candidate.timestamps.length) {
+    throw new Error("Trip path and timestamps must have equal length of at least 2");
+  }
+
+  if (!candidate.path.every(isCoordinate)) {
+    throw new Error("Trip path points must be [lng, lat] number tuples");
+  }
+
+  if (!candidate.timestamps.every((timestamp) => Number.isFinite(timestamp))) {
+    throw new Error("Trip timestamps must be finite seconds");
+  }
+
+  return {
+    path: candidate.path,
+    timestamps: candidate.timestamps,
+  };
 }
 
 function normalizeTrafficPayload(payload: unknown): TrafficPayload {
@@ -396,6 +601,12 @@ function roadColor(properties: RoadProperties | undefined): [number, number, num
   return [red, green, blue, 225];
 }
 
+function trafficLightColor(color: TrafficLight["color"]): [number, number, number, number] {
+  if (color === "red") return [232, 73, 59, 240];
+  if (color === "yellow") return [244, 191, 65, 240];
+  return [60, 204, 124, 240];
+}
+
 function getRoadProperties(object: unknown): RoadProperties | undefined {
   if (!object || typeof object !== "object") return undefined;
 
@@ -423,10 +634,19 @@ function isTrafficLight(light: unknown): light is TrafficLight {
   const candidate = light as Partial<TrafficLight>;
 
   return (
-    (candidate.color === "red" || candidate.color === "green") &&
+    (candidate.color === "red" || candidate.color === "yellow" || candidate.color === "green") &&
     Array.isArray(candidate.coordinates) &&
     candidate.coordinates.length >= 2 &&
     candidate.coordinates.every((value) => Number.isFinite(value))
+  );
+}
+
+function isCoordinate(point: unknown): point is Coordinate {
+  return (
+    Array.isArray(point) &&
+    point.length === 2 &&
+    Number.isFinite(point[0]) &&
+    Number.isFinite(point[1])
   );
 }
 

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@deck.gl/core": "^9.3.2",
+    "@deck.gl/geo-layers": "^9.3.2",
     "@deck.gl/layers": "^9.3.2",
     "@deck.gl/react": "^9.3.2",
     "@vis.gl/react-maplibre": "^8.1.1",
