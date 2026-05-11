@@ -97,7 +97,7 @@ type TrafficMapProps = {
 
 type LoadState = "idle" | "loading" | "ready" | "empty" | "error";
 
-const TRIP_TRAIL_LENGTH_SECONDS = 35;
+const TRIP_TRAIL_LENGTH_SECONDS = 30;
 const TRIP_ANIMATION_SPEED = 3;
 
 export default function TrafficMap({
@@ -339,44 +339,18 @@ export default function TrafficMap({
     return () => cancelAnimationFrame(frameId);
   }, [maxTripTime]);
 
-  const tripGlowLayer = useMemo(
+  const tripsLayer = useMemo(
     () =>
       new TripsLayer<Trip>({
-        id: "agent-vehicle-trip-glow",
+        id: "agent-vehicle-trips",
         data: trips,
         getPath: (trip) => trip.path,
         getTimestamps: (trip) => trip.timestamps,
-        getColor: [72, 219, 255, 90],
-        getWidth: 11,
-        widthMinPixels: 5,
-        widthMaxPixels: 18,
-        capRounded: true,
-        jointRounded: true,
-        fadeTrail: true,
-        trailLength: TRIP_TRAIL_LENGTH_SECONDS,
-        currentTime,
-        parameters: {
-          depthWriteEnabled: false,
-        },
-        updateTriggers: {
-          getPath: [trips],
-          getTimestamps: [trips],
-        },
-      }),
-    [currentTime, trips],
-  );
-
-  const tripCoreLayer = useMemo(
-    () =>
-      new TripsLayer<Trip>({
-        id: "agent-vehicle-trip-core",
-        data: trips,
-        getPath: (trip) => trip.path,
-        getTimestamps: (trip) => trip.timestamps,
-        getColor: [164, 246, 255, 245],
-        getWidth: 4,
-        widthMinPixels: 2,
-        widthMaxPixels: 8,
+        getColor: [255, 200, 0],
+        getWidth: 5,
+        opacity: 0.8,
+        widthMinPixels: 3,
+        widthMaxPixels: 10,
         capRounded: true,
         jointRounded: true,
         fadeTrail: true,
@@ -430,7 +404,7 @@ export default function TrafficMap({
       <DeckGL
         initialViewState={ALMATY_VIEW_STATE}
         controller
-        layers={[roadLayer, tripGlowLayer, tripCoreLayer, trafficLightLayer]}
+        layers={[roadLayer, tripsLayer, trafficLightLayer]}
         getTooltip={({ object }) => {
           if (isTrafficLight(object)) {
             return { text: `Traffic light\n${object.color}` };
