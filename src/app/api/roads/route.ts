@@ -16,7 +16,8 @@ export async function GET() {
     }
 
     const fileContent = await fs.readFile(filePath, 'utf-8');
-    const geojson = JSON.parse(fileContent);
+    const validJsonContent = fileContent.replace(/([:[,\[]\s*)NaN(?=\s*[,}\]])/g, '$1null');
+    const geojson = JSON.parse(validJsonContent);
 
     return NextResponse.json(geojson);
   } catch (error) {

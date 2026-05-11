@@ -13,6 +13,7 @@
 
 .panel {
   position: absolute;
+  z-index: 10;
   left: 16px;
   top: 16px;
   display: grid;
@@ -54,6 +55,7 @@
 
 .status {
   position: absolute;
+  z-index: 10;
   left: 16px;
   bottom: 16px;
   max-width: min(520px, calc(100% - 32px));
