@@ -1,5 +1,0 @@
-[console_scripts]
-traffic-sim = traffic_sim.cli:main
-traffic-sim-live = traffic_sim.live_cli:main
-traffic-sim-map = traffic_sim.visualize_cli:main
-traffic-sim-web = traffic_sim.web_cli:main
