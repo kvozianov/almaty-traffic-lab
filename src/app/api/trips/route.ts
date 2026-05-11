@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { exec } from 'child_process';
+import util from 'util';
 
 type Trip = {
   path: [number, number][];
@@ -15,39 +17,45 @@ const MIN_TRIP_COUNT = 100;
 const MAX_TRIP_COUNT = 5000;
 const DEFAULT_TRIP_COUNT = 100;
 
-export async function GET(request: Request) {
+const execAsync = util.promisify(exec);
+
+export const runtime = 'nodejs';
+
+export async function GET(request: NextRequest) {
   try {
-    const filePath = path.join(process.cwd(), 'data', 'trips.json');
-
-    try {
-      await fs.access(filePath);
-    } catch {
-      return NextResponse.json(
-        { error: 'Trips data not found. Please run the generate_trips script first.' },
-        { status: 404 }
-      );
-    }
-
-    const fileContent = await fs.readFile(filePath, 'utf-8');
-    const tripsData = JSON.parse(fileContent) as TripsPayload;
     const requestedCount = getRequestedTripCount(request);
+    const filePath = path.join(process.cwd(), 'data', 'trips.json');
+    let tripsData = await readTripsPayload(filePath);
+
+    if (!tripsData || !Array.isArray(tripsData.trips) || tripsData.trips.length === 0) {
+      await execAsync(`python scripts/generate_trips.py ${requestedCount}`);
+      tripsData = await readTripsPayload(filePath);
+    }
 
     return NextResponse.json({
       ...tripsData,
       trips: buildTripSample(Array.isArray(tripsData.trips) ? tripsData.trips : [], requestedCount),
     });
   } catch (error) {
-    console.error('Error reading trips data file:', error);
+    console.error('Error handling trips request:', error);
     return NextResponse.json(
-      { error: 'Failed to load trips data.' },
+      { error: 'Failed to process trips request.' },
       { status: 500 }
     );
   }
 }
 
-function getRequestedTripCount(request: Request): number {
-  const requestUrl = new URL(request.url);
-  const count = Number(requestUrl.searchParams.get('count') ?? DEFAULT_TRIP_COUNT);
+async function readTripsPayload(filePath: string): Promise<TripsPayload> {
+  try {
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(fileContent) as TripsPayload;
+  } catch {
+    return { trips: [] };
+  }
+}
+
+function getRequestedTripCount(request: NextRequest): number {
+  const count = Number(request.nextUrl.searchParams.get('count') ?? DEFAULT_TRIP_COUNT);
 
   if (!Number.isFinite(count)) return DEFAULT_TRIP_COUNT;
 
@@ -68,3 +76,10 @@ function buildTripSample(sourceTrips: Trip[], requestedCount: number): Trip[] {
     };
   });
 }
+if __name__ == "__main__":
+    try:
+        trip_count = int(sys.argv[1]) if len(sys.argv) > 1 else 150
+    except ValueError:
+        trip_count = 150
+
+    generate_trips(trip_count)
