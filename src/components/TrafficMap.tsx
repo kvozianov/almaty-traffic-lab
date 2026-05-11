@@ -130,6 +130,7 @@ type AnalyticsMetrics = {
   congestionIndex: number;
   averageTravelTimeMinutes?: number;
   throughputPerHour?: number;
+  activeVehicles?: number;
   jamCount?: number;
 };
 
@@ -168,6 +169,7 @@ type TrafficMapProps = {
   trafficEndpoint?: string;
   tripsEndpoint?: string;
   analyticsEndpoint?: string;
+  analyticsExportEndpoint?: string;
 };
 
 type LoadState = "idle" | "loading" | "ready" | "empty" | "error";
@@ -188,6 +190,7 @@ export default function TrafficMap({
   trafficEndpoint = "/api/traffic",
   tripsEndpoint = "/api/trips",
   analyticsEndpoint = "/api/analytics",
+  analyticsExportEndpoint = "/api/analytics/export",
 }: TrafficMapProps) {
   const [roads, setRoads] = useState<RoadFeatureCollection>({ type: "FeatureCollection", features: [] });
   const [traffic, setTraffic] = useState<TrafficPayload>({ lights: [], roads: [] });
@@ -665,6 +668,7 @@ export default function TrafficMap({
       ["congestion_index", String(Math.round(snapshot.metrics.congestionIndex))],
       ["average_travel_time_minutes", String(snapshot.metrics.averageTravelTimeMinutes ?? "")],
       ["throughput_per_hour", String(snapshot.metrics.throughputPerHour ?? "")],
+      ["active_vehicles", String(snapshot.metrics.activeVehicles ?? "")],
       ["jam_count", String(snapshot.metrics.jamCount ?? "")],
       ["incidents", String(snapshot.incidents.length)],
       ["closure_zones", String(snapshot.closureZones.length)],
@@ -678,6 +682,10 @@ export default function TrafficMap({
     link.click();
     URL.revokeObjectURL(url);
   }, [snapshot]);
+
+  const handleExportBackendCsv = useCallback(() => {
+    window.location.href = analyticsExportEndpoint;
+  }, [analyticsExportEndpoint]);
 
   const handleExportPdf = useCallback(() => {
     window.print();
@@ -720,7 +728,14 @@ export default function TrafficMap({
 
         <div className={styles.metricGrid}>
           <Metric label="Avg trip" value={formatMinutes(snapshot.metrics.averageTravelTimeMinutes)} />
-          <Metric label="Throughput" value={formatThroughput(snapshot.metrics.throughputPerHour)} />
+          <Metric
+            label={snapshot.metrics.activeVehicles === undefined ? "Throughput" : "Vehicles"}
+            value={
+              snapshot.metrics.activeVehicles === undefined
+                ? formatThroughput(snapshot.metrics.throughputPerHour)
+                : snapshot.metrics.activeVehicles.toLocaleString("en-US")
+            }
+          />
           <Metric label="Jams" value={String(snapshot.metrics.jamCount ?? 0)} />
           <Metric label="Events" value={String(snapshot.incidents.length + snapshot.closureZones.length)} />
         </div>
@@ -791,7 +806,7 @@ export default function TrafficMap({
           />
           <span>{simulationSpeed.toFixed(1)}x</span>
         </label>
-        <button type="button" onClick={handleExportCsv}>
+        <button type="button" onClick={analyticsState === "ready" ? handleExportBackendCsv : handleExportCsv}>
           CSV
         </button>
         <button type="button" onClick={handleExportPdf}>
@@ -908,12 +923,17 @@ function normalizeAnalyticsPayload(payload: unknown): Level4Analytics {
   if (!payload || typeof payload !== "object") return EMPTY_ANALYTICS;
 
   const root = payload as Record<string, unknown>;
-  const metricsSource = getRecord(root.analytics) ?? getRecord(root.metrics) ?? root;
+  const metricsSource = getRecord(root.summary) ?? getRecord(root.analytics) ?? getRecord(root.metrics) ?? root;
   const incidentsSource = firstArray(root.incidents, root.accidents, root.events);
-  const zonesSource = firstArray(root.closureZones, root.closures, root.blockedZones, root.zones);
-  const timeSeriesSource = firstArray(root.timeSeries, root.history, root.timeline, root.byHour);
-  const forecastSource = firstArray(root.forecast, root.mlForecast, root.prediction, root.nextHour);
-  const bottlenecksSource = firstArray(root.bottlenecks, root.topIntersections, root.capacityNodes);
+  const zonesSource = firstArray(root.closureZones, root.closure_zones, root.closures, root.blockedZones, root.zones);
+  const timeSeriesSource = firstArray(root.time_series, root.timeSeries, root.history, root.timeline, root.byHour);
+  const forecastSource = firstArray(root.ml_forecast, root.forecast, root.mlForecast, root.prediction, root.nextHour);
+  const bottlenecksSource = firstArray(
+    root.node_throughput,
+    root.bottlenecks,
+    root.topIntersections,
+    root.capacityNodes,
+  );
 
   return {
     metrics: normalizeAnalyticsMetrics(metricsSource),
@@ -926,15 +946,23 @@ function normalizeAnalyticsPayload(payload: unknown): Level4Analytics {
 }
 
 function normalizeAnalyticsMetrics(source: Record<string, unknown>): AnalyticsMetrics {
+  const averageTripSeconds = optionalNumber(source.average_trip_time_seconds ?? source.avg_trip_time_seconds);
+  const averageTripMinutes = optionalNumber(
+    source.averageTravelTimeMinutes ??
+      source.average_trip_time_minutes ??
+      source.avgTravelTimeMinutes ??
+      source.averageTripMinutes ??
+      source.avgTrip,
+  );
+
   return {
     congestionIndex: normalizePercent(
-      source.congestionIndex ?? source.congestion ?? source.loadIndex ?? source.cityLoad ?? source.index,
+      source.congestion_index ?? source.congestionIndex ?? source.congestion ?? source.loadIndex ?? source.cityLoad ?? source.index,
     ),
-    averageTravelTimeMinutes: optionalNumber(
-      source.averageTravelTimeMinutes ?? source.avgTravelTimeMinutes ?? source.averageTripMinutes ?? source.avgTrip,
-    ),
-    throughputPerHour: optionalNumber(source.throughputPerHour ?? source.throughput ?? source.capacity),
-    jamCount: optionalInteger(source.jamCount ?? source.congestionCount ?? source.jams),
+    averageTravelTimeMinutes: averageTripMinutes ?? (averageTripSeconds === undefined ? undefined : averageTripSeconds / 60),
+    throughputPerHour: optionalNumber(source.throughput_per_hour ?? source.throughputPerHour ?? source.throughput ?? source.capacity),
+    activeVehicles: optionalInteger(source.total_active_vehicles ?? source.activeVehicles ?? source.active_vehicles),
+    jamCount: optionalInteger(source.jam_count ?? source.jamCount ?? source.congestionCount ?? source.jams),
   };
 }
 
@@ -945,20 +973,20 @@ function normalizeIncident(item: unknown): MapIncident[] {
   const coordinates = normalizeCoordinate(source.coordinates ?? source.point ?? source.location);
   if (!coordinates) return [];
 
-  const type = normalizeIncidentType(source.type);
+  const type = normalizeIncidentType(source.incidentType ?? source.incident_type ?? source.type);
   const severity = normalizeSeverity(source.severity ?? source.level ?? source.priority);
 
   return [
     {
-      id: String(source.id ?? source.incidentId ?? `${type}-${coordinates.join("-")}`),
+      id: String(source.id ?? source.incidentId ?? source.incident_id ?? `${type}-${coordinates.join("-")}`),
       coordinates,
       type,
       severity,
       title: String(source.title ?? source.name ?? incidentTypeLabel(type)),
       description: optionalString(source.description ?? source.summary),
-      roadId: optionalString(source.roadId ?? source.edgeId),
-      impact: optionalImpact(source.impact ?? source.densityImpact ?? source.delayFactor),
-      updatedAt: optionalString(source.updatedAt ?? source.timestamp),
+      roadId: optionalString(source.roadId ?? source.road_id ?? source.edgeId ?? source.edge_id),
+      impact: optionalImpact(source.impact ?? source.densityImpact ?? source.density_impact ?? source.delayFactor),
+      updatedAt: optionalString(source.updatedAt ?? source.updated_at ?? source.timestamp),
     },
   ];
 }
@@ -974,13 +1002,13 @@ function normalizeClosureZone(item: unknown): ClosureZone[] {
 
   return [
     {
-      id: String(source.id ?? source.zoneId ?? `closure-${polygon[0].join("-")}`),
+      id: String(source.id ?? source.zoneId ?? source.zone_id ?? `closure-${polygon[0].join("-")}`),
       polygon,
       title: String(source.title ?? source.name ?? "Closure zone"),
       severity,
       impact: optionalImpact(source.impact ?? source.load ?? source.density),
-      startsAt: optionalString(source.startsAt ?? source.startTime),
-      endsAt: optionalString(source.endsAt ?? source.endTime),
+      startsAt: optionalString(source.startsAt ?? source.starts_at ?? source.startTime),
+      endsAt: optionalString(source.endsAt ?? source.ends_at ?? source.endTime),
     },
   ];
 }
@@ -989,16 +1017,24 @@ function normalizeTimeSeriesPoint(item: unknown): TimeSeriesPoint[] {
   const source = getRecord(item);
   if (!source) return [];
 
-  const congestion = normalizePercent(source.congestion ?? source.congestionIndex ?? source.load ?? source.value);
+  const congestion = normalizePercent(
+    source.predicted_congestion ??
+      source.congestion_index ??
+      source.congestion ??
+      source.congestionIndex ??
+      source.load ??
+      source.value,
+  );
   const label = String(source.label ?? source.time ?? source.hour ?? source.bucket ?? "");
+  const forecastOffset = optionalInteger(source.offset_hours ?? source.offsetHours);
 
-  if (!label) return [];
+  if (!label && forecastOffset === undefined) return [];
 
   return [
     {
-      label,
+      label: label || `+${forecastOffset}h`,
       congestion,
-      throughput: optionalNumber(source.throughput ?? source.capacity),
+      throughput: optionalNumber(source.throughput ?? source.vehicles_per_hour ?? source.capacity),
     },
   ];
 }
@@ -1009,10 +1045,10 @@ function normalizeBottleneck(item: unknown): Bottleneck[] {
 
   return [
     {
-      id: String(source.id ?? source.nodeId ?? source.roadId ?? source.name ?? "bottleneck"),
-      name: String(source.name ?? source.label ?? source.nodeId ?? "Intersection"),
-      congestion: normalizePercent(source.congestion ?? source.load ?? source.score),
-      throughput: optionalNumber(source.throughput ?? source.capacity),
+      id: String(source.id ?? source.node_id ?? source.nodeId ?? source.roadId ?? source.name ?? "bottleneck"),
+      name: String(source.name ?? source.label ?? source.node_id ?? source.nodeId ?? "Intersection"),
+      congestion: normalizePercent(source.congestion ?? source.load ?? source.score ?? statusToCongestion(source.status)),
+      throughput: optionalNumber(source.throughput ?? source.vehicles_per_hour ?? source.capacity),
     },
   ];
 }
@@ -1082,6 +1118,7 @@ function buildAnalyticsSnapshot(
         analytics.metrics.congestionIndex > 0 ? analytics.metrics.congestionIndex : Math.round(averageDensity * 100),
       averageTravelTimeMinutes: analytics.metrics.averageTravelTimeMinutes ?? derivedTripMinutes,
       throughputPerHour: analytics.metrics.throughputPerHour ?? derivedThroughput,
+      activeVehicles: analytics.metrics.activeVehicles,
       jamCount: analytics.metrics.jamCount ?? jamCount,
     },
     incidents: analytics.incidents,
@@ -1338,6 +1375,13 @@ function normalizePolygon(value: unknown): Coordinate[] {
 function normalizeIncidentType(value: unknown): IncidentType {
   if (value === "construction" || value === "closure" || value === "event") return value;
   return "accident";
+}
+
+function statusToCongestion(value: unknown): number | undefined {
+  if (value === "congested") return 88;
+  if (value === "heavy") return 66;
+  if (value === "normal") return 34;
+  return undefined;
 }
 
 function normalizeSeverity(value: unknown): IncidentSeverity {
