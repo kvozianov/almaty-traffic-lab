@@ -76,3 +76,10 @@ function buildTripSample(sourceTrips: Trip[], requestedCount: number): Trip[] {
     };
   });
 }
+if __name__ == "__main__":
+    try:
+        trip_count = int(sys.argv[1]) if len(sys.argv) > 1 else 150
+    except ValueError:
+        trip_count = 150
+
+    generate_trips(trip_count)
