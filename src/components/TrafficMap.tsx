@@ -97,7 +97,7 @@ type TrafficMapProps = {
 
 type LoadState = "idle" | "loading" | "ready" | "empty" | "error";
 
-const TRIP_TRAIL_LENGTH_SECONDS = 30;
+const TRIP_TRAIL_LENGTH_SECONDS = 50;
 const TRIP_ANIMATION_SPEED = 3;
 
 export default function TrafficMap({
@@ -310,9 +310,7 @@ export default function TrafficMap({
     let maxTime = 0;
 
     for (const trip of trips) {
-      for (const timestamp of trip.timestamps) {
-        maxTime = Math.max(maxTime, timestamp);
-      }
+      maxTime = Math.max(maxTime, getTripEndTime(trip));
     }
 
     return maxTime;
@@ -349,7 +347,7 @@ export default function TrafficMap({
         getColor: [255, 200, 0],
         getWidth: 5,
         opacity: 0.8,
-        widthMinPixels: 3,
+        widthMinPixels: 2.5,
         widthMaxPixels: 10,
         capRounded: true,
         jointRounded: true,
@@ -470,21 +468,24 @@ function parseTrip(trip: unknown): Trip {
     throw new Error("Trip must include path and timestamps arrays");
   }
 
-  if (candidate.path.length < 2 || candidate.path.length !== candidate.timestamps.length) {
+  const path = candidate.path as Coordinate[];
+  const timestamps = candidate.timestamps as number[];
+
+  if (path.length < 2 || path.length !== timestamps.length) {
     throw new Error("Trip path and timestamps must have equal length of at least 2");
   }
 
-  if (!candidate.path.every(isCoordinate)) {
+  if (!isCoordinate(path[0]) || !isCoordinate(path[path.length - 1])) {
     throw new Error("Trip path points must be [lng, lat] number tuples");
   }
 
-  if (!candidate.timestamps.every((timestamp) => Number.isFinite(timestamp))) {
+  if (!Number.isFinite(timestamps[0]) || !Number.isFinite(timestamps[timestamps.length - 1])) {
     throw new Error("Trip timestamps must be finite seconds");
   }
 
   return {
-    path: candidate.path,
-    timestamps: candidate.timestamps,
+    path,
+    timestamps,
   };
 }
 
@@ -622,6 +623,10 @@ function isCoordinate(point: unknown): point is Coordinate {
     Number.isFinite(point[0]) &&
     Number.isFinite(point[1])
   );
+}
+
+function getTripEndTime(trip: Trip): number {
+  return trip.timestamps[trip.timestamps.length - 1] ?? 0;
 }
 
 function getTrafficDensityForRoad(properties: RoadProperties, densityById: Map<string, number>): number | undefined {
