@@ -4,61 +4,38 @@ import path from 'path';
 import { exec } from 'child_process';
 import util from 'util';
 
+type Trip = {
+  path: [number, number][];
+  timestamps: number[];
+};
+
+type TripsPayload = {
+  trips?: Trip[];
+};
+
+const MIN_TRIP_COUNT = 100;
+const MAX_TRIP_COUNT = 5000;
+const DEFAULT_TRIP_COUNT = 100;
+
 const execAsync = util.promisify(exec);
+
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const countParam = searchParams.get('count');
-    let requestedCount = countParam ? parseInt(countParam, 10) : undefined;
-
+    const requestedCount = getRequestedTripCount(request);
     const filePath = path.join(process.cwd(), 'data', 'trips.json');
+    let tripsData = await readTripsPayload(filePath);
 
-    let tripsData: { trips: any[] } = { trips: [] };
-    let fileExists = false;
-
-    try {
-      await fs.access(filePath);
-      fileExists = true;
-      const fileContent = await fs.readFile(filePath, 'utf-8');
-      tripsData = JSON.parse(fileContent);
-    } catch {
-      fileExists = false;
+    if (!tripsData || !Array.isArray(tripsData.trips) || tripsData.trips.length === 0) {
+      await execAsync(`python scripts/generate_trips.py ${requestedCount}`);
+      tripsData = await readTripsPayload(filePath);
     }
 
-    if (requestedCount !== undefined && !isNaN(requestedCount) && requestedCount > 0) {
-        if (!fileExists || tripsData.trips.length < requestedCount) {
-            // Need to generate on the fly
-            console.log(`Generating ${requestedCount} trips on the fly...`);
-            try {
-                // Determine python executable, mostly 'python' works since we activate env or run in shell
-                await execAsync(`python scripts/generate_trips.py ${requestedCount}`);
-
-                const newFileContent = await fs.readFile(filePath, 'utf-8');
-                tripsData = JSON.parse(newFileContent);
-                // The newly generated file should have requestedCount trips, but just in case:
-                tripsData.trips = tripsData.trips.slice(0, requestedCount);
-            } catch (err) {
-                console.error('Error generating trips:', err);
-                return NextResponse.json(
-                  { error: 'Failed to generate trips data on the fly.' },
-                  { status: 500 }
-                );
-            }
-        } else {
-            // Slice the pre-generated large pool
-            tripsData.trips = tripsData.trips.slice(0, requestedCount);
-        }
-    } else {
-        if (!fileExists) {
-             return NextResponse.json(
-                { error: 'Trips data not found. Please run the generate_trips script first.' },
-                { status: 404 }
-              );
-        }
-    }
-
-    return NextResponse.json(tripsData);
+    return NextResponse.json({
+      ...tripsData,
+      trips: buildTripSample(Array.isArray(tripsData.trips) ? tripsData.trips : [], requestedCount),
+    });
   } catch (error) {
     console.error('Error handling trips request:', error);
     return NextResponse.json(
@@ -67,3 +44,42 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+async function readTripsPayload(filePath: string): Promise<TripsPayload> {
+  try {
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(fileContent) as TripsPayload;
+  } catch {
+    return { trips: [] };
+  }
+}
+
+function getRequestedTripCount(request: NextRequest): number {
+  const count = Number(request.nextUrl.searchParams.get('count') ?? DEFAULT_TRIP_COUNT);
+
+  if (!Number.isFinite(count)) return DEFAULT_TRIP_COUNT;
+
+  return Math.min(Math.max(Math.round(count), MIN_TRIP_COUNT), MAX_TRIP_COUNT);
+}
+
+function buildTripSample(sourceTrips: Trip[], requestedCount: number): Trip[] {
+  if (sourceTrips.length === 0) return [];
+
+  return Array.from({ length: requestedCount }, (_, index) => {
+    const sourceTrip = sourceTrips[index % sourceTrips.length];
+    const cycle = Math.floor(index / sourceTrips.length);
+    const offset = cycle * 11 + (index % sourceTrips.length) * 0.33;
+
+    return {
+      path: sourceTrip.path,
+      timestamps: sourceTrip.timestamps.map((timestamp) => Number((timestamp + offset).toFixed(2))),
+    };
+  });
+}
+if __name__ == "__main__":
+    try:
+        trip_count = int(sys.argv[1]) if len(sys.argv) > 1 else 150
+    except ValueError:
+        trip_count = 150
+
+    generate_trips(trip_count)
