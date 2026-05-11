@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "2d249151d3b00fe1",
+        "id": "5cc8849807f3c2bd",
         "type": "tabs",
         "children": [
           {
-            "id": "e648329af5660dee",
+            "id": "4126b425d48fb784",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "TASK.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "TASK"
+              "title": "New tab"
             }
           }
         ]
@@ -94,7 +90,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "TASK.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +99,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for TASK"
+              "title": "Backlinks"
             }
           },
           {
@@ -113,12 +108,11 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "TASK.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from TASK"
+              "title": "Outgoing links"
             }
           },
           {
@@ -156,13 +150,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "TASK.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of TASK"
+              "title": "Outline"
             }
           }
         ]
@@ -183,46 +176,23 @@
       "bases:Create new base": false
     }
   },
-  "active": "e648329af5660dee",
+  "active": "4126b425d48fb784",
   "lastOpenFiles": [
-    "eslint.config.mjs",
-    "node_modules/@tailwindcss/oxide-darwin-arm64/LICENSE",
-    "node_modules/es-abstract/eslint.config.mjs",
-    "node_modules/es-abstract/README.md",
-    "node_modules/es-abstract/CHANGELOG.md",
-    "node_modules/es-abstract/package.json",
-    "node_modules/typescript/ThirdPartyNoticeText.txt",
-    "node_modules/typescript/LICENSE.txt",
-    "node_modules/typescript/SECURITY.md",
-    "node_modules/typescript/README.md",
-    "node_modules/typescript/package.json",
-    "node_modules/jiti/README.md",
-    "node_modules/jiti/package.json",
-    "node_modules/jiti/lib/jiti.mjs",
-    "node_modules/jiti/lib/types.d.ts",
-    "node_modules/jiti/lib/jiti.d.mts",
-    "node_modules/eslint/README.md",
-    "node_modules/zod/README.md",
-    "node_modules/@typescript-eslint/eslint-plugin/README.md",
-    "node_modules/eslint-plugin-react/README.md",
-    "node_modules/eslint-plugin-jsx-a11y/README.md",
-    "node_modules/eslint-plugin-jsx-a11y/LICENSE.md",
-    "node_modules/eslint-plugin-jsx-a11y/CHANGELOG.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/tabindex-no-positive.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/scope.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/role-supports-aria-props.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/role-has-required-aria-props.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/prefer-tag-over-role.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/no-static-element-interactions.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/no-redundant-roles.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/no-onchange.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/no-noninteractive-tabindex.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/no-noninteractive-element-to-interactive-role.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/no-noninteractive-element-interactions.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/no-interactive-element-to-noninteractive-role.md",
-    "node_modules/eslint-plugin-jsx-a11y/docs/rules/no-distracting-elements.md",
-    "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/maplibre-logo-dark.svg",
-    "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/maplibre-logo-big.svg",
+    "jules-project-1---city-4185476308999925795",
+    "TASK.md",
+    "node_modules/split-string/node_modules/extend-shallow/package.json",
+    "node_modules/split-string/node_modules/extend-shallow/index.js",
+    "node_modules/split-string/node_modules/extend-shallow/README.md",
+    "node_modules/split-string/node_modules/extend-shallow/LICENSE",
+    "node_modules/split-string/node_modules/is-extendable/package.json",
+    "node_modules/split-string/node_modules/is-extendable/index.js",
+    "node_modules/split-string/node_modules/is-extendable/index.d.ts",
+    "node_modules/split-string/node_modules/is-extendable/README.md",
+    "node_modules/split-string/node_modules/is-extendable/LICENSE",
+    "node_modules/split-string/node_modules/is-extendable",
+    "node_modules/split-string/node_modules/extend-shallow",
+    "node_modules/split-string/package.json",
+    "node_modules/split-string/README.md",
     "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-symbol.png",
     "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-raster.png",
     "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-line.png",
@@ -230,6 +200,29 @@
     "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-heatmap.png",
     "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-fill.png",
     "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-fill-extrusion.png",
-    "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-circle.png"
+    "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-circle.png",
+    "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/img/src/layer-background.png",
+    "node_modules/@maplibre/maplibre-gl-style-spec/src/feature_filter/README.md",
+    "node_modules/@maplibre/maplibre-gl-style-spec/docs/public/maplibre-logo-dark.svg",
+    "node_modules/@maplibre/maplibre-gl-style-spec/README.md",
+    "node_modules/@maplibre/maplibre-gl-style-spec/COMMUNITY.md",
+    "node_modules/@maplibre/maplibre-gl-style-spec/CODE-OF-CONDUCT.md",
+    "node_modules/@maplibre/maplibre-gl-style-spec/CHANGELOG.md",
+    "node_modules/assign-symbols/README.md",
+    "node_modules/isobject/README.md",
+    "node_modules/is-plain-object/README.md",
+    "node_modules/extend-shallow/README.md",
+    "node_modules/arr-union/README.md",
+    "node_modules/union-value/README.md",
+    "node_modules/set-value/README.md",
+    "node_modules/typewise-core/README.md",
+    "node_modules/typewise/README.md",
+    "node_modules/typewise/CONTRIBUTING.md",
+    "node_modules/bytewise-core/README.md",
+    "node_modules/sort-asc/README.md",
+    "node_modules/sort-desc/README.md",
+    "node_modules/is-extendable/README.md",
+    "node_modules/bytewise/CONTRIBUTING.md",
+    "node_modules/bytewise/README.md"
   ]
 }

@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import DeckGL from "@deck.gl/react";
 import { GeoJsonLayer } from "@deck.gl/layers";
-import { Map } from "react-map-gl/mapbox";
+import { Map } from "@vis.gl/react-maplibre";
 import type { PickingInfo } from "@deck.gl/core";
 import styles from "./TrafficMap.module.css";
+
+const CARTO_DARK_MATTER_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
 const ALMATY_VIEW_STATE = {
   longitude: 76.945,
@@ -59,7 +61,6 @@ type RoadsPayload =
 
 type TrafficMapProps = {
   className?: string;
-  mapboxAccessToken?: string;
   mapStyle?: string;
   roadsEndpoint?: string;
 };
@@ -68,8 +69,7 @@ type LoadState = "idle" | "loading" | "ready" | "empty" | "error";
 
 export default function TrafficMap({
   className,
-  mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
-  mapStyle = "mapbox://styles/mapbox/dark-v11",
+  mapStyle = CARTO_DARK_MATTER_STYLE,
   roadsEndpoint = "/api/roads",
 }: TrafficMapProps) {
   const [roads, setRoads] = useState<RoadFeatureCollection>({ type: "FeatureCollection", features: [] });
@@ -163,10 +163,9 @@ export default function TrafficMap({
         }}
       >
         <Map
-          mapboxAccessToken={mapboxAccessToken}
           mapStyle={mapStyle}
           reuseMaps
-          attributionControl
+          attributionControl={{ compact: true }}
           style={{ width: "100%", height: "100%" }}
         />
       </DeckGL>
