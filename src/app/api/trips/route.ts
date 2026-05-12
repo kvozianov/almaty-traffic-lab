@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     let tripsData = await readTripsPayload(filePath);
 
     if (!tripsData || !Array.isArray(tripsData.trips) || tripsData.trips.length === 0) {
-      await execAsync(`python scripts/generate_trips.py ${requestedCount}`);
+      await execAsync(`python3 scripts/generate_trips.py ${requestedCount}`);
       tripsData = await readTripsPayload(filePath);
     }
 
@@ -76,10 +76,3 @@ function buildTripSample(sourceTrips: Trip[], requestedCount: number): Trip[] {
     };
   });
 }
-if __name__ == "__main__":
-    try:
-        trip_count = int(sys.argv[1]) if len(sys.argv) > 1 else 150
-    except ValueError:
-        trip_count = 150
-
-    generate_trips(trip_count)

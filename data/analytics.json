@@ -1,198 +1,198 @@
 {
   "summary": {
-    "average_trip_time_seconds": 1151.11,
-    "congestion_index": 50.83,
-    "total_active_vehicles": 1500
+    "average_trip_time_seconds": 1555.74,
+    "congestion_index": 48.72,
+    "total_active_vehicles": 18000
   },
   "node_throughput": [
     {
-      "node_id": "node_2408",
-      "vehicles_per_hour": 2712,
+      "node_id": "node_2477",
+      "vehicles_per_hour": 2856,
+      "status": "heavy"
+    },
+    {
+      "node_id": "node_9742",
+      "vehicles_per_hour": 2840,
       "status": "congested"
     },
     {
-      "node_id": "node_9849",
-      "vehicles_per_hour": 2619,
-      "status": "heavy"
+      "node_id": "node_1979",
+      "vehicles_per_hour": 2543,
+      "status": "normal"
     },
     {
-      "node_id": "node_9392",
-      "vehicles_per_hour": 2507,
+      "node_id": "node_6430",
+      "vehicles_per_hour": 2521,
       "status": "congested"
     },
     {
-      "node_id": "node_5319",
-      "vehicles_per_hour": 2072,
-      "status": "heavy"
+      "node_id": "node_8484",
+      "vehicles_per_hour": 2443,
+      "status": "congested"
     },
     {
-      "node_id": "node_3212",
-      "vehicles_per_hour": 1590,
+      "node_id": "node_5218",
+      "vehicles_per_hour": 1031,
+      "status": "congested"
+    },
+    {
+      "node_id": "node_7087",
+      "vehicles_per_hour": 891,
       "status": "normal"
     },
     {
-      "node_id": "node_4814",
-      "vehicles_per_hour": 1333,
-      "status": "normal"
+      "node_id": "node_4558",
+      "vehicles_per_hour": 847,
+      "status": "congested"
     },
     {
-      "node_id": "node_5716",
-      "vehicles_per_hour": 1291,
-      "status": "heavy"
+      "node_id": "node_1229",
+      "vehicles_per_hour": 845,
+      "status": "congested"
     },
     {
-      "node_id": "node_1390",
-      "vehicles_per_hour": 1075,
-      "status": "heavy"
-    },
-    {
-      "node_id": "node_8775",
-      "vehicles_per_hour": 932,
-      "status": "normal"
-    },
-    {
-      "node_id": "node_8371",
-      "vehicles_per_hour": 856,
+      "node_id": "node_8597",
+      "vehicles_per_hour": 748,
       "status": "heavy"
     }
   ],
   "time_series": [
     {
       "hour": "00:00",
-      "congestion_index": 39.21,
-      "avg_speed_kph": 40.4
+      "congestion_index": 55.57,
+      "avg_speed_kph": 32.2
     },
     {
       "hour": "01:00",
-      "congestion_index": 5.5,
-      "avg_speed_kph": 57.2
+      "congestion_index": 8.48,
+      "avg_speed_kph": 55.8
     },
     {
       "hour": "02:00",
-      "congestion_index": 6.5,
-      "avg_speed_kph": 56.8
+      "congestion_index": 12.36,
+      "avg_speed_kph": 53.8
     },
     {
       "hour": "03:00",
-      "congestion_index": 16.85,
-      "avg_speed_kph": 51.6
+      "congestion_index": 7.2,
+      "avg_speed_kph": 56.4
     },
     {
       "hour": "04:00",
-      "congestion_index": 13.24,
-      "avg_speed_kph": 53.4
+      "congestion_index": 6.72,
+      "avg_speed_kph": 56.6
     },
     {
       "hour": "05:00",
-      "congestion_index": 15.22,
-      "avg_speed_kph": 52.4
+      "congestion_index": 7.47,
+      "avg_speed_kph": 56.3
     },
     {
       "hour": "06:00",
-      "congestion_index": 32.75,
-      "avg_speed_kph": 43.6
+      "congestion_index": 41.3,
+      "avg_speed_kph": 39.3
     },
     {
       "hour": "07:00",
-      "congestion_index": 40.33,
-      "avg_speed_kph": 39.8
+      "congestion_index": 50.04,
+      "avg_speed_kph": 35.0
     },
     {
       "hour": "08:00",
-      "congestion_index": 84.05,
-      "avg_speed_kph": 18.0
+      "congestion_index": 83.77,
+      "avg_speed_kph": 18.1
     },
     {
       "hour": "09:00",
-      "congestion_index": 87.42,
-      "avg_speed_kph": 16.3
+      "congestion_index": 87.6,
+      "avg_speed_kph": 16.2
     },
     {
       "hour": "10:00",
-      "congestion_index": 59.69,
-      "avg_speed_kph": 30.2
+      "congestion_index": 37.8,
+      "avg_speed_kph": 41.1
     },
     {
       "hour": "11:00",
-      "congestion_index": 43.51,
-      "avg_speed_kph": 38.2
+      "congestion_index": 45.81,
+      "avg_speed_kph": 37.1
     },
     {
       "hour": "12:00",
-      "congestion_index": 57.62,
-      "avg_speed_kph": 31.2
+      "congestion_index": 55.69,
+      "avg_speed_kph": 32.2
     },
     {
       "hour": "13:00",
-      "congestion_index": 54.67,
-      "avg_speed_kph": 32.7
+      "congestion_index": 57.93,
+      "avg_speed_kph": 31.0
     },
     {
       "hour": "14:00",
-      "congestion_index": 41.04,
-      "avg_speed_kph": 39.5
+      "congestion_index": 40.73,
+      "avg_speed_kph": 39.6
     },
     {
       "hour": "15:00",
-      "congestion_index": 38.92,
-      "avg_speed_kph": 40.5
+      "congestion_index": 58.04,
+      "avg_speed_kph": 31.0
     },
     {
       "hour": "16:00",
-      "congestion_index": 53.83,
-      "avg_speed_kph": 33.1
+      "congestion_index": 52.38,
+      "avg_speed_kph": 33.8
     },
     {
       "hour": "17:00",
-      "congestion_index": 83.1,
-      "avg_speed_kph": 18.4
+      "congestion_index": 88.85,
+      "avg_speed_kph": 15.6
     },
     {
       "hour": "18:00",
-      "congestion_index": 84.43,
-      "avg_speed_kph": 17.8
+      "congestion_index": 79.43,
+      "avg_speed_kph": 20.3
     },
     {
       "hour": "19:00",
-      "congestion_index": 82.94,
-      "avg_speed_kph": 18.5
+      "congestion_index": 80.1,
+      "avg_speed_kph": 19.9
     },
     {
       "hour": "20:00",
-      "congestion_index": 35.9,
-      "avg_speed_kph": 42.0
+      "congestion_index": 32.41,
+      "avg_speed_kph": 43.8
     },
     {
       "hour": "21:00",
-      "congestion_index": 45.47,
-      "avg_speed_kph": 37.3
+      "congestion_index": 32.24,
+      "avg_speed_kph": 43.9
     },
     {
       "hour": "22:00",
-      "congestion_index": 34.99,
-      "avg_speed_kph": 42.5
+      "congestion_index": 37.48,
+      "avg_speed_kph": 41.3
     },
     {
       "hour": "23:00",
-      "congestion_index": 56.34,
-      "avg_speed_kph": 31.8
+      "congestion_index": 58.59,
+      "avg_speed_kph": 30.7
     }
   ],
   "ml_forecast": [
     {
       "offset_hours": 1,
-      "predicted_congestion": 53.31,
-      "confidence": 0.79
+      "predicted_congestion": 49.41,
+      "confidence": 0.89
     },
     {
       "offset_hours": 2,
-      "predicted_congestion": 53.42,
-      "confidence": 0.73
+      "predicted_congestion": 48.94,
+      "confidence": 0.79
     },
     {
       "offset_hours": 3,
-      "predicted_congestion": 62.35,
-      "confidence": 0.73
+      "predicted_congestion": 42.23,
+      "confidence": 0.82
     }
   ]
 }

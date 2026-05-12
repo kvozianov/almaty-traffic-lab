@@ -39,6 +39,8 @@ const DAY_SECONDS = 24 * 60 * 60;
 const TRIPS_LAYER_TARGET_OPACITY = 0.8;
 
 type Coordinate = [number, number];
+type AgentType = "car" | "truck" | "bus";
+type CrossingPhase = "walk" | "clearance" | "stop";
 type IncidentSeverity = "low" | "medium" | "high" | "critical";
 type IncidentType = "accident" | "construction" | "closure" | "event";
 
@@ -103,10 +105,18 @@ type TrafficPayload = {
 type Trip = {
   path: Coordinate[];
   timestamps: number[];
+  agentType?: AgentType;
+  brakeEvents?: TripBrakeEvent[];
 };
 
 type TripsPayload = {
   trips: Trip[];
+};
+
+type TripBrakeEvent = {
+  at: number;
+  reason: "yield" | "pedestrian" | "signal";
+  intensity: number;
 };
 
 type MapIncident = {
@@ -161,11 +171,49 @@ type Level4Analytics = {
   bottlenecks: Bottleneck[];
 };
 
+type AgentProfile = {
+  type: AgentType;
+  count: number;
+  averageSpeedKph?: number;
+  delaySeconds?: number;
+  brakeEvents?: number;
+};
+
+type IntersectionPhysics = {
+  id: string;
+  coordinates: Coordinate;
+  title: string;
+  priority: "major" | "minor" | "roundabout";
+  slowdownRadiusMeters: number;
+  yieldDelaySeconds: number;
+  activeApproachDensity: number;
+};
+
+type PedestrianCrossing = {
+  id: string;
+  coordinates: Coordinate;
+  title: string;
+  phase: CrossingPhase;
+  brakeIntensity: number;
+  cycleSeconds: number;
+  nextSwitchSeconds?: number;
+};
+
+type Level6Physics = {
+  agentProfiles: AgentProfile[];
+  intersections: IntersectionPhysics[];
+  pedestrianCrossings: PedestrianCrossing[];
+  updatedAt?: string;
+  source: "api" | "mock";
+};
+
 type MapSelection =
   | { kind: "road"; title: string; detail: string }
   | { kind: "incident"; title: string; detail: string }
   | { kind: "closure"; title: string; detail: string }
-  | { kind: "light"; title: string; detail: string };
+  | { kind: "light"; title: string; detail: string }
+  | { kind: "intersection"; title: string; detail: string }
+  | { kind: "crossing"; title: string; detail: string };
 
 type TrafficMapProps = {
   className?: string;
@@ -175,6 +223,7 @@ type TrafficMapProps = {
   tripsEndpoint?: string;
   analyticsEndpoint?: string;
   analyticsExportEndpoint?: string;
+  physicsEndpoint?: string;
 };
 
 type LoadState = "idle" | "loading" | "ready" | "empty" | "error";
@@ -188,6 +237,74 @@ const EMPTY_ANALYTICS: Level4Analytics = {
   bottlenecks: [],
 };
 
+const MOCK_LEVEL6_PHYSICS: Level6Physics = {
+  source: "mock",
+  updatedAt: "mock",
+  agentProfiles: [
+    { type: "car", count: 1280, averageSpeedKph: 32.4, delaySeconds: 42, brakeEvents: 186 },
+    { type: "truck", count: 214, averageSpeedKph: 24.8, delaySeconds: 71, brakeEvents: 58 },
+    { type: "bus", count: 96, averageSpeedKph: 21.6, delaySeconds: 85, brakeEvents: 37 },
+  ],
+  intersections: [
+    {
+      id: "yield-abay-seifullin",
+      coordinates: [76.9394, 43.2501],
+      title: "Abay / Seifullin",
+      priority: "major",
+      slowdownRadiusMeters: 92,
+      yieldDelaySeconds: 11,
+      activeApproachDensity: 0.72,
+    },
+    {
+      id: "yield-satpaev-furmanov",
+      coordinates: [76.9537, 43.2368],
+      title: "Satpaev / Nazarbayev",
+      priority: "minor",
+      slowdownRadiusMeters: 76,
+      yieldDelaySeconds: 17,
+      activeApproachDensity: 0.84,
+    },
+    {
+      id: "yield-timiryazev-auezov",
+      coordinates: [76.9078, 43.2258],
+      title: "Timiryazev / Auezov",
+      priority: "roundabout",
+      slowdownRadiusMeters: 66,
+      yieldDelaySeconds: 9,
+      activeApproachDensity: 0.58,
+    },
+  ],
+  pedestrianCrossings: [
+    {
+      id: "crossing-panfilov-arbat",
+      coordinates: [76.9458, 43.2632],
+      title: "Panfilov promenade",
+      phase: "walk",
+      brakeIntensity: 0.78,
+      cycleSeconds: 36,
+      nextSwitchSeconds: 14,
+    },
+    {
+      id: "crossing-abay-masanchi",
+      coordinates: [76.9289, 43.2409],
+      title: "Abay / Masanchi",
+      phase: "clearance",
+      brakeIntensity: 0.45,
+      cycleSeconds: 42,
+      nextSwitchSeconds: 8,
+    },
+    {
+      id: "crossing-dostyk-satpaev",
+      coordinates: [76.9586, 43.2361],
+      title: "Dostyk / Satpaev",
+      phase: "stop",
+      brakeIntensity: 0.18,
+      cycleSeconds: 48,
+      nextSwitchSeconds: 27,
+    },
+  ],
+};
+
 export default function TrafficMap({
   className,
   mapStyle = CARTO_DARK_MATTER_STYLE,
@@ -196,25 +313,32 @@ export default function TrafficMap({
   tripsEndpoint = "/api/trips",
   analyticsEndpoint = "/api/analytics",
   analyticsExportEndpoint = "/api/analytics/export",
+  physicsEndpoint = "/api/physics",
 }: TrafficMapProps) {
   const [roads, setRoads] = useState<RoadFeatureCollection>({ type: "FeatureCollection", features: [] });
   const [traffic, setTraffic] = useState<TrafficPayload>({ lights: [], roads: [] });
   const [trips, setTrips] = useState<Trip[]>([]);
   const [analytics, setAnalytics] = useState<Level4Analytics>(EMPTY_ANALYTICS);
+  const [physics, setPhysics] = useState<Level6Physics>(MOCK_LEVEL6_PHYSICS);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [simulationSpeed, setSimulationSpeed] = useState(DEFAULT_TRIP_ANIMATION_SPEED);
   const [trafficDensity, setTrafficDensity] = useState(DEFAULT_TRAFFIC_DENSITY);
   const [requestedTrafficDensity, setRequestedTrafficDensity] = useState(DEFAULT_TRAFFIC_DENSITY);
+  const [showAgentClasses, setShowAgentClasses] = useState(true);
+  const [showPhysicsOverlay, setShowPhysicsOverlay] = useState(true);
+  const [showPedestrianPhases, setShowPedestrianPhases] = useState(true);
   const [tripsLayerOpacity, setTripsLayerOpacity] = useState(TRIPS_LAYER_TARGET_OPACITY);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [trafficState, setTrafficState] = useState<LoadState>("idle");
   const [tripsState, setTripsState] = useState<LoadState>("idle");
   const [analyticsState, setAnalyticsState] = useState<LoadState>("idle");
+  const [physicsState, setPhysicsState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [trafficError, setTrafficError] = useState<string | null>(null);
   const [tripsError, setTripsError] = useState<string | null>(null);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [physicsError, setPhysicsError] = useState<string | null>(null);
   const [hoveredRoad, setHoveredRoad] = useState<RoadProperties | null>(null);
   const [selectedItem, setSelectedItem] = useState<MapSelection | null>(null);
   const currentTimeRef = useRef(0);
@@ -407,6 +531,47 @@ export default function TrafficMap({
     return () => controller.abort();
   }, [analyticsEndpoint]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadPhysics() {
+      setPhysicsState("loading");
+      setPhysicsError(null);
+
+      try {
+        const response = await fetch(physicsEndpoint, {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+
+        if (response.status === 404) {
+          setPhysics(MOCK_LEVEL6_PHYSICS);
+          setPhysicsState("empty");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Physics request failed: ${response.status}`);
+        }
+
+        const payload = (await response.json()) as unknown;
+        const nextPhysics = normalizePhysicsPayload(payload);
+
+        setPhysics(nextPhysics);
+        setPhysicsState(hasPhysicsData(nextPhysics) ? "ready" : "empty");
+      } catch (nextError) {
+        if (controller.signal.aborted) return;
+        setPhysics(MOCK_LEVEL6_PHYSICS);
+        setPhysicsState("error");
+        setPhysicsError(nextError instanceof Error ? nextError.message : "Could not load level 6 physics");
+      }
+    }
+
+    loadPhysics();
+
+    return () => controller.abort();
+  }, [physicsEndpoint]);
+
   const roadDensityById = useMemo(() => {
     const densityById = new Map<string, number>();
 
@@ -442,6 +607,30 @@ export default function TrafficMap({
     () => buildAnalyticsSnapshot(analytics, roadsWithTraffic, trips),
     [analytics, roadsWithTraffic, trips],
   );
+
+  const level6Snapshot = useMemo(() => buildPhysicsSnapshot(physics, trips), [physics, trips]);
+
+  const trafficLightsWithPhase = useMemo(
+    () =>
+      traffic.lights.map((light, index) => ({
+        ...light,
+        color: cycleTrafficLightColor(light.color, currentTime, index),
+      })),
+    [currentTime, traffic.lights],
+  );
+
+  const physicsClockSecond = Math.floor(currentTime);
+
+  const crossingPhases = useMemo(
+    () =>
+      level6Snapshot.pedestrianCrossings.map((crossing, index) => ({
+        ...crossing,
+        phase: cycleCrossingPhase(crossing, physicsClockSecond, index),
+      })),
+    [level6Snapshot.pedestrianCrossings, physicsClockSecond],
+  );
+
+  const tripsByAgentType = useMemo(() => groupTripsByAgentType(trips), [trips]);
 
   const updateHoveredRoad = useCallback((properties: RoadProperties | null) => {
     setHoveredRoad((current) => {
@@ -498,7 +687,7 @@ export default function TrafficMap({
     () =>
       new ScatterplotLayer<TrafficLight>({
         id: "traffic-lights",
-        data: traffic.lights,
+        data: trafficLightsWithPhase,
         pickable: true,
         getPosition: (light) => light.coordinates,
         getFillColor: (light) => trafficLightColor(light.color),
@@ -509,7 +698,7 @@ export default function TrafficMap({
         stroked: true,
         lineWidthMinPixels: 1,
         updateTriggers: {
-          getFillColor: [traffic.lights],
+          getFillColor: [trafficLightsWithPhase],
         },
         onClick: (info) => {
           if (!isTrafficLight(info.object)) return false;
@@ -523,7 +712,7 @@ export default function TrafficMap({
           return true;
         },
       }),
-    [traffic.lights],
+    [trafficLightsWithPhase],
   );
 
   const closureZoneLayer = useMemo(
@@ -638,32 +827,134 @@ export default function TrafficMap({
     return () => cancelAnimationFrame(frameId);
   }, [isPlaying, maxTripTime, simulationSpeed]);
 
-  const tripsLayer = useMemo(
+  const tripLayers = useMemo(
     () =>
-      new TripsLayer<Trip>({
-        id: "agent-vehicle-trips",
-        data: trips,
-        getPath: (trip) => trip.path,
-        getTimestamps: (trip) => trip.timestamps,
-        getColor: [255, 200, 0],
-        getWidth: 5,
-        opacity: tripsLayerOpacity,
-        widthMinPixels: 2.5,
-        widthMaxPixels: 10,
-        capRounded: true,
-        jointRounded: true,
-        fadeTrail: true,
-        trailLength: TRIP_TRAIL_LENGTH_SECONDS,
-        currentTime,
+      showAgentClasses
+        ? [
+            createVehicleTripLayer("agent-vehicle-trips", tripsByAgentType.car, currentTime, tripsLayerOpacity, "car"),
+            createVehicleTripLayer("level6-truck-trips", tripsByAgentType.truck, currentTime, tripsLayerOpacity, "truck"),
+            createVehicleTripLayer("level6-bus-trips", tripsByAgentType.bus, currentTime, tripsLayerOpacity, "bus"),
+          ]
+        : [createVehicleTripLayer("agent-vehicle-trips", trips, currentTime, tripsLayerOpacity, "car")],
+    [currentTime, showAgentClasses, trips, tripsByAgentType, tripsLayerOpacity],
+  );
+
+  const intersectionSlowdownLayer = useMemo(
+    () =>
+      new ScatterplotLayer<IntersectionPhysics>({
+        id: "level6-yield-slowdown-zones",
+        data: showPhysicsOverlay ? level6Snapshot.intersections : [],
+        pickable: true,
+        getPosition: (intersection) => intersection.coordinates,
+        getFillColor: (intersection) => yieldZoneFillColor(intersection.activeApproachDensity),
+        getLineColor: (intersection) => yieldZoneLineColor(intersection.priority),
+        getRadius: (intersection) => intersection.slowdownRadiusMeters,
+        radiusUnits: "meters",
+        radiusMinPixels: 18,
+        radiusMaxPixels: 68,
+        stroked: true,
+        lineWidthMinPixels: 1,
+        lineWidthMaxPixels: 3,
         parameters: {
           depthWriteEnabled: false,
         },
         updateTriggers: {
-          getPath: [trips],
-          getTimestamps: [trips],
+          getFillColor: [level6Snapshot.intersections],
+          getLineColor: [level6Snapshot.intersections],
+          getRadius: [level6Snapshot.intersections],
+        },
+        onClick: (info) => {
+          if (!isIntersectionPhysics(info.object)) return false;
+
+          setSelectedItem({
+            kind: "intersection",
+            title: info.object.title,
+            detail: `${intersectionPriorityLabel(info.object.priority)} | yield delay ${Math.round(
+              info.object.yieldDelaySeconds,
+            )}s | approach ${formatPercent(info.object.activeApproachDensity)}`,
+          });
+
+          return true;
         },
       }),
-    [currentTime, trips, tripsLayerOpacity],
+    [level6Snapshot.intersections, showPhysicsOverlay],
+  );
+
+  const intersectionCoreLayer = useMemo(
+    () =>
+      new ScatterplotLayer<IntersectionPhysics>({
+        id: "level6-yield-intersection-cores",
+        data: showPhysicsOverlay ? level6Snapshot.intersections : [],
+        pickable: true,
+        getPosition: (intersection) => intersection.coordinates,
+        getFillColor: (intersection) => yieldCoreColor(intersection.priority),
+        getLineColor: [255, 253, 248, 210],
+        getRadius: (intersection) => 7 + clamp01(intersection.activeApproachDensity) * 7,
+        radiusUnits: "pixels",
+        stroked: true,
+        lineWidthMinPixels: 1,
+        parameters: {
+          depthWriteEnabled: false,
+        },
+        updateTriggers: {
+          getFillColor: [level6Snapshot.intersections],
+          getRadius: [level6Snapshot.intersections],
+        },
+        onClick: (info) => {
+          if (!isIntersectionPhysics(info.object)) return false;
+
+          setSelectedItem({
+            kind: "intersection",
+            title: info.object.title,
+            detail: `${intersectionPriorityLabel(info.object.priority)} | slowdown radius ${Math.round(
+              info.object.slowdownRadiusMeters,
+            )}m`,
+          });
+
+          return true;
+        },
+      }),
+    [level6Snapshot.intersections, showPhysicsOverlay],
+  );
+
+  const pedestrianCrossingLayer = useMemo(
+    () =>
+      new ScatterplotLayer<PedestrianCrossing>({
+        id: "level6-pedestrian-crossing-phases",
+        data: showPedestrianPhases ? crossingPhases : [],
+        pickable: true,
+        getPosition: (crossing) => crossing.coordinates,
+        getFillColor: (crossing) => crossingPhaseColor(crossing.phase, crossing.brakeIntensity),
+        getLineColor: (crossing) => crossingPhaseStrokeColor(crossing.phase),
+        getRadius: (crossing) => 18 + clamp01(crossing.brakeIntensity) * 34,
+        radiusUnits: "meters",
+        radiusMinPixels: 10,
+        radiusMaxPixels: 34,
+        stroked: true,
+        lineWidthMinPixels: 2,
+        parameters: {
+          depthWriteEnabled: false,
+        },
+        updateTriggers: {
+          getFillColor: [crossingPhases],
+          getLineColor: [crossingPhases],
+          getRadius: [crossingPhases],
+        },
+        onClick: (info) => {
+          if (!isPedestrianCrossing(info.object)) return false;
+
+          setSelectedItem({
+            kind: "crossing",
+            title: info.object.title,
+            detail: `${crossingPhaseLabel(info.object.phase)} | brake ${formatPercent(info.object.brakeIntensity)} | cycle ${
+              info.object.cycleSeconds
+            }s`,
+          });
+
+          return true;
+        },
+      }),
+    [crossingPhases, showPedestrianPhases],
   );
 
   const timeOfDaySeconds = useMemo(() => {
@@ -688,16 +979,25 @@ export default function TrafficMap({
     if (analyticsState === "error") {
       return `${roads.features.length.toLocaleString("en-US")} road segments | ${analyticsError ?? "analytics unavailable"}`;
     }
+    if (physicsState === "error") {
+      return `${roads.features.length.toLocaleString("en-US")} road segments | ${
+        physicsError ?? "level 6 physics using mock fallback"
+      }`;
+    }
     return `${roads.features.length.toLocaleString("en-US")} road segments | ${traffic.lights.length.toLocaleString(
       "en-US",
     )} lights | ${traffic.roads.length.toLocaleString("en-US")} density updates | ${trips.length.toLocaleString(
       "en-US",
-    )} trips | ${analyticsState === "ready" ? "level 4 analytics online" : "waiting for level 4 analytics API"}`;
+    )} trips | ${analyticsState === "ready" ? "level 4 analytics online" : "waiting for level 4 analytics API"} | ${
+      physicsState === "ready" ? "level 6 physics online" : "level 6 mock overlay"
+    }`;
   }, [
     analyticsError,
     analyticsState,
     error,
     loadState,
+    physicsError,
+    physicsState,
     roads.features.length,
     traffic.lights.length,
     traffic.roads.length,
@@ -764,7 +1064,16 @@ export default function TrafficMap({
       <DeckGL
         initialViewState={ALMATY_VIEW_STATE}
         controller
-        layers={[roadLayer, tripsLayer, trafficLightLayer, closureZoneLayer, incidentLayer]}
+        layers={[
+          roadLayer,
+          ...tripLayers,
+          trafficLightLayer,
+          closureZoneLayer,
+          incidentLayer,
+          intersectionSlowdownLayer,
+          intersectionCoreLayer,
+          pedestrianCrossingLayer,
+        ]}
         getTooltip={({ object }) => buildTooltip(object)}
       >
         <MapLibre
@@ -777,8 +1086,8 @@ export default function TrafficMap({
 
       <div className={styles.panel}>
         <p className={styles.eyebrow}>Almaty Traffic Lab</p>
-        <h1 className={styles.title}>Level 4 command view</h1>
-        <p className={styles.meta}>Almaty center | live vehicles, roads, incidents, closures</p>
+        <h1 className={styles.title}>Level 6 micro model</h1>
+        <p className={styles.meta}>Almaty center | agents, yielding, pedestrian phases</p>
         {hoveredRoad ? (
           <p className={styles.meta}>
             {String(hoveredRoad.name || hoveredRoad.id || hoveredRoad.osmid || "Road")} | density{" "}
@@ -855,6 +1164,50 @@ export default function TrafficMap({
         </section>
       </aside>
 
+      <aside className={styles.microPanel} aria-label="Level 6 physics controls">
+        <div className={styles.panelHeader}>
+          <span>Micro-model</span>
+          <small>
+            {physicsState === "ready" ? "API" : physicsState === "loading" ? "loading" : `${level6Snapshot.source} data`}
+          </small>
+        </div>
+
+        <div className={styles.toggleGrid}>
+          <ToggleControl checked={showAgentClasses} label="Agent classes" onChange={setShowAgentClasses} />
+          <ToggleControl checked={showPhysicsOverlay} label="Yield zones" onChange={setShowPhysicsOverlay} />
+          <ToggleControl checked={showPedestrianPhases} label="Crossings" onChange={setShowPedestrianPhases} />
+        </div>
+
+        <div className={styles.agentMix} aria-label="Agent mix">
+          {level6Snapshot.agentProfiles.map((profile) => (
+            <div key={profile.type} className={styles.agentRow}>
+              <span
+                className={styles.agentSwatch}
+                style={{ background: agentCssColor(profile.type) }}
+                aria-hidden="true"
+              />
+              <div>
+                <strong>{agentTypeLabel(profile.type)}</strong>
+                <small>
+                  {profile.count.toLocaleString("en-US")} units
+                  {profile.averageSpeedKph ? ` | ${profile.averageSpeedKph.toFixed(1)} kph` : ""}
+                </small>
+              </div>
+              <b>{profile.delaySeconds === undefined ? "n/a" : `${Math.round(profile.delaySeconds)}s`}</b>
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.physicsGrid}>
+          <Metric label="Yield nodes" value={String(level6Snapshot.intersections.length)} />
+          <Metric label="Ped phases" value={String(level6Snapshot.pedestrianCrossings.length)} />
+          <Metric label="Brake load" value={formatPercent(averageCrossingBrake(level6Snapshot.pedestrianCrossings))} />
+          <Metric label="Delay" value={`${Math.round(averageYieldDelay(level6Snapshot.intersections))}s`} />
+        </div>
+
+        {physicsState === "error" ? <p className={styles.emptyText}>{physicsError}</p> : null}
+      </aside>
+
       <div className={styles.controls} aria-label="Simulation controls">
         <div className={styles.controlHeader}>
           <div>
@@ -898,6 +1251,7 @@ export default function TrafficMap({
               max="10"
               step="0.1"
               value={simulationSpeed}
+              onInput={(event) => setSimulationSpeed(Number(event.currentTarget.value))}
               onChange={(event) => setSimulationSpeed(Number(event.target.value))}
             />
           </label>
@@ -914,6 +1268,7 @@ export default function TrafficMap({
               step="300"
               value={timeOfDaySeconds}
               disabled={maxTripTime <= 0}
+              onInput={(event) => handleTimeScrub(Number(event.currentTarget.value))}
               onChange={(event) => handleTimeScrub(Number(event.target.value))}
             />
           </label>
@@ -929,6 +1284,7 @@ export default function TrafficMap({
               max={MAX_TRAFFIC_DENSITY}
               step="100"
               value={trafficDensity}
+              onInput={(event) => setTrafficDensity(Number(event.currentTarget.value))}
               onChange={(event) => setTrafficDensity(Number(event.target.value))}
             />
           </label>
@@ -971,7 +1327,10 @@ export default function TrafficMap({
       ) : null}
 
       <div
-        className={[styles.status, loadState === "error" || analyticsState === "error" ? styles.statusError : ""]
+        className={[
+          styles.status,
+          loadState === "error" || analyticsState === "error" || physicsState === "error" ? styles.statusError : "",
+        ]
           .filter(Boolean)
           .join(" ")}
       >
@@ -990,6 +1349,24 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ToggleControl({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className={styles.toggleControl}>
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.currentTarget.checked)} />
+      <span aria-hidden="true" />
+      <b>{label}</b>
+    </label>
+  );
+}
+
 function MiniBarChart({ points }: { points: TimeSeriesPoint[] }) {
   if (points.length === 0) {
     return <p className={styles.emptyText}>Traffic time series will render here after the analytics API lands.</p>;
@@ -1005,6 +1382,64 @@ function MiniBarChart({ points }: { points: TimeSeriesPoint[] }) {
       ))}
     </div>
   );
+}
+
+function createVehicleTripLayer(
+  id: string,
+  data: Trip[],
+  currentTime: number,
+  opacity: number,
+  agentType: AgentType,
+) {
+  return new TripsLayer<Trip>({
+    id,
+    data,
+    getPath: (trip) => trip.path,
+    getTimestamps: (trip) => trip.timestamps,
+    getColor: agentTripColor(agentType),
+    getWidth: agentType === "car" ? 5 : agentType === "truck" ? 8 : 7,
+    opacity,
+    widthMinPixels: agentType === "car" ? 2.5 : 4,
+    widthMaxPixels: agentType === "car" ? 10 : 16,
+    capRounded: true,
+    jointRounded: true,
+    fadeTrail: true,
+    trailLength: agentType === "car" ? TRIP_TRAIL_LENGTH_SECONDS : TRIP_TRAIL_LENGTH_SECONDS * 1.25,
+    currentTime,
+    parameters: {
+      depthWriteEnabled: false,
+    },
+    updateTriggers: {
+      getPath: [data],
+      getTimestamps: [data],
+    },
+  });
+}
+
+function groupTripsByAgentType(trips: Trip[]): Record<AgentType, Trip[]> {
+  const groups: Record<AgentType, Trip[]> = {
+    car: [],
+    truck: [],
+    bus: [],
+  };
+
+  for (const trip of trips) {
+    groups[trip.agentType ?? "car"].push(trip);
+  }
+
+  return groups;
+}
+
+function averageCrossingBrake(crossings: PedestrianCrossing[]): number {
+  if (crossings.length === 0) return 0;
+
+  return crossings.reduce((total, crossing) => total + clamp01(crossing.brakeIntensity), 0) / crossings.length;
+}
+
+function averageYieldDelay(intersections: IntersectionPhysics[]): number {
+  if (intersections.length === 0) return 0;
+
+  return intersections.reduce((total, intersection) => total + intersection.yieldDelaySeconds, 0) / intersections.length;
 }
 
 function buildTripsRequestUrl(endpoint: string, count: number): string {
@@ -1061,10 +1496,139 @@ function parseTrip(trip: unknown): Trip {
     throw new Error("Trip timestamps must be finite seconds");
   }
 
+  const source = trip as Record<string, unknown>;
+  const brakeEventsSource = source.brakeEvents ?? source.brake_events;
+
   return {
     path,
     timestamps,
+    agentType: normalizeAgentType(source.agentType ?? source.agent_type ?? source.vehicleType ?? source.vehicle_type ?? source.type),
+    brakeEvents: Array.isArray(brakeEventsSource) ? brakeEventsSource.flatMap(normalizeTripBrakeEvent) : undefined,
   };
+}
+
+function normalizeTripBrakeEvent(item: unknown): TripBrakeEvent[] {
+  const source = getRecord(item);
+  if (!source) return [];
+
+  const at = optionalNumber(source.at ?? source.time ?? source.timestamp ?? source.t);
+  if (at === undefined) return [];
+
+  return [
+    {
+      at,
+      reason: normalizeBrakeReason(source.reason ?? source.type),
+      intensity: optionalImpact(source.intensity ?? source.brakeIntensity ?? source.brake_intensity) ?? 0.45,
+    },
+  ];
+}
+
+function normalizePhysicsPayload(payload: unknown): Level6Physics {
+  if (!payload || typeof payload !== "object") {
+    return { ...MOCK_LEVEL6_PHYSICS, source: "api", agentProfiles: [], intersections: [], pedestrianCrossings: [] };
+  }
+
+  const root = payload as Record<string, unknown>;
+  const agentProfilesSource = firstArray(
+    root.agentProfiles,
+    root.agent_profiles,
+    root.agentMix,
+    root.agent_mix,
+    root.vehicleTypes,
+    root.vehicle_types,
+    root.vehicles,
+    root.agents,
+  );
+  const intersectionsSource = firstArray(
+    root.intersections,
+    root.intersectionPhysics,
+    root.intersection_physics,
+    root.yieldZones,
+    root.yield_zones,
+    root.priorityNodes,
+    root.priority_nodes,
+  );
+  const pedestrianCrossingsSource = firstArray(
+    root.pedestrianCrossings,
+    root.pedestrian_crossings,
+    root.crossings,
+    root.crosswalks,
+    root.pedestrianPhases,
+    root.pedestrian_phases,
+  );
+
+  return {
+    source: "api",
+    updatedAt: optionalString(root.updatedAt ?? root.updated_at ?? root.timestamp),
+    agentProfiles: agentProfilesSource.flatMap(normalizeAgentProfile),
+    intersections: intersectionsSource.flatMap(normalizeIntersectionPhysics),
+    pedestrianCrossings: pedestrianCrossingsSource.flatMap(normalizePedestrianCrossing),
+  };
+}
+
+function normalizeAgentProfile(item: unknown): AgentProfile[] {
+  const source = getRecord(item);
+  if (!source) return [];
+
+  const type = normalizeAgentType(source.type ?? source.agentType ?? source.agent_type ?? source.vehicleType);
+  const count = optionalInteger(source.count ?? source.total ?? source.vehicles ?? source.activeVehicles) ?? 0;
+
+  return [
+    {
+      type,
+      count,
+      averageSpeedKph: optionalNumber(source.averageSpeedKph ?? source.average_speed_kph ?? source.avgSpeedKph),
+      delaySeconds: optionalNumber(source.delaySeconds ?? source.delay_seconds ?? source.avgDelaySeconds),
+      brakeEvents: optionalInteger(source.brakeEvents ?? source.brake_events ?? source.brakes),
+    },
+  ];
+}
+
+function normalizeIntersectionPhysics(item: unknown): IntersectionPhysics[] {
+  const source = getRecord(item);
+  if (!source) return [];
+
+  const coordinates = normalizeCoordinate(source.coordinates ?? source.point ?? source.location);
+  if (!coordinates) return [];
+
+  const id = String(source.id ?? source.nodeId ?? source.node_id ?? `intersection-${coordinates.join("-")}`);
+
+  return [
+    {
+      id,
+      coordinates,
+      title: String(source.title ?? source.name ?? source.label ?? id),
+      priority: normalizeIntersectionPriority(source.priority ?? source.priorityRule ?? source.priority_rule),
+      slowdownRadiusMeters:
+        optionalNumber(source.slowdownRadiusMeters ?? source.slowdown_radius_meters ?? source.radiusMeters) ?? 70,
+      yieldDelaySeconds:
+        optionalNumber(source.yieldDelaySeconds ?? source.yield_delay_seconds ?? source.delaySeconds ?? source.delay) ?? 8,
+      activeApproachDensity:
+        optionalImpact(source.activeApproachDensity ?? source.active_approach_density ?? source.density ?? source.load) ?? 0.5,
+    },
+  ];
+}
+
+function normalizePedestrianCrossing(item: unknown): PedestrianCrossing[] {
+  const source = getRecord(item);
+  if (!source) return [];
+
+  const coordinates = normalizeCoordinate(source.coordinates ?? source.point ?? source.location);
+  if (!coordinates) return [];
+
+  const id = String(source.id ?? source.crossingId ?? source.crossing_id ?? `crossing-${coordinates.join("-")}`);
+
+  return [
+    {
+      id,
+      coordinates,
+      title: String(source.title ?? source.name ?? source.label ?? id),
+      phase: normalizeCrossingPhase(source.phase ?? source.pedestrianPhase ?? source.pedestrian_phase ?? source.state),
+      brakeIntensity: optionalImpact(source.brakeIntensity ?? source.brake_intensity ?? source.impact ?? source.delay) ?? 0.35,
+      cycleSeconds: optionalNumber(source.cycleSeconds ?? source.cycle_seconds ?? source.cycle ?? source.period) ?? 40,
+      nextSwitchSeconds: optionalNumber(source.nextSwitchSeconds ?? source.next_switch_seconds ?? source.nextChangeSeconds),
+    },
+  ];
 }
 
 function normalizeTrafficPayload(payload: unknown): TrafficPayload {
@@ -1280,7 +1844,8 @@ function buildAnalyticsSnapshot(
       activeVehicles: analytics.metrics.activeVehicles,
       jamCount: analytics.metrics.jamCount ?? jamCount,
     },
-    incidents: analytics.incidents,
+    incidents:
+      analytics.incidents.length > 0 ? analytics.incidents : deriveTrafficIncidents(roadsWithTraffic.features),
     closureZones: analytics.closureZones,
     timeSeries,
     forecast: analytics.forecast,
@@ -1289,7 +1854,131 @@ function buildAnalyticsSnapshot(
   };
 }
 
+function buildPhysicsSnapshot(physics: Level6Physics, trips: Trip[]): Level6Physics {
+  return {
+    ...physics,
+    agentProfiles:
+      physics.agentProfiles.length > 0 ? normalizeAgentProfilesTotal(physics.agentProfiles) : deriveAgentProfiles(trips),
+    intersections: physics.intersections.length > 0 ? physics.intersections : MOCK_LEVEL6_PHYSICS.intersections,
+    pedestrianCrossings:
+      physics.pedestrianCrossings.length > 0 ? physics.pedestrianCrossings : MOCK_LEVEL6_PHYSICS.pedestrianCrossings,
+  };
+}
+
+function normalizeAgentProfilesTotal(profiles: AgentProfile[]): AgentProfile[] {
+  const merged = new Map<AgentType, AgentProfile>();
+
+  for (const profile of profiles) {
+    const current = merged.get(profile.type);
+    if (!current) {
+      merged.set(profile.type, profile);
+      continue;
+    }
+
+    merged.set(profile.type, {
+      type: profile.type,
+      count: current.count + profile.count,
+      averageSpeedKph: weightedAverage(current.averageSpeedKph, current.count, profile.averageSpeedKph, profile.count),
+      delaySeconds: weightedAverage(current.delaySeconds, current.count, profile.delaySeconds, profile.count),
+      brakeEvents: (current.brakeEvents ?? 0) + (profile.brakeEvents ?? 0),
+    });
+  }
+
+  return ensureAgentProfileOrder(Array.from(merged.values()));
+}
+
+function deriveAgentProfiles(trips: Trip[]): AgentProfile[] {
+  if (trips.length === 0) return MOCK_LEVEL6_PHYSICS.agentProfiles;
+
+  const grouped = groupTripsByAgentType(trips);
+
+  return ensureAgentProfileOrder(
+    (["car", "truck", "bus"] as AgentType[]).map((type) => {
+      const agentTrips = grouped[type];
+      const brakeEvents = agentTrips.reduce((total, trip) => total + (trip.brakeEvents?.length ?? 0), 0);
+
+      return {
+        type,
+        count: agentTrips.length,
+        averageSpeedKph: deriveAverageSpeedKph(agentTrips),
+        delaySeconds: brakeEvents > 0 ? 24 + brakeEvents / Math.max(1, agentTrips.length) : undefined,
+        brakeEvents,
+      };
+    }),
+  );
+}
+
+function ensureAgentProfileOrder(profiles: AgentProfile[]): AgentProfile[] {
+  const byType = new Map(profiles.map((profile) => [profile.type, profile]));
+
+  return (["car", "truck", "bus"] as AgentType[]).map(
+    (type) => byType.get(type) ?? { type, count: 0, brakeEvents: 0 },
+  );
+}
+
+function weightedAverage(
+  leftValue: number | undefined,
+  leftWeight: number,
+  rightValue: number | undefined,
+  rightWeight: number,
+): number | undefined {
+  if (leftValue === undefined) return rightValue;
+  if (rightValue === undefined) return leftValue;
+
+  const totalWeight = Math.max(1, leftWeight + rightWeight);
+  return (leftValue * leftWeight + rightValue * rightWeight) / totalWeight;
+}
+
+function deriveAverageSpeedKph(trips: Trip[]): number | undefined {
+  const speeds = trips
+    .map((trip) => {
+      const durationSeconds = trip.timestamps[trip.timestamps.length - 1] - trip.timestamps[0];
+      if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return undefined;
+
+      return (estimatePathDistanceMeters(trip.path) / durationSeconds) * 3.6;
+    })
+    .filter((speed): speed is number => speed !== undefined && Number.isFinite(speed));
+
+  if (speeds.length === 0) return undefined;
+
+  return speeds.reduce((total, speed) => total + speed, 0) / speeds.length;
+}
+
+function estimatePathDistanceMeters(path: Coordinate[]): number {
+  let total = 0;
+
+  for (let index = 1; index < path.length; index += 1) {
+    total += estimateCoordinateDistanceMeters(path[index - 1], path[index]);
+  }
+
+  return total;
+}
+
+function estimateCoordinateDistanceMeters(a: Coordinate, b: Coordinate): number {
+  const metersPerDegreeLat = 111_320;
+  const averageLat = ((a[1] + b[1]) / 2 / 180) * Math.PI;
+  const metersPerDegreeLng = metersPerDegreeLat * Math.cos(averageLat);
+  const dx = (b[0] - a[0]) * metersPerDegreeLng;
+  const dy = (b[1] - a[1]) * metersPerDegreeLat;
+
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 function buildTooltip(object: unknown) {
+  if (isIntersectionPhysics(object)) {
+    return {
+      text: `${object.title}\n${intersectionPriorityLabel(object.priority)} | yield delay ${Math.round(
+        object.yieldDelaySeconds,
+      )}s`,
+    };
+  }
+
+  if (isPedestrianCrossing(object)) {
+    return {
+      text: `${object.title}\n${crossingPhaseLabel(object.phase)} | brake ${formatPercent(object.brakeIntensity)}`,
+    };
+  }
+
   if (isMapIncident(object)) {
     return {
       text: `${object.title}\n${object.type} | impact ${formatPercent(
@@ -1345,6 +2034,42 @@ function deriveBottlenecks(features: LineStringFeature[]): Bottleneck[] {
     .slice(0, 5);
 }
 
+function deriveTrafficIncidents(features: LineStringFeature[]): MapIncident[] {
+  return features
+    .flatMap((feature) => {
+      const density = clamp01(Number(feature.properties.density ?? feature.properties.load ?? 0));
+      const coordinates = getFeatureMidpoint(feature);
+
+      if (!coordinates || density < 0.9) return [];
+
+      const title = String(
+        feature.properties.name || feature.properties.id || feature.properties.osmid || "High load segment",
+      );
+
+      return [
+        {
+          id: `derived-incident-${getPrimaryRoadKey(feature.properties) ?? coordinates.join("-")}`,
+          coordinates,
+          type: density > 0.96 ? "accident" : "event",
+          severity: density > 0.96 ? "critical" : "high",
+          title,
+          description: "Derived from live road density",
+          roadId: optionalString(feature.properties.id ?? feature.properties.roadId ?? feature.properties.osmid),
+          impact: density,
+        } satisfies MapIncident,
+      ];
+    })
+    .sort((a, b) => (b.impact ?? 0) - (a.impact ?? 0))
+    .slice(0, 6);
+}
+
+function getFeatureMidpoint(feature: LineStringFeature): Coordinate | undefined {
+  const coordinates = feature.geometry.coordinates;
+  if (coordinates.length === 0) return undefined;
+
+  return coordinates[Math.floor(coordinates.length / 2)];
+}
+
 function deriveAverageTripMinutes(trips: Trip[]): number | undefined {
   const durations = trips
     .map((trip) => trip.timestamps[trip.timestamps.length - 1] - trip.timestamps[0])
@@ -1394,6 +2119,76 @@ function trafficLightColor(color: TrafficLight["color"]): [number, number, numbe
   if (color === "red") return [232, 73, 59, 240];
   if (color === "yellow") return [244, 191, 65, 240];
   return [60, 204, 124, 240];
+}
+
+function agentTripColor(type: AgentType): [number, number, number] {
+  if (type === "truck") return [97, 186, 218];
+  if (type === "bus") return [204, 137, 74];
+  return [255, 200, 0];
+}
+
+function agentCssColor(type: AgentType): string {
+  const [red, green, blue] = agentTripColor(type);
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
+function agentTypeLabel(type: AgentType): string {
+  if (type === "truck") return "Trucks";
+  if (type === "bus") return "Buses";
+  return "Cars";
+}
+
+function cycleTrafficLightColor(
+  baseColor: TrafficLight["color"],
+  currentTimeSeconds: number,
+  index: number,
+): TrafficLight["color"] {
+  const sequence: TrafficLight["color"][] = ["green", "yellow", "red"];
+  const baseIndex = Math.max(0, sequence.indexOf(baseColor));
+  const phaseIndex = Math.floor(currentTimeSeconds / 12 + index) % sequence.length;
+
+  return sequence[(baseIndex + phaseIndex) % sequence.length];
+}
+
+function cycleCrossingPhase(crossing: PedestrianCrossing, currentTimeSeconds: number, index: number): CrossingPhase {
+  if (crossing.nextSwitchSeconds !== undefined && crossing.nextSwitchSeconds > 0) return crossing.phase;
+
+  const cycleSeconds = Math.max(12, crossing.cycleSeconds);
+  const phaseTime = (currentTimeSeconds + index * 7) % cycleSeconds;
+
+  if (phaseTime < cycleSeconds * 0.38) return "walk";
+  if (phaseTime < cycleSeconds * 0.58) return "clearance";
+  return "stop";
+}
+
+function yieldZoneFillColor(density: number): [number, number, number, number] {
+  const load = clamp01(density);
+  return [235, Math.round(188 - load * 62), Math.round(82 - load * 32), Math.round(38 + load * 52)];
+}
+
+function yieldZoneLineColor(priority: IntersectionPhysics["priority"]): [number, number, number, number] {
+  if (priority === "roundabout") return [155, 216, 205, 220];
+  if (priority === "major") return [244, 191, 65, 225];
+  return [235, 124, 58, 225];
+}
+
+function yieldCoreColor(priority: IntersectionPhysics["priority"]): [number, number, number, number] {
+  if (priority === "roundabout") return [96, 196, 166, 245];
+  if (priority === "major") return [244, 191, 65, 245];
+  return [235, 124, 58, 245];
+}
+
+function crossingPhaseColor(phase: CrossingPhase, intensity: number): [number, number, number, number] {
+  const alpha = Math.round(76 + clamp01(intensity) * 84);
+  if (phase === "walk") return [207, 63, 50, alpha];
+  if (phase === "clearance") return [244, 191, 65, alpha];
+  return [96, 196, 166, alpha];
+}
+
+function crossingPhaseStrokeColor(phase: CrossingPhase): [number, number, number, number] {
+  if (phase === "walk") return [245, 103, 87, 245];
+  if (phase === "clearance") return [244, 191, 65, 245];
+  return [155, 216, 205, 245];
 }
 
 function severityColor(severity: IncidentSeverity, alpha: number): [number, number, number, number] {
@@ -1454,6 +2249,20 @@ function isClosureZone(item: unknown): item is ClosureZone {
 
   const candidate = item as Partial<ClosureZone>;
   return typeof candidate.title === "string" && Array.isArray(candidate.polygon);
+}
+
+function isIntersectionPhysics(item: unknown): item is IntersectionPhysics {
+  if (!item || typeof item !== "object") return false;
+
+  const candidate = item as Partial<IntersectionPhysics>;
+  return typeof candidate.title === "string" && isCoordinate(candidate.coordinates);
+}
+
+function isPedestrianCrossing(item: unknown): item is PedestrianCrossing {
+  if (!item || typeof item !== "object") return false;
+
+  const candidate = item as Partial<PedestrianCrossing>;
+  return typeof candidate.title === "string" && isCoordinate(candidate.coordinates);
 }
 
 function isCoordinate(point: unknown): point is Coordinate {
@@ -1542,6 +2351,32 @@ function normalizeIncidentType(value: unknown): IncidentType {
   return "accident";
 }
 
+function normalizeAgentType(value: unknown): AgentType {
+  const normalized = String(value ?? "").toLowerCase();
+
+  if (normalized === "truck" || normalized === "lorry" || normalized === "freight") return "truck";
+  if (normalized === "bus" || normalized === "public_transport" || normalized === "transit") return "bus";
+  return "car";
+}
+
+function normalizeBrakeReason(value: unknown): TripBrakeEvent["reason"] {
+  if (value === "pedestrian" || value === "signal") return value;
+  return "yield";
+}
+
+function normalizeIntersectionPriority(value: unknown): IntersectionPhysics["priority"] {
+  if (value === "minor" || value === "roundabout") return value;
+  return "major";
+}
+
+function normalizeCrossingPhase(value: unknown): CrossingPhase {
+  const normalized = String(value ?? "").toLowerCase();
+
+  if (normalized === "walk" || normalized === "pedestrian" || normalized === "red_for_cars") return "walk";
+  if (normalized === "clearance" || normalized === "yellow" || normalized === "flashing") return "clearance";
+  return "stop";
+}
+
 function statusToCongestion(value: unknown): number | undefined {
   if (value === "congested") return 88;
   if (value === "heavy") return 66;
@@ -1574,6 +2409,18 @@ function incidentTypeLabel(type: IncidentType): string {
   if (type === "closure") return "Road closure";
   if (type === "event") return "Public event";
   return "Traffic accident";
+}
+
+function intersectionPriorityLabel(priority: IntersectionPhysics["priority"]): string {
+  if (priority === "minor") return "minor road yields";
+  if (priority === "roundabout") return "roundabout priority";
+  return "major road priority";
+}
+
+function crossingPhaseLabel(phase: CrossingPhase): string {
+  if (phase === "walk") return "pedestrian walk phase";
+  if (phase === "clearance") return "clearance phase";
+  return "vehicle flow phase";
 }
 
 function optionalNumber(value: unknown): number | undefined {
@@ -1624,6 +2471,14 @@ function hasAnalyticsData(analytics: Level4Analytics): boolean {
     analytics.timeSeries.length > 0 ||
     analytics.forecast.length > 0 ||
     analytics.bottlenecks.length > 0
+  );
+}
+
+function hasPhysicsData(physics: Level6Physics): boolean {
+  return (
+    physics.agentProfiles.length > 0 ||
+    physics.intersections.length > 0 ||
+    physics.pedestrianCrossings.length > 0
   );
 }
 
