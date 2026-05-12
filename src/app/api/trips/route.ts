@@ -5,9 +5,25 @@ import { exec } from 'child_process';
 import util from 'util';
 
 type Trip = {
+  type: 'car' | 'truck' | 'bus';
   path: [number, number][];
   timestamps: number[];
 };
+
+/**
+ * Data Contract for Trips API (/api/trips):
+ *
+ * {
+ *   "trips": [
+ *     {
+ *       "type": "car" | "truck" | "bus",   // Defines agent rendering size/icon (Level 6)
+ *       "path": [[lng, lat], ...],         // Sequence of geospatial coordinates
+ *       "timestamps": [float, ...]         // Time in seconds to reach each coordinate, accounting for speed limits, vehicle type, and minor yielding delays
+ *     },
+ *     ...
+ *   ]
+ * }
+ */
 
 type TripsPayload = {
   trips?: Trip[];
@@ -71,6 +87,7 @@ function buildTripSample(sourceTrips: Trip[], requestedCount: number): Trip[] {
     const offset = cycle * 11 + (index % sourceTrips.length) * 0.33;
 
     return {
+      type: sourceTrip.type || 'car',
       path: sourceTrip.path,
       timestamps: sourceTrip.timestamps.map((timestamp) => Number((timestamp + offset).toFixed(2))),
     };

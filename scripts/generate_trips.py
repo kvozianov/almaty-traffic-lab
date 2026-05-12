@@ -36,7 +36,10 @@ def generate_trips(num_trips=150):
         while start == end:
             end = random.choice(nodes_list)
 
+
+        agent_type = random.choices(["car", "truck", "bus"], weights=[0.8, 0.1, 0.1])[0]
         try:
+
             path = graph.shortest_path(start, end, algorithm="astar")
 
             if not path.nodes or len(path.nodes) < 2:
@@ -62,6 +65,10 @@ def generate_trips(num_trips=150):
                 # Calculate time to traverse road
                 # speed = distance / time => time = distance / speed
                 speed_mps = (road.max_speed_kph * 1000) / 3600
+                if agent_type == "truck":
+                    speed_mps *= 0.8
+                elif agent_type == "bus":
+                    speed_mps *= 0.7
                 if speed_mps <= 0:
                     speed_mps = 13.8 # 50km/h fallback
 
@@ -85,6 +92,11 @@ def generate_trips(num_trips=150):
                             fraction = segment_lengths[j-1] / total_geom_length
                             segment_time = time_s * fraction
                             current_time += segment_time
+
+                            # Add random minor delays to simulate yielding / pedestrian crossings
+                            # We can trigger this roughly every few segments for realism
+                            if random.random() < 0.05:
+                                current_time += random.uniform(2.0, 5.0)
                             coordinates.append(list(p)) # ensure it's a list for json serialization
                             timestamps.append(round(current_time, 2))
                     else:
@@ -98,6 +110,7 @@ def generate_trips(num_trips=150):
 
             if len(coordinates) == len(timestamps) and len(coordinates) > 1:
                 trips.append({
+                    "type": agent_type,
                     "path": coordinates,
                     "timestamps": timestamps
                 })

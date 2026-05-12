@@ -20,3 +20,21 @@ pnpm-debug.log*
 # macOS
 .DS_Store
 data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env/
+.venv/
+env.bak/
+venv.bak/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.coverage
+htmlcov/
