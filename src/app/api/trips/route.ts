@@ -4,7 +4,20 @@ import path from 'path';
 import { exec } from 'child_process';
 import util from 'util';
 
+// Data Contract for Trips API
+// {
+//   "trips": [
+//     {
+//       "vehicle_type": "car" | "truck" | "bus",
+//       "path": [[lon, lat], [lon, lat], ...],
+//       "timestamps": [t1, t2, ...]
+//     },
+//     ...
+//   ]
+// }
+
 type Trip = {
+  vehicle_type?: 'car' | 'truck' | 'bus';
   path: [number, number][];
   timestamps: number[];
 };
@@ -71,15 +84,9 @@ function buildTripSample(sourceTrips: Trip[], requestedCount: number): Trip[] {
     const offset = cycle * 11 + (index % sourceTrips.length) * 0.33;
 
     return {
+      vehicle_type: sourceTrip.vehicle_type || 'car',
       path: sourceTrip.path,
       timestamps: sourceTrip.timestamps.map((timestamp) => Number((timestamp + offset).toFixed(2))),
     };
   });
 }
-if __name__ == "__main__":
-    try:
-        trip_count = int(sys.argv[1]) if len(sys.argv) > 1 else 150
-    except ValueError:
-        trip_count = 150
-
-    generate_trips(trip_count)

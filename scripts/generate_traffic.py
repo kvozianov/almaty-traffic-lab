@@ -50,9 +50,21 @@ def generate_traffic():
             "color": random.choice(["red", "yellow", "green"])
         })
 
+    # Sample pedestrian crossings
+    pedestrian_crossings = []
+    # Use remaining light locations for ped crossings to spread them out
+    remaining_locations = list(set(light_locations) - set(sampled_locations))
+    sampled_ped_locations = random.sample(remaining_locations, min(30, len(remaining_locations)))
+    for loc in sampled_ped_locations:
+        pedestrian_crossings.append({
+            "coordinates": [loc[0], loc[1]],
+            "state": random.choice(["walk", "dont_walk"])
+        })
+
     result = {
         "lights": lights,
-        "roads": roads
+        "roads": roads,
+        "pedestrian_crossings": pedestrian_crossings
     }
 
     os.makedirs(os.path.dirname(output_file), exist_ok=True)

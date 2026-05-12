@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: traffic-sim-almaty
+Version: 0.1.0
+Summary: MVP traffic simulation project for Almaty-style city road research
+Author: Kirill
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.115
+Requires-Dist: httpx>=0.28
+Requires-Dist: uvicorn>=0.32
+Provides-Extra: osm
+Requires-Dist: networkx>=3.2; extra == "osm"
+Requires-Dist: osmnx>=1.9; extra == "osm"
+Provides-Extra: pygame
+Requires-Dist: pygame>=2.6; extra == "pygame"

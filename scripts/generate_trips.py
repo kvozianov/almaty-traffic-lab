@@ -20,6 +20,22 @@ def haversine(lon1, lat1, lon2, lat2):
 
     return R * c
 
+def get_vehicle_properties():
+    # 70% cars, 20% buses, 10% trucks
+    vehicle_type = random.choices(
+        ['car', 'bus', 'truck'],
+        weights=[0.7, 0.2, 0.1],
+        k=1
+    )[0]
+
+    speed_multiplier = 1.0
+    if vehicle_type == 'bus':
+        speed_multiplier = 0.8
+    elif vehicle_type == 'truck':
+        speed_multiplier = 0.7
+
+    return vehicle_type, speed_multiplier
+
 def generate_trips(num_trips=150):
     print("Loading graph...")
     graph = load_preset_graph("full_almaty_fast")
@@ -31,6 +47,7 @@ def generate_trips(num_trips=150):
     for i in range(num_trips):
         start = random.choice(nodes_list)
         end = random.choice(nodes_list)
+        vehicle_type, speed_multiplier = get_vehicle_properties()
 
         # Ensure start and end are different
         while start == end:
@@ -53,7 +70,7 @@ def generate_trips(num_trips=150):
             timestamps.append(round(current_time, 2))
 
             # Follow edges
-            for road_id in path.roads:
+            for idx, road_id in enumerate(path.roads):
                 road = graph.roads[road_id]
                 # End node of the road
                 end_node_id = road.end_node
@@ -61,9 +78,11 @@ def generate_trips(num_trips=150):
 
                 # Calculate time to traverse road
                 # speed = distance / time => time = distance / speed
-                speed_mps = (road.max_speed_kph * 1000) / 3600
-                if speed_mps <= 0:
-                    speed_mps = 13.8 # 50km/h fallback
+                base_speed_mps = (road.max_speed_kph * 1000) / 3600
+                if base_speed_mps <= 0:
+                    base_speed_mps = 13.8 # 50km/h fallback
+
+                speed_mps = base_speed_mps * speed_multiplier
 
                 time_s = road.length_m / speed_mps
 
@@ -84,20 +103,35 @@ def generate_trips(num_trips=150):
                             p = geom[j]
                             fraction = segment_lengths[j-1] / total_geom_length
                             segment_time = time_s * fraction
+
+                            # Physics: intersection yield (slow down at the end of the road, if not the last road in trip)
+                            if j == len(geom) - 1 and idx < len(path.roads) - 1:
+                                # Add 2 to 5 seconds of intersection delay randomly
+                                segment_time += random.uniform(2.0, 5.0)
+
+                            # Physics: random pedestrian crossing delay
+                            if random.random() < 0.05: # 5% chance of ped crossing delay per segment
+                                segment_time += random.uniform(1.0, 4.0)
+
                             current_time += segment_time
                             coordinates.append(list(p)) # ensure it's a list for json serialization
                             timestamps.append(round(current_time, 2))
                     else:
+                        if idx < len(path.roads) - 1:
+                            time_s += random.uniform(2.0, 5.0)
                         current_time += time_s
                         coordinates.append([end_node.x, end_node.y])
                         timestamps.append(round(current_time, 2))
                 else:
+                    if idx < len(path.roads) - 1:
+                        time_s += random.uniform(2.0, 5.0)
                     current_time += time_s
                     coordinates.append([end_node.x, end_node.y])
                     timestamps.append(round(current_time, 2))
 
             if len(coordinates) == len(timestamps) and len(coordinates) > 1:
                 trips.append({
+                    "vehicle_type": vehicle_type,
                     "path": coordinates,
                     "timestamps": timestamps
                 })
@@ -120,14 +154,6 @@ def generate_trips(num_trips=150):
     print(f"Saved trips to {out_file}")
 
 if __name__ == "__main__":
-<<<<<<< HEAD
-    try:
-        trip_count = int(sys.argv[1]) if len(sys.argv) > 1 else 150
-    except ValueError:
-        trip_count = 150
-
-    generate_trips(trip_count)
-=======
     num_trips = 150
     if len(sys.argv) > 1:
         try:
@@ -140,4 +166,3 @@ if __name__ == "__main__":
         except ValueError:
             pass
     generate_trips(num_trips)
->>>>>>> a74eef75914b05f9d9ce8772551853a467674d7a
