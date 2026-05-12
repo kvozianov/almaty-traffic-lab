@@ -2,6 +2,19 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+// Data Contract for Traffic API
+// {
+//   "lights": [
+//     { "coordinates": [lon, lat], "color": "red" | "yellow" | "green" }
+//   ],
+//   "roads": [
+//     { "id": "12345", "density": 0.85 }
+//   ],
+//   "pedestrian_crossings": [
+//     { "coordinates": [lon, lat], "state": "walk" | "dont_walk" }
+//   ]
+// }
+
 export async function GET() {
   try {
     const filePath = path.join(process.cwd(), 'data', 'traffic_data.json');
