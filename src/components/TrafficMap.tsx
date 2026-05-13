@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
-import { GeoJsonLayer, IconLayer, PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { ColumnLayer, GeoJsonLayer, IconLayer, PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { TripsLayer } from "@deck.gl/geo-layers";
 import { Map as MapLibre } from "@vis.gl/react-maplibre";
 import type { PickingInfo } from "@deck.gl/core";
@@ -37,12 +37,16 @@ const MIN_TRAFFIC_DENSITY = 100;
 const MAX_TRAFFIC_DENSITY = 5000;
 const DAY_SECONDS = 24 * 60 * 60;
 const TRIPS_LAYER_TARGET_OPACITY = 0.8;
+const LEVEL7_COLUMN_RADIUS_METERS = 96;
+const LEVEL7_VARIANT_TRIP_CAP = 1200;
 
 type Coordinate = [number, number];
 type AgentType = "car" | "truck" | "bus";
 type CrossingPhase = "walk" | "clearance" | "stop";
 type IncidentSeverity = "low" | "medium" | "high" | "critical";
 type IncidentType = "accident" | "construction" | "closure" | "event";
+type CalendarMode = "weekday" | "weekend" | "night";
+type ScenarioSide = "baseline" | "variant";
 
 type RoadProperties = {
   id?: string;
@@ -207,13 +211,62 @@ type Level6Physics = {
   source: "api" | "mock";
 };
 
+type CalendarPattern = {
+  id: string;
+  mode: CalendarMode;
+  title: string;
+  trafficMultiplier: number;
+  attractionShift: number;
+  description?: string;
+};
+
+type Level7Point = {
+  id: string;
+  coordinates: Coordinate;
+  label: string;
+  intensity: number;
+  mode: CalendarMode;
+};
+
+type JamColumn = {
+  id: string;
+  coordinates: Coordinate;
+  label: string;
+  intensity: number;
+  heightMeters: number;
+  scenario: ScenarioSide;
+  mode?: CalendarMode;
+};
+
+type ComparisonScenario = {
+  id: string;
+  title: string;
+  baselineLabel: string;
+  variantLabel: string;
+  deltaCongestion: number;
+  deltaTravelTimeMinutes?: number;
+  blockedRoadName?: string;
+  closedStreets?: string;
+  status?: "ready" | "pending" | "simulating";
+};
+
+type Level7Patterns = {
+  calendarPatterns: CalendarPattern[];
+  attractionPoints: Level7Point[];
+  jamColumns: JamColumn[];
+  comparisons: ComparisonScenario[];
+  updatedAt?: string;
+  source: "api" | "derived" | "stub";
+};
+
 type MapSelection =
   | { kind: "road"; title: string; detail: string }
   | { kind: "incident"; title: string; detail: string }
   | { kind: "closure"; title: string; detail: string }
   | { kind: "light"; title: string; detail: string }
   | { kind: "intersection"; title: string; detail: string }
-  | { kind: "crossing"; title: string; detail: string };
+  | { kind: "crossing"; title: string; detail: string }
+  | { kind: "level7"; title: string; detail: string };
 
 type TrafficMapProps = {
   className?: string;
@@ -236,6 +289,41 @@ const EMPTY_ANALYTICS: Level4Analytics = {
   forecast: [],
   bottlenecks: [],
 };
+
+const EMPTY_LEVEL7: Level7Patterns = {
+  source: "stub",
+  calendarPatterns: [],
+  attractionPoints: [],
+  jamColumns: [],
+  comparisons: [],
+};
+
+const DERIVED_LEVEL7_PATTERNS: CalendarPattern[] = [
+  {
+    id: "weekday",
+    mode: "weekday",
+    title: "Обычный день",
+    trafficMultiplier: 1,
+    attractionShift: 0.18,
+    description: "Baseline commuter demand for workday comparison.",
+  },
+  {
+    id: "weekend",
+    mode: "weekend",
+    title: "Выходной",
+    trafficMultiplier: 0.72,
+    attractionShift: 0.46,
+    description: "Demand shifts toward malls, parks, and leisure corridors.",
+  },
+  {
+    id: "night",
+    mode: "night",
+    title: "Ночь",
+    trafficMultiplier: 0.28,
+    attractionShift: 0.08,
+    description: "Low-flow mode with isolated late congestion pockets.",
+  },
+];
 
 const MOCK_LEVEL6_PHYSICS: Level6Physics = {
   source: "mock",
@@ -318,6 +406,7 @@ export default function TrafficMap({
   const [roads, setRoads] = useState<RoadFeatureCollection>({ type: "FeatureCollection", features: [] });
   const [traffic, setTraffic] = useState<TrafficPayload>({ lights: [], roads: [] });
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [variantTrips, setVariantTrips] = useState<Trip[]>([]);
   const [analytics, setAnalytics] = useState<Level4Analytics>(EMPTY_ANALYTICS);
   const [physics, setPhysics] = useState<Level6Physics>(MOCK_LEVEL6_PHYSICS);
   const [currentTime, setCurrentTime] = useState(0);
@@ -328,15 +417,21 @@ export default function TrafficMap({
   const [showAgentClasses, setShowAgentClasses] = useState(true);
   const [showPhysicsOverlay, setShowPhysicsOverlay] = useState(true);
   const [showPedestrianPhases, setShowPedestrianPhases] = useState(true);
+  const [showLevel7Columns, setShowLevel7Columns] = useState(true);
+  const [splitScreenEnabled, setSplitScreenEnabled] = useState(false);
+  const [activeCalendarMode, setActiveCalendarMode] = useState<CalendarMode>("weekday");
+  const [activeComparisonId, setActiveComparisonId] = useState<string | null>(null);
   const [tripsLayerOpacity, setTripsLayerOpacity] = useState(TRIPS_LAYER_TARGET_OPACITY);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [trafficState, setTrafficState] = useState<LoadState>("idle");
   const [tripsState, setTripsState] = useState<LoadState>("idle");
+  const [variantTripsState, setVariantTripsState] = useState<LoadState>("idle");
   const [analyticsState, setAnalyticsState] = useState<LoadState>("idle");
   const [physicsState, setPhysicsState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [trafficError, setTrafficError] = useState<string | null>(null);
   const [tripsError, setTripsError] = useState<string | null>(null);
+  const [variantTripsError, setVariantTripsError] = useState<string | null>(null);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [physicsError, setPhysicsError] = useState<string | null>(null);
   const [hoveredRoad, setHoveredRoad] = useState<RoadProperties | null>(null);
@@ -452,10 +547,13 @@ export default function TrafficMap({
       animateTripsOpacity(0.2);
 
       try {
-        const response = await fetch(buildTripsRequestUrl(tripsEndpoint, requestedTrafficDensity), {
-          headers: { Accept: "application/json" },
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          buildTripsRequestUrl(tripsEndpoint, requestedTrafficDensity, activeCalendarMode),
+          {
+            headers: { Accept: "application/json" },
+            signal: controller.signal,
+          },
+        );
 
         if (!response.ok) {
           throw new Error(`Trips request failed: ${response.status}`);
@@ -488,7 +586,7 @@ export default function TrafficMap({
     loadTrips();
 
     return () => controller.abort();
-  }, [animateTripsOpacity, requestedTrafficDensity, tripsEndpoint]);
+  }, [activeCalendarMode, animateTripsOpacity, requestedTrafficDensity, tripsEndpoint]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -498,7 +596,7 @@ export default function TrafficMap({
       setAnalyticsError(null);
 
       try {
-        const response = await fetch(analyticsEndpoint, {
+        const response = await fetch(buildAnalyticsRequestUrl(analyticsEndpoint, activeCalendarMode), {
           headers: { Accept: "application/json" },
           signal: controller.signal,
         });
@@ -529,7 +627,7 @@ export default function TrafficMap({
     loadAnalytics();
 
     return () => controller.abort();
-  }, [analyticsEndpoint]);
+  }, [activeCalendarMode, analyticsEndpoint]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -610,6 +708,79 @@ export default function TrafficMap({
 
   const level6Snapshot = useMemo(() => buildPhysicsSnapshot(physics, trips), [physics, trips]);
 
+  const level7Snapshot = useMemo(
+    () => buildLevel7Snapshot(EMPTY_LEVEL7, roadsWithTraffic, snapshot),
+    [roadsWithTraffic, snapshot],
+  );
+
+  const activeCalendarPattern = useMemo(
+    () =>
+      level7Snapshot.calendarPatterns.find((pattern) => pattern.mode === activeCalendarMode) ??
+      DERIVED_LEVEL7_PATTERNS.find((pattern) => pattern.mode === activeCalendarMode) ??
+      DERIVED_LEVEL7_PATTERNS[0],
+    [activeCalendarMode, level7Snapshot.calendarPatterns],
+  );
+
+  const activeComparison = useMemo(
+    () =>
+      level7Snapshot.comparisons.find((comparison) => comparison.id === activeComparisonId) ??
+      level7Snapshot.comparisons[0],
+    [activeComparisonId, level7Snapshot.comparisons],
+  );
+
+  useEffect(() => {
+    if (!splitScreenEnabled || !activeComparison?.closedStreets) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadVariantTrips() {
+      setVariantTripsState("loading");
+      setVariantTripsError(null);
+
+      try {
+        const response = await fetch(
+          buildTripsRequestUrl(
+            tripsEndpoint,
+            Math.min(requestedTrafficDensity, LEVEL7_VARIANT_TRIP_CAP),
+            activeCalendarMode,
+            activeComparison?.closedStreets,
+          ),
+          {
+            headers: { Accept: "application/json" },
+            signal: controller.signal,
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Variant trips request failed: ${response.status}`);
+        }
+
+        const payload = (await response.json()) as unknown;
+        const nextTrips = parseTripsPayload(payload).trips;
+
+        setVariantTrips(nextTrips);
+        setVariantTripsState(nextTrips.length > 0 ? "ready" : "empty");
+      } catch (nextError) {
+        if (controller.signal.aborted) return;
+        setVariantTrips([]);
+        setVariantTripsState("error");
+        setVariantTripsError(nextError instanceof Error ? nextError.message : "Could not load variant trips");
+      }
+    }
+
+    loadVariantTrips();
+
+    return () => controller.abort();
+  }, [
+    activeCalendarMode,
+    activeComparison?.closedStreets,
+    requestedTrafficDensity,
+    splitScreenEnabled,
+    tripsEndpoint,
+  ]);
+
   const trafficLightsWithPhase = useMemo(
     () =>
       traffic.lights.map((light, index) => ({
@@ -631,6 +802,7 @@ export default function TrafficMap({
   );
 
   const tripsByAgentType = useMemo(() => groupTripsByAgentType(trips), [trips]);
+  const variantTripsByAgentType = useMemo(() => groupTripsByAgentType(variantTrips), [variantTrips]);
 
   const updateHoveredRoad = useCallback((properties: RoadProperties | null) => {
     setHoveredRoad((current) => {
@@ -641,10 +813,12 @@ export default function TrafficMap({
     });
   }, []);
 
+  const deckLayerNamespace = splitScreenEnabled ? "split" : "single";
+
   const roadLayer = useMemo(
     () =>
       new GeoJsonLayer({
-        id: "almaty-road-graph",
+        id: `${deckLayerNamespace}-almaty-road-graph`,
         data: roadsWithTraffic,
         pickable: true,
         stroked: true,
@@ -680,13 +854,13 @@ export default function TrafficMap({
           return true;
         },
       }),
-    [roadsWithTraffic, updateHoveredRoad],
+    [deckLayerNamespace, roadsWithTraffic, updateHoveredRoad],
   );
 
   const trafficLightLayer = useMemo(
     () =>
       new ScatterplotLayer<TrafficLight>({
-        id: "traffic-lights",
+        id: `${deckLayerNamespace}-traffic-lights`,
         data: trafficLightsWithPhase,
         pickable: true,
         getPosition: (light) => light.coordinates,
@@ -712,13 +886,13 @@ export default function TrafficMap({
           return true;
         },
       }),
-    [trafficLightsWithPhase],
+    [deckLayerNamespace, trafficLightsWithPhase],
   );
 
   const closureZoneLayer = useMemo(
     () =>
       new PolygonLayer<ClosureZone>({
-        id: "level4-closure-zones",
+        id: `${deckLayerNamespace}-level4-closure-zones`,
         data: snapshot.closureZones,
         pickable: true,
         filled: true,
@@ -750,13 +924,13 @@ export default function TrafficMap({
           return true;
         },
       }),
-    [snapshot.closureZones],
+    [deckLayerNamespace, snapshot.closureZones],
   );
 
   const incidentLayer = useMemo(
     () =>
       new IconLayer<MapIncident>({
-        id: "level4-incidents",
+        id: `${deckLayerNamespace}-level4-incidents`,
         data: snapshot.incidents,
         pickable: true,
         billboard: true,
@@ -786,7 +960,7 @@ export default function TrafficMap({
           return true;
         },
       }),
-    [snapshot.incidents],
+    [deckLayerNamespace, snapshot.incidents],
   );
 
   const maxTripTime = useMemo(() => {
@@ -831,18 +1005,82 @@ export default function TrafficMap({
     () =>
       showAgentClasses
         ? [
-            createVehicleTripLayer("agent-vehicle-trips", tripsByAgentType.car, currentTime, tripsLayerOpacity, "car"),
-            createVehicleTripLayer("level6-truck-trips", tripsByAgentType.truck, currentTime, tripsLayerOpacity, "truck"),
-            createVehicleTripLayer("level6-bus-trips", tripsByAgentType.bus, currentTime, tripsLayerOpacity, "bus"),
+            createVehicleTripLayer(
+              `${deckLayerNamespace}-agent-vehicle-trips`,
+              tripsByAgentType.car,
+              currentTime,
+              tripsLayerOpacity,
+              "car",
+            ),
+            createVehicleTripLayer(
+              `${deckLayerNamespace}-level6-truck-trips`,
+              tripsByAgentType.truck,
+              currentTime,
+              tripsLayerOpacity,
+              "truck",
+            ),
+            createVehicleTripLayer(
+              `${deckLayerNamespace}-level6-bus-trips`,
+              tripsByAgentType.bus,
+              currentTime,
+              tripsLayerOpacity,
+              "bus",
+            ),
           ]
-        : [createVehicleTripLayer("agent-vehicle-trips", trips, currentTime, tripsLayerOpacity, "car")],
-    [currentTime, showAgentClasses, trips, tripsByAgentType, tripsLayerOpacity],
+        : [
+            createVehicleTripLayer(
+              `${deckLayerNamespace}-agent-vehicle-trips`,
+              trips,
+              currentTime,
+              tripsLayerOpacity,
+              "car",
+            ),
+          ],
+    [currentTime, deckLayerNamespace, showAgentClasses, trips, tripsByAgentType, tripsLayerOpacity],
+  );
+
+  const variantTripLayers = useMemo(
+    () =>
+      showAgentClasses
+        ? [
+            createVehicleTripLayer(
+              `${deckLayerNamespace}-variant-car-trips`,
+              variantTripsByAgentType.car,
+              currentTime,
+              tripsLayerOpacity,
+              "car",
+            ),
+            createVehicleTripLayer(
+              `${deckLayerNamespace}-variant-truck-trips`,
+              variantTripsByAgentType.truck,
+              currentTime,
+              tripsLayerOpacity,
+              "truck",
+            ),
+            createVehicleTripLayer(
+              `${deckLayerNamespace}-variant-bus-trips`,
+              variantTripsByAgentType.bus,
+              currentTime,
+              tripsLayerOpacity,
+              "bus",
+            ),
+          ]
+        : [
+            createVehicleTripLayer(
+              `${deckLayerNamespace}-variant-vehicle-trips`,
+              variantTrips,
+              currentTime,
+              tripsLayerOpacity,
+              "car",
+            ),
+          ],
+    [currentTime, deckLayerNamespace, showAgentClasses, tripsLayerOpacity, variantTrips, variantTripsByAgentType],
   );
 
   const intersectionSlowdownLayer = useMemo(
     () =>
       new ScatterplotLayer<IntersectionPhysics>({
-        id: "level6-yield-slowdown-zones",
+        id: `${deckLayerNamespace}-level6-yield-slowdown-zones`,
         data: showPhysicsOverlay ? level6Snapshot.intersections : [],
         pickable: true,
         getPosition: (intersection) => intersection.coordinates,
@@ -877,13 +1115,13 @@ export default function TrafficMap({
           return true;
         },
       }),
-    [level6Snapshot.intersections, showPhysicsOverlay],
+    [deckLayerNamespace, level6Snapshot.intersections, showPhysicsOverlay],
   );
 
   const intersectionCoreLayer = useMemo(
     () =>
       new ScatterplotLayer<IntersectionPhysics>({
-        id: "level6-yield-intersection-cores",
+        id: `${deckLayerNamespace}-level6-yield-intersection-cores`,
         data: showPhysicsOverlay ? level6Snapshot.intersections : [],
         pickable: true,
         getPosition: (intersection) => intersection.coordinates,
@@ -914,13 +1152,13 @@ export default function TrafficMap({
           return true;
         },
       }),
-    [level6Snapshot.intersections, showPhysicsOverlay],
+    [deckLayerNamespace, level6Snapshot.intersections, showPhysicsOverlay],
   );
 
   const pedestrianCrossingLayer = useMemo(
     () =>
       new ScatterplotLayer<PedestrianCrossing>({
-        id: "level6-pedestrian-crossing-phases",
+        id: `${deckLayerNamespace}-level6-pedestrian-crossing-phases`,
         data: showPedestrianPhases ? crossingPhases : [],
         pickable: true,
         getPosition: (crossing) => crossing.coordinates,
@@ -954,7 +1192,92 @@ export default function TrafficMap({
           return true;
         },
       }),
-    [crossingPhases, showPedestrianPhases],
+    [crossingPhases, deckLayerNamespace, showPedestrianPhases],
+  );
+
+  const level7AttractionLayer = useMemo(
+    () =>
+      new ScatterplotLayer<Level7Point>({
+        id: `${deckLayerNamespace}-level7-calendar-attraction-points`,
+        data: showLevel7Columns
+          ? level7Snapshot.attractionPoints.filter((point) => point.mode === activeCalendarMode)
+          : [],
+        pickable: true,
+        getPosition: (point) => point.coordinates,
+        getFillColor: (point) => calendarPointColor(point.mode, point.intensity),
+        getLineColor: [255, 253, 248, 210],
+        getRadius: (point) => 36 + clamp01(point.intensity) * 110,
+        radiusUnits: "meters",
+        radiusMinPixels: 8,
+        radiusMaxPixels: 52,
+        stroked: true,
+        lineWidthMinPixels: 1,
+        parameters: {
+          depthWriteEnabled: false,
+        },
+        updateTriggers: {
+          getFillColor: [activeCalendarMode, level7Snapshot.attractionPoints],
+          getRadius: [activeCalendarMode, level7Snapshot.attractionPoints],
+        },
+        onClick: (info) => {
+          if (!isLevel7Point(info.object)) return false;
+
+          setSelectedItem({
+            kind: "level7",
+            title: info.object.label,
+            detail: `${calendarModeLabel(info.object.mode)} attraction | intensity ${formatPercent(info.object.intensity)}`,
+          });
+
+          return true;
+        },
+      }),
+    [activeCalendarMode, deckLayerNamespace, level7Snapshot.attractionPoints, showLevel7Columns],
+  );
+
+  const level7BaselineColumnLayer = useMemo(
+    () =>
+      createLevel7ColumnLayer(
+        `${deckLayerNamespace}-level7-baseline-jam-columns`,
+        showLevel7Columns
+          ? level7Snapshot.jamColumns.filter(
+              (column) => column.scenario === "baseline" && (!column.mode || column.mode === activeCalendarMode),
+            )
+          : [],
+        activeCalendarMode,
+        (column) => {
+          setSelectedItem({
+            kind: "level7",
+            title: column.label,
+            detail: `baseline queue stack | intensity ${formatPercent(column.intensity)} | ${Math.round(
+              column.heightMeters,
+            )}m`,
+          });
+        },
+      ),
+    [activeCalendarMode, deckLayerNamespace, level7Snapshot.jamColumns, showLevel7Columns],
+  );
+
+  const level7VariantColumnLayer = useMemo(
+    () =>
+      createLevel7ColumnLayer(
+        `${deckLayerNamespace}-level7-variant-jam-columns`,
+        showLevel7Columns
+          ? level7Snapshot.jamColumns.filter(
+              (column) => column.scenario === "variant" && (!column.mode || column.mode === activeCalendarMode),
+            )
+          : [],
+        activeCalendarMode,
+        (column) => {
+          setSelectedItem({
+            kind: "level7",
+            title: column.label,
+            detail: `variant queue stack | intensity ${formatPercent(column.intensity)} | ${Math.round(
+              column.heightMeters,
+            )}m`,
+          });
+        },
+      ),
+    [activeCalendarMode, deckLayerNamespace, level7Snapshot.jamColumns, showLevel7Columns],
   );
 
   const timeOfDaySeconds = useMemo(() => {
@@ -984,13 +1307,18 @@ export default function TrafficMap({
         physicsError ?? "level 6 physics using mock fallback"
       }`;
     }
+    if (variantTripsState === "error") {
+      return `${roads.features.length.toLocaleString("en-US")} road segments | ${
+        variantTripsError ?? "variant scenario unavailable"
+      }`;
+    }
     return `${roads.features.length.toLocaleString("en-US")} road segments | ${traffic.lights.length.toLocaleString(
       "en-US",
     )} lights | ${traffic.roads.length.toLocaleString("en-US")} density updates | ${trips.length.toLocaleString(
       "en-US",
     )} trips | ${analyticsState === "ready" ? "level 4 analytics online" : "waiting for level 4 analytics API"} | ${
       physicsState === "ready" ? "level 6 physics online" : "level 6 mock overlay"
-    }`;
+    } | level 7 scenario API ${splitScreenEnabled ? `| ${variantTrips.length.toLocaleString("en-US")} variant trips` : ""}`;
   }, [
     analyticsError,
     analyticsState,
@@ -999,6 +1327,7 @@ export default function TrafficMap({
     physicsError,
     physicsState,
     roads.features.length,
+    splitScreenEnabled,
     traffic.lights.length,
     traffic.roads.length,
     trafficError,
@@ -1006,6 +1335,9 @@ export default function TrafficMap({
     trips.length,
     tripsError,
     tripsState,
+    variantTrips.length,
+    variantTripsError,
+    variantTripsState,
   ]);
 
   const handleReset = useCallback(() => {
@@ -1059,43 +1391,161 @@ export default function TrafficMap({
     window.print();
   }, []);
 
+  const sharedDeckLayers = useMemo(
+    () => [
+      roadLayer,
+      ...tripLayers,
+      trafficLightLayer,
+      closureZoneLayer,
+      incidentLayer,
+      intersectionSlowdownLayer,
+      intersectionCoreLayer,
+      pedestrianCrossingLayer,
+      level7AttractionLayer,
+    ],
+    [
+      closureZoneLayer,
+      incidentLayer,
+      intersectionCoreLayer,
+      intersectionSlowdownLayer,
+      level7AttractionLayer,
+      pedestrianCrossingLayer,
+      roadLayer,
+      trafficLightLayer,
+      tripLayers,
+    ],
+  );
+
+  const primaryDeckLayers = useMemo(
+    () => [...sharedDeckLayers, level7BaselineColumnLayer, level7VariantColumnLayer],
+    [level7BaselineColumnLayer, level7VariantColumnLayer, sharedDeckLayers],
+  );
+
+  const baselineDeckLayers = useMemo(
+    () => [...sharedDeckLayers, level7BaselineColumnLayer],
+    [level7BaselineColumnLayer, sharedDeckLayers],
+  );
+
+  const variantDeckLayers = useMemo(
+    () => [...variantTripLayers, level7VariantColumnLayer],
+    [level7VariantColumnLayer, variantTripLayers],
+  );
+
   return (
     <section className={[styles.shell, className].filter(Boolean).join(" ")} aria-label="Almaty traffic map">
-      <DeckGL
-        initialViewState={ALMATY_VIEW_STATE}
-        controller
-        layers={[
-          roadLayer,
-          ...tripLayers,
-          trafficLightLayer,
-          closureZoneLayer,
-          incidentLayer,
-          intersectionSlowdownLayer,
-          intersectionCoreLayer,
-          pedestrianCrossingLayer,
-        ]}
-        getTooltip={({ object }) => buildTooltip(object)}
-      >
-        <MapLibre
-          mapStyle={mapStyle}
-          reuseMaps
-          attributionControl={{ compact: true }}
-          style={{ width: "100%", height: "100%" }}
-        />
-      </DeckGL>
+      <div className={splitScreenEnabled ? styles.splitMapStage : styles.mapStage}>
+        <div className={styles.mapPane}>
+          <DeckGL
+            initialViewState={ALMATY_VIEW_STATE}
+            controller
+            layers={splitScreenEnabled ? baselineDeckLayers : primaryDeckLayers}
+            getTooltip={({ object }) => buildTooltip(object)}
+            style={{ position: "relative", width: "100%", height: "100%" }}
+          >
+            <MapLibre
+              mapStyle={mapStyle}
+              reuseMaps={!splitScreenEnabled}
+              attributionControl={{ compact: true }}
+              style={{ width: "100%", height: "100%" }}
+            />
+          </DeckGL>
+          {splitScreenEnabled ? (
+            <span className={styles.mapBadge}>{activeComparison?.baselineLabel ?? "Baseline"}</span>
+          ) : null}
+        </div>
 
-      <div className={styles.panel}>
-        <p className={styles.eyebrow}>Almaty Traffic Lab</p>
-        <h1 className={styles.title}>Level 6 micro model</h1>
-        <p className={styles.meta}>Almaty center | agents, yielding, pedestrian phases</p>
-        {hoveredRoad ? (
-          <p className={styles.meta}>
-            {String(hoveredRoad.name || hoveredRoad.id || hoveredRoad.osmid || "Road")} | density{" "}
-            {Number(hoveredRoad.density ?? hoveredRoad.load ?? 0).toFixed(2)}
-          </p>
+        {splitScreenEnabled ? (
+          <div className={styles.mapPane}>
+            <DeckGL
+              initialViewState={{ ...ALMATY_VIEW_STATE, longitude: ALMATY_VIEW_STATE.longitude + 0.006 }}
+              controller
+              layers={variantDeckLayers}
+              getTooltip={({ object }) => buildTooltip(object)}
+              style={{ position: "relative", width: "100%", height: "100%" }}
+            >
+              <MapLibre
+                mapStyle={mapStyle}
+                reuseMaps={false}
+                attributionControl={{ compact: true }}
+                style={{ width: "100%", height: "100%" }}
+              />
+            </DeckGL>
+            <span className={styles.mapBadge}>{activeComparison?.variantLabel ?? "Variant"}</span>
+          </div>
         ) : null}
       </div>
 
+      <div className={styles.leftRail}>
+        <div className={styles.panel}>
+          <p className={styles.eyebrow}>Almaty Traffic Lab</p>
+          <h1 className={styles.title}>Level 7 scenario model</h1>
+          <p className={styles.meta}>Calendar demand, split-screen A/B, physical queue stacks</p>
+          {hoveredRoad ? (
+            <p className={styles.meta}>
+              {String(hoveredRoad.name || hoveredRoad.id || hoveredRoad.osmid || "Road")} | density{" "}
+              {Number(hoveredRoad.density ?? hoveredRoad.load ?? 0).toFixed(2)}
+            </p>
+          ) : null}
+        </div>
+
+        <aside className={styles.level7Panel} aria-label="Level 7 scenario controls">
+          <div className={styles.panelHeader}>
+            <span>Level 7</span>
+            <small>{splitScreenEnabled && variantTripsState === "loading" ? "loading A/B" : "Jules API"}</small>
+          </div>
+
+          <div className={styles.segmentedControl} aria-label="Calendar pattern">
+            {(["weekday", "weekend", "night"] as CalendarMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={activeCalendarMode === mode ? styles.activeControl : undefined}
+                onClick={() => setActiveCalendarMode(mode)}
+                aria-pressed={activeCalendarMode === mode}
+              >
+                {calendarModeLabel(mode)}
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.patternCard}>
+            <span>{activeCalendarPattern.title}</span>
+            <strong>{formatPercent(activeCalendarPattern.trafficMultiplier)}</strong>
+            <p>{activeCalendarPattern.description ?? "Waiting for calendar demand profile."}</p>
+          </div>
+
+          <div className={styles.toggleGrid}>
+            <ToggleControl checked={showLevel7Columns} label="3D queues" onChange={setShowLevel7Columns} />
+            <ToggleControl checked={splitScreenEnabled} label="Split view" onChange={setSplitScreenEnabled} />
+          </div>
+
+          <label className={styles.selectField}>
+            <span>A/B scenario</span>
+            <select
+              value={activeComparison?.id ?? ""}
+              onChange={(event) => setActiveComparisonId(event.currentTarget.value || null)}
+            >
+              {level7Snapshot.comparisons.length === 0 ? <option value="">Awaiting API</option> : null}
+              {level7Snapshot.comparisons.map((comparison) => (
+                <option key={comparison.id} value={comparison.id}>
+                  {comparison.title}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className={styles.physicsGrid}>
+            <Metric label="Queue stacks" value={String(level7Snapshot.jamColumns.length)} />
+            <Metric label="Attractors" value={String(level7Snapshot.attractionPoints.length)} />
+            <Metric label="A/B delta" value={formatSignedPercent(activeComparison?.deltaCongestion ?? 0)} />
+            <Metric label="Shift" value={formatPercent(activeCalendarPattern.attractionShift)} />
+          </div>
+
+          {variantTripsState === "error" ? <p className={styles.emptyText}>{variantTripsError}</p> : null}
+        </aside>
+      </div>
+
+      <div className={styles.rightRail}>
       <aside className={styles.dashboard} aria-label="Level 4 analytics dashboard">
         <div className={styles.metricHero}>
           <span className={styles.metricLabel}>Congestion index</span>
@@ -1207,6 +1657,7 @@ export default function TrafficMap({
 
         {physicsState === "error" ? <p className={styles.emptyText}>{physicsError}</p> : null}
       </aside>
+      </div>
 
       <div className={styles.controls} aria-label="Simulation controls">
         <div className={styles.controlHeader}>
@@ -1329,7 +1780,9 @@ export default function TrafficMap({
       <div
         className={[
           styles.status,
-          loadState === "error" || analyticsState === "error" || physicsState === "error" ? styles.statusError : "",
+          loadState === "error" || analyticsState === "error" || physicsState === "error" || variantTripsState === "error"
+            ? styles.statusError
+            : "",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -1416,6 +1869,42 @@ function createVehicleTripLayer(
   });
 }
 
+function createLevel7ColumnLayer(
+  id: string,
+  data: JamColumn[],
+  activeMode: CalendarMode,
+  onSelect: (column: JamColumn) => void,
+) {
+  return new ColumnLayer<JamColumn>({
+    id,
+    data,
+    pickable: true,
+    diskResolution: 18,
+    radius: LEVEL7_COLUMN_RADIUS_METERS,
+    extruded: true,
+    filled: true,
+    stroked: true,
+    getPosition: (column) => column.coordinates,
+    getElevation: (column) => Math.max(12, column.heightMeters),
+    getFillColor: (column) => level7ColumnColor(column, activeMode),
+    getLineColor: [255, 253, 248, 120],
+    lineWidthMinPixels: 1,
+    material: false,
+    parameters: {
+      depthWriteEnabled: true,
+    },
+    updateTriggers: {
+      getElevation: [data],
+      getFillColor: [activeMode, data],
+    },
+    onClick: (info) => {
+      if (!isJamColumn(info.object)) return false;
+      onSelect(info.object);
+      return true;
+    },
+  });
+}
+
 function groupTripsByAgentType(trips: Trip[]): Record<AgentType, Trip[]> {
   const groups: Record<AgentType, Trip[]> = {
     car: [],
@@ -1442,10 +1931,32 @@ function averageYieldDelay(intersections: IntersectionPhysics[]): number {
   return intersections.reduce((total, intersection) => total + intersection.yieldDelaySeconds, 0) / intersections.length;
 }
 
-function buildTripsRequestUrl(endpoint: string, count: number): string {
+function buildTripsRequestUrl(
+  endpoint: string,
+  count: number,
+  mode: CalendarMode,
+  closedStreets?: string,
+): string {
   const requestUrl = new URL(endpoint, window.location.origin);
 
   requestUrl.searchParams.set("count", String(clampInteger(count, MIN_TRAFFIC_DENSITY, MAX_TRAFFIC_DENSITY)));
+  requestUrl.searchParams.set("pattern", calendarModeToApiPattern(mode));
+
+  if (closedStreets) {
+    requestUrl.searchParams.set("closed_streets", closedStreets);
+  }
+
+  return requestUrl.toString();
+}
+
+function buildAnalyticsRequestUrl(endpoint: string, mode: CalendarMode, closedStreets?: string): string {
+  const requestUrl = new URL(endpoint, window.location.origin);
+
+  requestUrl.searchParams.set("pattern", calendarModeToApiPattern(mode));
+
+  if (closedStreets) {
+    requestUrl.searchParams.set("closed_streets", closedStreets);
+  }
 
   return requestUrl.toString();
 }
@@ -1541,6 +2052,8 @@ function normalizePhysicsPayload(payload: unknown): Level6Physics {
   );
   const intersectionsSource = firstArray(
     root.intersections,
+    root.uncontrolledIntersections,
+    root.uncontrolled_intersections,
     root.intersectionPhysics,
     root.intersection_physics,
     root.yieldZones,
@@ -1592,19 +2105,24 @@ function normalizeIntersectionPhysics(item: unknown): IntersectionPhysics[] {
   if (!coordinates) return [];
 
   const id = String(source.id ?? source.nodeId ?? source.node_id ?? `intersection-${coordinates.join("-")}`);
+  const seed = coordinateSeed(coordinates);
+  const isUncontrolled = source.type === "uncontrolled_intersection";
 
   return [
     {
       id,
       coordinates,
-      title: String(source.title ?? source.name ?? source.label ?? id),
-      priority: normalizeIntersectionPriority(source.priority ?? source.priorityRule ?? source.priority_rule),
+      title: String(source.title ?? source.name ?? source.label ?? (isUncontrolled ? "Uncontrolled intersection" : id)),
+      priority: normalizeIntersectionPriority(source.priority ?? source.priorityRule ?? source.priority_rule ?? source.type),
       slowdownRadiusMeters:
-        optionalNumber(source.slowdownRadiusMeters ?? source.slowdown_radius_meters ?? source.radiusMeters) ?? 70,
+        optionalNumber(source.slowdownRadiusMeters ?? source.slowdown_radius_meters ?? source.radiusMeters) ??
+        Math.round(54 + seed * 42),
       yieldDelaySeconds:
-        optionalNumber(source.yieldDelaySeconds ?? source.yield_delay_seconds ?? source.delaySeconds ?? source.delay) ?? 8,
+        optionalNumber(source.yieldDelaySeconds ?? source.yield_delay_seconds ?? source.delaySeconds ?? source.delay) ??
+        Math.round(5 + seed * 13),
       activeApproachDensity:
-        optionalImpact(source.activeApproachDensity ?? source.active_approach_density ?? source.density ?? source.load) ?? 0.5,
+        optionalImpact(source.activeApproachDensity ?? source.active_approach_density ?? source.density ?? source.load) ??
+        0.34 + seed * 0.5,
     },
   ];
 }
@@ -1617,15 +2135,22 @@ function normalizePedestrianCrossing(item: unknown): PedestrianCrossing[] {
   if (!coordinates) return [];
 
   const id = String(source.id ?? source.crossingId ?? source.crossing_id ?? `crossing-${coordinates.join("-")}`);
+  const seed = coordinateSeed(coordinates);
+  const phases: CrossingPhase[] = ["walk", "clearance", "stop"];
 
   return [
     {
       id,
       coordinates,
-      title: String(source.title ?? source.name ?? source.label ?? id),
-      phase: normalizeCrossingPhase(source.phase ?? source.pedestrianPhase ?? source.pedestrian_phase ?? source.state),
-      brakeIntensity: optionalImpact(source.brakeIntensity ?? source.brake_intensity ?? source.impact ?? source.delay) ?? 0.35,
-      cycleSeconds: optionalNumber(source.cycleSeconds ?? source.cycle_seconds ?? source.cycle ?? source.period) ?? 40,
+      title: String(source.title ?? source.name ?? source.label ?? "Pedestrian crossing"),
+      phase:
+        source.phase || source.pedestrianPhase || source.pedestrian_phase || source.state
+          ? normalizeCrossingPhase(source.phase ?? source.pedestrianPhase ?? source.pedestrian_phase ?? source.state)
+          : phases[Math.floor(seed * phases.length) % phases.length],
+      brakeIntensity:
+        optionalImpact(source.brakeIntensity ?? source.brake_intensity ?? source.impact ?? source.delay) ?? 0.22 + seed * 0.56,
+      cycleSeconds:
+        optionalNumber(source.cycleSeconds ?? source.cycle_seconds ?? source.cycle ?? source.period) ?? Math.round(32 + seed * 24),
       nextSwitchSeconds: optionalNumber(source.nextSwitchSeconds ?? source.next_switch_seconds ?? source.nextChangeSeconds),
     },
   ];
@@ -1865,6 +2390,155 @@ function buildPhysicsSnapshot(physics: Level6Physics, trips: Trip[]): Level6Phys
   };
 }
 
+function buildLevel7Snapshot(
+  level7: Level7Patterns,
+  roadsWithTraffic: RoadFeatureCollection,
+  analytics: Level4Analytics,
+): Level7Patterns {
+  const hasApiData = hasLevel7Data(level7);
+  const calendarPatterns =
+    level7.calendarPatterns.length > 0 ? mergeCalendarPatterns(level7.calendarPatterns) : DERIVED_LEVEL7_PATTERNS;
+  const jamColumns =
+    level7.jamColumns.length > 0 ? level7.jamColumns : deriveJamColumns(roadsWithTraffic.features, analytics);
+  const attractionPoints =
+    level7.attractionPoints.length > 0 ? level7.attractionPoints : deriveAttractionPoints(jamColumns);
+  const comparisons = level7.comparisons.length > 0 ? level7.comparisons : deriveComparisons(analytics);
+
+  return {
+    ...level7,
+    source: hasApiData ? level7.source : "derived",
+    calendarPatterns,
+    attractionPoints,
+    jamColumns,
+    comparisons,
+  };
+}
+
+function mergeCalendarPatterns(patterns: CalendarPattern[]): CalendarPattern[] {
+  const byMode = new Map<CalendarMode, CalendarPattern>();
+
+  for (const pattern of DERIVED_LEVEL7_PATTERNS) {
+    byMode.set(pattern.mode, pattern);
+  }
+
+  for (const pattern of patterns) {
+    byMode.set(pattern.mode, pattern);
+  }
+
+  return (["weekday", "weekend", "night"] as CalendarMode[]).map((mode) => byMode.get(mode) ?? DERIVED_LEVEL7_PATTERNS[0]);
+}
+
+function deriveJamColumns(features: LineStringFeature[], analytics: Level4Analytics): JamColumn[] {
+  const fromRoads = features
+    .flatMap((feature) => {
+      const density = clamp01(Number(feature.properties.density ?? feature.properties.load ?? 0));
+      const coordinates = getFeatureMidpoint(feature);
+
+      if (!coordinates || density < 0.66) return [];
+
+      const label = String(feature.properties.name ?? feature.properties.id ?? feature.properties.osmid ?? "Queue stack");
+      const heightMeters = Math.round(36 + density * 210);
+
+      return [
+        {
+          id: `baseline-${getPrimaryRoadKey(feature.properties) || coordinates.join("-")}`,
+          coordinates,
+          label,
+          intensity: density,
+          heightMeters,
+          scenario: "baseline" as const,
+        },
+        {
+          id: `variant-${getPrimaryRoadKey(feature.properties) || coordinates.join("-")}`,
+          coordinates: offsetCoordinate(coordinates, 34, -28),
+          label: `${label} variant`,
+          intensity: clamp01(density * 0.86),
+          heightMeters: Math.round(heightMeters * 0.86),
+          scenario: "variant" as const,
+        },
+      ];
+    })
+    .sort((a, b) => b.intensity - a.intensity)
+    .slice(0, 18);
+
+  if (fromRoads.length > 0) return fromRoads;
+
+  return analytics.bottlenecks.slice(0, 4).flatMap((bottleneck, index) => {
+    const seed = coordinateSeed([76.91 + index * 0.016, 43.224 + index * 0.01]);
+    const coordinates: Coordinate = [76.91 + index * 0.018 + seed * 0.01, 43.226 + index * 0.009];
+    const intensity = clamp01(bottleneck.congestion / 100);
+
+    return [
+      {
+        id: `derived-baseline-${bottleneck.id}`,
+        coordinates,
+        label: bottleneck.name,
+        intensity,
+        heightMeters: Math.round(32 + intensity * 190),
+        scenario: "baseline" as const,
+      },
+      {
+        id: `derived-variant-${bottleneck.id}`,
+        coordinates: offsetCoordinate(coordinates, 40, -22),
+        label: `${bottleneck.name} variant`,
+        intensity: clamp01(intensity * 0.82),
+        heightMeters: Math.round((32 + intensity * 190) * 0.82),
+        scenario: "variant" as const,
+      },
+    ];
+  });
+}
+
+function deriveAttractionPoints(columns: JamColumn[]): Level7Point[] {
+  const topColumns = columns.filter((column) => column.scenario === "baseline").slice(0, 5);
+
+  return topColumns.flatMap((column, index) => {
+    const mode: CalendarMode = index % 3 === 0 ? "weekday" : index % 3 === 1 ? "weekend" : "night";
+
+    return [
+      {
+        id: `derived-attractor-${column.id}`,
+        coordinates: offsetCoordinate(column.coordinates, 90 - index * 18, 58 + index * 11),
+        label: calendarAttractorLabel(mode, index),
+        intensity: clamp01(column.intensity * (mode === "night" ? 0.52 : mode === "weekend" ? 0.74 : 0.9)),
+        mode,
+      },
+    ];
+  });
+}
+
+function deriveComparisons(analytics: Level4Analytics): ComparisonScenario[] {
+  const congestion = analytics.metrics.congestionIndex;
+  const variantDelta = congestion > 0 ? -Math.min(22, Math.max(6, congestion * 0.18)) : -12;
+
+  return [
+    {
+      id: "normal-vs-abay-closure",
+      title: "Обычный день vs Абая закрыта",
+      baselineLabel: "Обычный день",
+      variantLabel: "Абая закрыта",
+      deltaCongestion: Math.abs(variantDelta),
+      deltaTravelTimeMinutes: analytics.metrics.averageTravelTimeMinutes
+        ? Math.round(analytics.metrics.averageTravelTimeMinutes * 0.18 * 10) / 10
+        : undefined,
+      blockedRoadName: "Abay avenue",
+      closedStreets: "abay",
+      status: "pending",
+    },
+    {
+      id: "adaptive-signals",
+      title: "Fixed lights vs adaptive",
+      baselineLabel: "Fixed lights",
+      variantLabel: "Adaptive policy",
+      deltaCongestion: variantDelta,
+      deltaTravelTimeMinutes: analytics.metrics.averageTravelTimeMinutes
+        ? -Math.round(analytics.metrics.averageTravelTimeMinutes * 0.12 * 10) / 10
+        : undefined,
+      status: "pending",
+    },
+  ];
+}
+
 function normalizeAgentProfilesTotal(profiles: AgentProfile[]): AgentProfile[] {
   const merged = new Map<AgentType, AgentProfile>();
 
@@ -1965,6 +2639,18 @@ function estimateCoordinateDistanceMeters(a: Coordinate, b: Coordinate): number 
 }
 
 function buildTooltip(object: unknown) {
+  if (isJamColumn(object)) {
+    return {
+      text: `${object.label}\n${object.scenario} queue | ${formatPercent(object.intensity)}`,
+    };
+  }
+
+  if (isLevel7Point(object)) {
+    return {
+      text: `${object.label}\n${calendarModeLabel(object.mode)} | ${formatPercent(object.intensity)}`,
+    };
+  }
+
   if (isIntersectionPhysics(object)) {
     return {
       text: `${object.title}\n${intersectionPriorityLabel(object.priority)} | yield delay ${Math.round(
@@ -2185,6 +2871,29 @@ function crossingPhaseColor(phase: CrossingPhase, intensity: number): [number, n
   return [96, 196, 166, alpha];
 }
 
+function level7ColumnColor(column: JamColumn, activeMode: CalendarMode): [number, number, number, number] {
+  const intensity = clamp01(column.intensity);
+  const modeLift = column.mode && column.mode !== activeMode ? 0.72 : 1;
+
+  if (column.scenario === "variant") {
+    return [Math.round(72 + intensity * 42), Math.round(170 + intensity * 52), Math.round(190 + intensity * 42), 172];
+  }
+
+  return [
+    Math.round((218 + intensity * 28) * modeLift),
+    Math.round((154 - intensity * 38) * modeLift),
+    Math.round((70 - intensity * 22) * modeLift),
+    184,
+  ];
+}
+
+function calendarPointColor(mode: CalendarMode, intensity: number): [number, number, number, number] {
+  const alpha = Math.round(70 + clamp01(intensity) * 96);
+  if (mode === "night") return [122, 154, 205, alpha];
+  if (mode === "weekend") return [96, 196, 166, alpha];
+  return [244, 191, 65, alpha];
+}
+
 function crossingPhaseStrokeColor(phase: CrossingPhase): [number, number, number, number] {
   if (phase === "walk") return [245, 103, 87, 245];
   if (phase === "clearance") return [244, 191, 65, 245];
@@ -2263,6 +2972,20 @@ function isPedestrianCrossing(item: unknown): item is PedestrianCrossing {
 
   const candidate = item as Partial<PedestrianCrossing>;
   return typeof candidate.title === "string" && isCoordinate(candidate.coordinates);
+}
+
+function isLevel7Point(item: unknown): item is Level7Point {
+  if (!item || typeof item !== "object") return false;
+
+  const candidate = item as Partial<Level7Point>;
+  return typeof candidate.label === "string" && isCoordinate(candidate.coordinates);
+}
+
+function isJamColumn(item: unknown): item is JamColumn {
+  if (!item || typeof item !== "object") return false;
+
+  const candidate = item as Partial<JamColumn>;
+  return typeof candidate.label === "string" && isCoordinate(candidate.coordinates);
 }
 
 function isCoordinate(point: unknown): point is Coordinate {
@@ -2365,6 +3088,7 @@ function normalizeBrakeReason(value: unknown): TripBrakeEvent["reason"] {
 }
 
 function normalizeIntersectionPriority(value: unknown): IntersectionPhysics["priority"] {
+  if (value === "uncontrolled_intersection") return "minor";
   if (value === "minor" || value === "roundabout") return value;
   return "major";
 }
@@ -2463,6 +3187,11 @@ function clampPercent(value: number): number {
   return Math.min(Math.max(value, 0), 100);
 }
 
+function coordinateSeed(coordinates: Coordinate): number {
+  const raw = Math.sin(coordinates[0] * 12_989.8 + coordinates[1] * 78_233) * 43_758.5453;
+  return raw - Math.floor(raw);
+}
+
 function hasAnalyticsData(analytics: Level4Analytics): boolean {
   return (
     analytics.metrics.congestionIndex > 0 ||
@@ -2482,8 +3211,56 @@ function hasPhysicsData(physics: Level6Physics): boolean {
   );
 }
 
+function hasLevel7Data(level7: Level7Patterns): boolean {
+  return (
+    level7.calendarPatterns.length > 0 ||
+    level7.attractionPoints.length > 0 ||
+    level7.jamColumns.length > 0 ||
+    level7.comparisons.length > 0
+  );
+}
+
+function offsetCoordinate(coordinates: Coordinate, eastMeters: number, northMeters: number): Coordinate {
+  const metersPerDegreeLat = 111_320;
+  const metersPerDegreeLng = metersPerDegreeLat * Math.cos((coordinates[1] / 180) * Math.PI);
+
+  return [coordinates[0] + eastMeters / metersPerDegreeLng, coordinates[1] + northMeters / metersPerDegreeLat];
+}
+
+function normalizeSignedPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+
+  const percent = Math.abs(value) <= 1 ? value * 100 : value;
+  return Math.min(Math.max(percent, -100), 100);
+}
+
+function calendarAttractorLabel(mode: CalendarMode, index: number): string {
+  if (mode === "night") return index % 2 === 0 ? "Night logistics pocket" : "Late service cluster";
+  if (mode === "weekend") return index % 2 === 0 ? "Weekend leisure pull" : "Retail demand shift";
+  return index % 2 === 0 ? "Morning commuter pull" : "Office corridor demand";
+}
+
+function calendarModeLabel(mode: CalendarMode): string {
+  if (mode === "weekend") return "Weekend";
+  if (mode === "night") return "Night";
+  return "Weekday";
+}
+
+function calendarModeToApiPattern(mode: CalendarMode): string {
+  if (mode === "weekend") return "weekend";
+  if (mode === "night") return "night";
+  return "normal";
+}
+
 function formatPercent(value: number): string {
   return `${Math.round(normalizeRatio(value) * 100)}%`;
+}
+
+function formatSignedPercent(value: number): string {
+  const normalized = normalizeSignedPercent(value);
+  const sign = normalized > 0 ? "+" : "";
+
+  return `${sign}${Math.round(normalized)}%`;
 }
 
 function formatTimeOfDay(seconds: number): string {

@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "2dc6dd5890f8b464",
+        "id": "d83d9ac507147429",
         "type": "tabs",
         "children": [
           {
-            "id": "01a2cc18031090cb",
+            "id": "2b70d63630cd9c87",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "TASKS.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "TASKS"
             }
           }
         ]
@@ -90,6 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "TASKS.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -99,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Backlinks for TASKS"
             }
           },
           {
@@ -108,11 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "TASKS.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Outgoing links from TASKS"
             }
           },
           {
@@ -150,12 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "TASKS.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of TASKS"
             }
           }
         ]
@@ -176,7 +183,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "01a2cc18031090cb",
+  "active": "2b70d63630cd9c87",
   "lastOpenFiles": [
     "TASKS.md",
     "src/traffic_sim/__pycache__/graph_cache.cpython-314.pyc",
@@ -187,8 +194,8 @@
     "src/traffic_sim/__pycache__/network.cpython-314.pyc",
     "src/traffic_sim/__pycache__/models.cpython-314.pyc",
     "src/traffic_sim/__pycache__/__init__.cpython-314.pyc",
-    "scripts/__pycache__/generate_trips.cpython-314.pyc",
-    "scripts/__pycache__/generate_traffic.cpython-314.pyc",
+    "data/physics.json",
+    "src/app/api/physics/route.ts",
     "TASK.md",
     "docs/analytics_contract.md",
     "node_modules/@loaders.gl/compression/README.md",
@@ -213,7 +220,6 @@
     "node_modules/@loaders.gl/mvt/node_modules/pbf/README.md",
     "node_modules/@loaders.gl/terrain/README.md",
     "node_modules/@loaders.gl/gis/node_modules/@mapbox/vector-tile/README.md",
-    "node_modules/@loaders.gl/gis/node_modules/@mapbox/vector-tile/CHANGELOG.md",
     "node_modules/jszip/graph.svg",
     "node_modules/long/long.png",
     "node_modules/long/donate.png",

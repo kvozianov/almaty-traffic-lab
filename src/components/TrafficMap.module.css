@@ -6,20 +6,84 @@
   background: #121815;
 }
 
-.map {
+.map,
+.mapStage,
+.splitMapStage {
   position: absolute;
   inset: 0;
 }
 
-.panel {
+.mapStage,
+.splitMapStage {
+  display: grid;
+}
+
+.splitMapStage {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1px;
+  background: rgba(244, 241, 232, 0.16);
+}
+
+.mapPane {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mapBadge {
+  position: absolute;
+  z-index: 9;
+  top: 12px;
+  left: 50%;
+  max-width: calc(100% - 24px);
+  padding: 6px 9px;
+  border: 1px solid rgba(244, 241, 232, 0.18);
+  border-radius: 7px;
+  background: rgba(18, 24, 21, 0.78);
+  color: #fffdf8;
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  backdrop-filter: blur(12px);
+}
+
+.leftRail,
+.rightRail {
   position: absolute;
   z-index: 10;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.leftRail > *,
+.rightRail > * {
+  pointer-events: auto;
+}
+
+.leftRail {
   left: 16px;
   top: 16px;
+  width: min(360px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+}
+
+.rightRail {
+  top: 16px;
+  right: 16px;
+  width: min(360px, calc(100% - 32px));
+  max-height: max(180px, calc(100dvh - 430px));
+  overflow: auto;
+}
+
+.panel,
+.level7Panel {
   display: grid;
   gap: 4px;
   min-width: 220px;
-  max-width: min(360px, calc(100% - 32px));
   padding: 12px 14px;
   border: 1px solid rgba(244, 241, 232, 0.18);
   border-radius: 8px;
@@ -29,15 +93,17 @@
   backdrop-filter: blur(14px);
 }
 
+.level7Panel {
+  gap: 10px;
+  padding: 12px;
+  background: rgba(18, 24, 21, 0.8);
+  backdrop-filter: blur(16px);
+}
+
 .dashboard {
-  position: absolute;
-  z-index: 10;
-  top: 16px;
-  right: 16px;
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
-  width: min(360px, calc(100% - 32px));
   padding: 12px;
   border: 1px solid rgba(244, 241, 232, 0.16);
   border-radius: 8px;
@@ -48,13 +114,8 @@
 }
 
 .microPanel {
-  position: absolute;
-  z-index: 10;
-  right: 16px;
-  top: 50%;
   display: grid;
   gap: 10px;
-  width: min(360px, calc(100% - 32px));
   padding: 12px;
   border: 1px solid rgba(244, 241, 232, 0.16);
   border-radius: 8px;
@@ -62,7 +123,6 @@
   color: #fffdf8;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 42px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(16px);
-  transform: translateY(-50%);
 }
 
 .eyebrow {
@@ -398,6 +458,7 @@
 }
 
 .controls button,
+.level7Panel button,
 .selectionPanel button {
   min-height: 32px;
   border: 1px solid rgba(244, 241, 232, 0.17);
@@ -415,13 +476,20 @@
   padding: 0 13px;
 }
 
+.level7Panel button {
+  padding: 0 9px;
+  min-width: 0;
+}
+
 .controls button:hover,
+.level7Panel button:hover,
 .selectionPanel button:hover {
   border-color: rgba(155, 216, 205, 0.52);
   background: rgba(155, 216, 205, 0.14);
 }
 
 .controls button:active,
+.level7Panel button:active,
 .selectionPanel button:active {
   transform: translateY(1px);
 }
@@ -471,6 +539,69 @@
 
 .exportGroup {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.segmentedControl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.patternCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  padding: 10px;
+  border: 1px solid rgba(244, 241, 232, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.06);
+}
+
+.patternCard span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 253, 248, 0.72);
+  font-size: 11px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.patternCard strong {
+  color: #bdeae1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.patternCard p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: rgba(255, 253, 248, 0.64);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.selectField {
+  display: grid;
+  gap: 7px;
+  color: rgba(255, 253, 248, 0.72);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.selectField select {
+  width: 100%;
+  min-height: 34px;
+  min-width: 0;
+  border: 1px solid rgba(244, 241, 232, 0.16);
+  border-radius: 7px;
+  background: rgba(255, 253, 248, 0.08);
+  color: #fffdf8;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .activeControl {
@@ -595,31 +726,25 @@
 }
 
 @media (max-width: 720px) {
-  .panel {
+  .splitMapStage {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .leftRail {
     left: 12px;
     right: 12px;
     top: 12px;
-    max-width: none;
-  }
-
-  .dashboard {
-    top: auto;
-    right: 12px;
-    bottom: 74px;
-    left: 12px;
     width: auto;
-    max-height: 36dvh;
-    overflow: auto;
+    max-height: 34dvh;
   }
 
-  .microPanel {
-    top: 86px;
+  .rightRail {
+    top: calc(34dvh + 20px);
     right: 12px;
     left: 12px;
     width: auto;
-    max-height: 30dvh;
-    overflow: auto;
-    transform: none;
+    max-height: 26dvh;
   }
 
   .metricValue {
@@ -640,7 +765,7 @@
     bottom: 12px;
     left: 12px;
     width: auto;
-    max-height: 48dvh;
+    max-height: 34dvh;
     overflow: auto;
   }
 
@@ -651,7 +776,7 @@
   .selectionPanel {
     left: 12px;
     right: 12px;
-    bottom: 252px;
+    bottom: calc(34dvh + 22px);
     width: auto;
   }
 
