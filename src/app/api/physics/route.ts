@@ -10,19 +10,14 @@ const execAsync = util.promisify(exec);
  * Data Contract for Physics API (/api/physics):
  *
  * {
- *   "uncontrolled_intersections": [
+ *   "agents": [
  *     {
- *       "coordinates": [lng, lat],
- *       "type": "uncontrolled_intersection"
- *     },
- *     ...
- *   ],
- *   "pedestrian_crossings": [
- *     {
- *       "coordinates": [lng, lat],
- *       "type": "pedestrian_crossing"
- *     },
- *     ...
+ *       "id": "1",
+ *       "trajectory": [
+ *         {"t": 0, "coord": [lng, lat], "v": 15.2, "a": 0.5},
+ *         ...
+ *       ]
+ *     }
  *   ]
  * }
  */
@@ -31,13 +26,13 @@ export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), 'data', 'physics.json');
+    const filePath = path.join(process.cwd(), 'data', 'physics_trajectories.json');
 
     try {
       await fs.access(filePath);
     } catch {
-      console.log('Physics data not found, generating...');
-      await execAsync('python3 scripts/generate_physics.py');
+      console.log('Physics trajectories data not found, generating...');
+      await execAsync('python3 scripts/physics_engine.py');
     }
 
     const fileContent = await fs.readFile(filePath, 'utf-8');
