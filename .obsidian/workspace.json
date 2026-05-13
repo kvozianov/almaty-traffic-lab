@@ -185,6 +185,7 @@
   },
   "active": "2b70d63630cd9c87",
   "lastOpenFiles": [
+    "data/physics_trajectories.json",
     "scripts/physics_engine.py",
     "TASKS.md",
     "src/traffic_sim/__pycache__/graph_cache.cpython-314.pyc",
@@ -196,7 +197,6 @@
     "src/traffic_sim/__pycache__/models.cpython-314.pyc",
     "src/traffic_sim/__pycache__/__init__.cpython-314.pyc",
     "data/physics.json",
-    "src/app/api/physics/route.ts",
     "TASK.md",
     "docs/analytics_contract.md",
     "node_modules/@loaders.gl/compression/README.md",
