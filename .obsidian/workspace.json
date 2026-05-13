@@ -185,6 +185,7 @@
   },
   "active": "2b70d63630cd9c87",
   "lastOpenFiles": [
+    "scripts/physics_engine.py",
     "TASKS.md",
     "src/traffic_sim/__pycache__/graph_cache.cpython-314.pyc",
     "src/traffic_sim/__pycache__/time_profiles.cpython-314.pyc",

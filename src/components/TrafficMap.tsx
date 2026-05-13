@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
-import { ColumnLayer, GeoJsonLayer, IconLayer, PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { ColumnLayer, GeoJsonLayer, IconLayer, LineLayer, PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { DataFilterExtension, type DataFilterExtensionProps } from "@deck.gl/extensions";
 import { TripsLayer } from "@deck.gl/geo-layers";
 import { Map as MapLibre } from "@vis.gl/react-maplibre";
 import type { PickingInfo } from "@deck.gl/core";
@@ -31,6 +32,7 @@ const INCIDENT_ICON = {
 };
 
 const TRIP_TRAIL_LENGTH_SECONDS = 50;
+const PHYSICS_TRAIL_LENGTH_SECONDS = 42;
 const DEFAULT_TRIP_ANIMATION_SPEED = 3;
 const DEFAULT_TRAFFIC_DENSITY = 100;
 const MIN_TRAFFIC_DENSITY = 100;
@@ -39,6 +41,7 @@ const DAY_SECONDS = 24 * 60 * 60;
 const TRIPS_LAYER_TARGET_OPACITY = 0.8;
 const LEVEL7_COLUMN_RADIUS_METERS = 96;
 const LEVEL7_VARIANT_TRIP_CAP = 1200;
+const PHYSICS_TRAIL_FILTER_EXTENSION = new DataFilterExtension({ filterSize: 1 });
 
 type Coordinate = [number, number];
 type AgentType = "car" | "truck" | "bus";
@@ -123,6 +126,31 @@ type TripBrakeEvent = {
   intensity: number;
 };
 
+type PhysicsTick = {
+  t: number;
+  coord: Coordinate;
+  v: number;
+  a: number;
+};
+
+type PhysicsAgent = {
+  id: string;
+  agentType?: AgentType;
+  trajectory: PhysicsTick[];
+};
+
+type PhysicsTrailSegment = {
+  id: string;
+  agentId: string;
+  agentType?: AgentType;
+  source: Coordinate;
+  target: Coordinate;
+  startTime: number;
+  endTime: number;
+  v: number;
+  a: number;
+};
+
 type MapIncident = {
   id: string;
   coordinates: Coordinate;
@@ -205,6 +233,7 @@ type PedestrianCrossing = {
 
 type Level6Physics = {
   agentProfiles: AgentProfile[];
+  agents: PhysicsAgent[];
   intersections: IntersectionPhysics[];
   pedestrianCrossings: PedestrianCrossing[];
   updatedAt?: string;
@@ -261,6 +290,7 @@ type Level7Patterns = {
 
 type MapSelection =
   | { kind: "road"; title: string; detail: string }
+  | { kind: "agent"; title: string; detail: string }
   | { kind: "incident"; title: string; detail: string }
   | { kind: "closure"; title: string; detail: string }
   | { kind: "light"; title: string; detail: string }
@@ -328,6 +358,7 @@ const DERIVED_LEVEL7_PATTERNS: CalendarPattern[] = [
 const MOCK_LEVEL6_PHYSICS: Level6Physics = {
   source: "mock",
   updatedAt: "mock",
+  agents: [],
   agentProfiles: [
     { type: "car", count: 1280, averageSpeedKph: 32.4, delaySeconds: 42, brakeEvents: 186 },
     { type: "truck", count: 214, averageSpeedKph: 24.8, delaySeconds: 71, brakeEvents: 58 },
@@ -707,6 +738,8 @@ export default function TrafficMap({
   );
 
   const level6Snapshot = useMemo(() => buildPhysicsSnapshot(physics, trips), [physics, trips]);
+  const hasPhysicsAgents = level6Snapshot.agents.length > 0;
+  const physicsTrailSegments = useMemo(() => buildPhysicsTrailSegments(level6Snapshot.agents), [level6Snapshot.agents]);
 
   const level7Snapshot = useMemo(
     () => buildLevel7Snapshot(EMPTY_LEVEL7, roadsWithTraffic, snapshot),
@@ -973,12 +1006,15 @@ export default function TrafficMap({
     return maxTime;
   }, [trips]);
 
+  const maxPhysicsTime = useMemo(() => getPhysicsEndTime(level6Snapshot.agents), [level6Snapshot.agents]);
+  const maxTimelineTime = Math.max(maxTripTime, maxPhysicsTime);
+
   useEffect(() => {
     currentTimeRef.current = currentTime;
   }, [currentTime]);
 
   useEffect(() => {
-    if (maxTripTime <= 0 || !isPlaying) {
+    if (maxTimelineTime <= 0 || !isPlaying) {
       return;
     }
 
@@ -988,7 +1024,7 @@ export default function TrafficMap({
     function animateTrips(now: number) {
       previousFrameTime ??= now;
       const elapsedSeconds = ((now - previousFrameTime) / 1000) * simulationSpeed;
-      const nextTime = (currentTimeRef.current + elapsedSeconds) % maxTripTime;
+      const nextTime = (currentTimeRef.current + elapsedSeconds) % maxTimelineTime;
 
       currentTimeRef.current = nextTime;
       setCurrentTime(nextTime);
@@ -999,7 +1035,7 @@ export default function TrafficMap({
     frameId = requestAnimationFrame(animateTrips);
 
     return () => cancelAnimationFrame(frameId);
-  }, [isPlaying, maxTripTime, simulationSpeed]);
+  }, [isPlaying, maxTimelineTime, simulationSpeed]);
 
   const tripLayers = useMemo(
     () =>
@@ -1075,6 +1111,35 @@ export default function TrafficMap({
             ),
           ],
     [currentTime, deckLayerNamespace, showAgentClasses, tripsLayerOpacity, variantTrips, variantTripsByAgentType],
+  );
+
+  const physicsShockwaveLayer = useMemo(
+    () =>
+      createPhysicsShockwaveLayer(
+        `${deckLayerNamespace}-level8-physics-shockwaves`,
+        showPhysicsOverlay && hasPhysicsAgents ? physicsTrailSegments : [],
+        currentTime,
+        tripsLayerOpacity,
+        showAgentClasses,
+        (segment) => {
+          setSelectedItem({
+            kind: "agent",
+            title: `Agent ${segment.agentId}`,
+            detail: `${agentTypeLabel(segment.agentType ?? "car")} | v ${formatSpeed(segment.v)} | a ${segment.a.toFixed(
+              2,
+            )} m/s^2`,
+          });
+        },
+      ),
+    [
+      currentTime,
+      deckLayerNamespace,
+      hasPhysicsAgents,
+      physicsTrailSegments,
+      showAgentClasses,
+      showPhysicsOverlay,
+      tripsLayerOpacity,
+    ],
   );
 
   const intersectionSlowdownLayer = useMemo(
@@ -1281,9 +1346,9 @@ export default function TrafficMap({
   );
 
   const timeOfDaySeconds = useMemo(() => {
-    if (maxTripTime <= 0) return 0;
-    return Math.min(DAY_SECONDS - 1, Math.round((currentTime / maxTripTime) * (DAY_SECONDS - 1)));
-  }, [currentTime, maxTripTime]);
+    if (maxTimelineTime <= 0) return 0;
+    return Math.min(DAY_SECONDS - 1, Math.round((currentTime / maxTimelineTime) * (DAY_SECONDS - 1)));
+  }, [currentTime, maxTimelineTime]);
 
   const statusText = useMemo(() => {
     if (loadState === "loading") return "Loading road graph from /api/roads";
@@ -1316,8 +1381,10 @@ export default function TrafficMap({
       "en-US",
     )} lights | ${traffic.roads.length.toLocaleString("en-US")} density updates | ${trips.length.toLocaleString(
       "en-US",
-    )} trips | ${analyticsState === "ready" ? "level 4 analytics online" : "waiting for level 4 analytics API"} | ${
-      physicsState === "ready" ? "level 6 physics online" : "level 6 mock overlay"
+    )} trips | ${level6Snapshot.agents.length.toLocaleString(
+      "en-US",
+    )} physics agents | ${analyticsState === "ready" ? "level 4 analytics online" : "waiting for level 4 analytics API"} | ${
+      physicsState === "ready" ? "level 8 physics online" : "level 6 mock overlay"
     } | level 7 scenario API ${splitScreenEnabled ? `| ${variantTrips.length.toLocaleString("en-US")} variant trips` : ""}`;
   }, [
     analyticsError,
@@ -1327,6 +1394,7 @@ export default function TrafficMap({
     physicsError,
     physicsState,
     roads.features.length,
+    level6Snapshot.agents.length,
     splitScreenEnabled,
     traffic.lights.length,
     traffic.roads.length,
@@ -1347,13 +1415,13 @@ export default function TrafficMap({
 
   const handleTimeScrub = useCallback(
     (timeOfDay: number) => {
-      if (maxTripTime <= 0) return;
+      if (maxTimelineTime <= 0) return;
 
-      const nextTime = (timeOfDay / (DAY_SECONDS - 1)) * maxTripTime;
+      const nextTime = (timeOfDay / (DAY_SECONDS - 1)) * maxTimelineTime;
       currentTimeRef.current = nextTime;
       setCurrentTime(nextTime);
     },
-    [maxTripTime],
+    [maxTimelineTime],
   );
 
   const handleTrafficDensityRefresh = useCallback(() => {
@@ -1394,7 +1462,7 @@ export default function TrafficMap({
   const sharedDeckLayers = useMemo(
     () => [
       roadLayer,
-      ...tripLayers,
+      ...(hasPhysicsAgents ? [physicsShockwaveLayer] : tripLayers),
       trafficLightLayer,
       closureZoneLayer,
       incidentLayer,
@@ -1410,6 +1478,8 @@ export default function TrafficMap({
       intersectionSlowdownLayer,
       level7AttractionLayer,
       pedestrianCrossingLayer,
+      hasPhysicsAgents,
+      physicsShockwaveLayer,
       roadLayer,
       trafficLightLayer,
       tripLayers,
@@ -1649,8 +1719,9 @@ export default function TrafficMap({
         </div>
 
         <div className={styles.physicsGrid}>
+          <Metric label="IDM agents" value={String(level6Snapshot.agents.length)} />
           <Metric label="Yield nodes" value={String(level6Snapshot.intersections.length)} />
-          <Metric label="Ped phases" value={String(level6Snapshot.pedestrianCrossings.length)} />
+          <Metric label="Shock waves" value={String(countHardBrakeSegments(physicsTrailSegments))} />
           <Metric label="Brake load" value={formatPercent(averageCrossingBrake(level6Snapshot.pedestrianCrossings))} />
           <Metric label="Delay" value={`${Math.round(averageYieldDelay(level6Snapshot.intersections))}s`} />
         </div>
@@ -1718,7 +1789,7 @@ export default function TrafficMap({
               max={DAY_SECONDS - 1}
               step="300"
               value={timeOfDaySeconds}
-              disabled={maxTripTime <= 0}
+              disabled={maxTimelineTime <= 0}
               onInput={(event) => handleTimeScrub(Number(event.currentTarget.value))}
               onChange={(event) => handleTimeScrub(Number(event.target.value))}
             />
@@ -1869,6 +1940,50 @@ function createVehicleTripLayer(
   });
 }
 
+function createPhysicsShockwaveLayer(
+  id: string,
+  data: PhysicsTrailSegment[],
+  currentTime: number,
+  opacity: number,
+  showAgentClasses: boolean,
+  onSelect: (segment: PhysicsTrailSegment) => void,
+) {
+  const trailStart = Math.max(0, currentTime - PHYSICS_TRAIL_LENGTH_SECONDS);
+  const softTrailStart = Math.max(0, currentTime - PHYSICS_TRAIL_LENGTH_SECONDS * 0.62);
+
+  return new LineLayer<PhysicsTrailSegment, DataFilterExtensionProps<PhysicsTrailSegment>>({
+    id,
+    data,
+    pickable: true,
+    getSourcePosition: (segment) => segment.source,
+    getTargetPosition: (segment) => segment.target,
+    getColor: (segment) => shockwaveTrailColor(segment.a, segment.v, segment.agentType),
+    getWidth: (segment) => physicsTrailWidth(segment, showAgentClasses),
+    widthUnits: "pixels",
+    widthMinPixels: 2,
+    widthMaxPixels: 11,
+    opacity,
+    extensions: [PHYSICS_TRAIL_FILTER_EXTENSION],
+    getFilterValue: (segment) => segment.endTime,
+    filterRange: [trailStart, currentTime],
+    filterSoftRange: [softTrailStart, currentTime],
+    filterTransformSize: false,
+    parameters: {
+      depthWriteEnabled: false,
+    },
+    updateTriggers: {
+      getColor: [data],
+      getWidth: [data, showAgentClasses],
+      getFilterValue: [data],
+    },
+    onClick: (info) => {
+      if (!isPhysicsTrailSegment(info.object)) return false;
+      onSelect(info.object);
+      return true;
+    },
+  });
+}
+
 function createLevel7ColumnLayer(
   id: string,
   data: JamColumn[],
@@ -1929,6 +2044,10 @@ function averageYieldDelay(intersections: IntersectionPhysics[]): number {
   if (intersections.length === 0) return 0;
 
   return intersections.reduce((total, intersection) => total + intersection.yieldDelaySeconds, 0) / intersections.length;
+}
+
+function countHardBrakeSegments(segments: PhysicsTrailSegment[]): number {
+  return segments.reduce((total, segment) => total + (segment.a < -2 ? 1 : 0), 0);
 }
 
 function buildTripsRequestUrl(
@@ -2035,11 +2154,30 @@ function normalizeTripBrakeEvent(item: unknown): TripBrakeEvent[] {
 }
 
 function normalizePhysicsPayload(payload: unknown): Level6Physics {
+  if (Array.isArray(payload)) {
+    return {
+      source: "api",
+      agentProfiles: [],
+      agents: payload.flatMap(normalizePhysicsAgent),
+      intersections: [],
+      pedestrianCrossings: [],
+    };
+  }
+
   if (!payload || typeof payload !== "object") {
-    return { ...MOCK_LEVEL6_PHYSICS, source: "api", agentProfiles: [], intersections: [], pedestrianCrossings: [] };
+    return { ...MOCK_LEVEL6_PHYSICS, source: "api", agentProfiles: [], agents: [], intersections: [], pedestrianCrossings: [] };
   }
 
   const root = payload as Record<string, unknown>;
+  const agentsSource = firstArray(
+    root.agents,
+    root.physicsAgents,
+    root.physics_agents,
+    root.agentTrajectories,
+    root.agent_trajectories,
+    root.trajectories,
+    root.vehicles,
+  );
   const agentProfilesSource = firstArray(
     root.agentProfiles,
     root.agent_profiles,
@@ -2047,8 +2185,6 @@ function normalizePhysicsPayload(payload: unknown): Level6Physics {
     root.agent_mix,
     root.vehicleTypes,
     root.vehicle_types,
-    root.vehicles,
-    root.agents,
   );
   const intersectionsSource = firstArray(
     root.intersections,
@@ -2058,6 +2194,10 @@ function normalizePhysicsPayload(payload: unknown): Level6Physics {
     root.intersection_physics,
     root.yieldZones,
     root.yield_zones,
+    root.conflictZones,
+    root.conflict_zones,
+    root.conflictPoints,
+    root.conflict_points,
     root.priorityNodes,
     root.priority_nodes,
   );
@@ -2074,9 +2214,74 @@ function normalizePhysicsPayload(payload: unknown): Level6Physics {
     source: "api",
     updatedAt: optionalString(root.updatedAt ?? root.updated_at ?? root.timestamp),
     agentProfiles: agentProfilesSource.flatMap(normalizeAgentProfile),
+    agents: agentsSource.flatMap(normalizePhysicsAgent),
     intersections: intersectionsSource.flatMap(normalizeIntersectionPhysics),
     pedestrianCrossings: pedestrianCrossingsSource.flatMap(normalizePedestrianCrossing),
   };
+}
+
+function normalizePhysicsAgent(item: unknown): PhysicsAgent[] {
+  const source = getRecord(item);
+  if (!source) return [];
+
+  const trajectorySource = firstArray(
+    source.trajectory,
+    source.ticks,
+    source.states,
+    source.positions,
+    source.path,
+    source.trace,
+  );
+  const trajectory = trajectorySource
+    .flatMap(normalizePhysicsTick)
+    .sort((left, right) => left.t - right.t)
+    .filter((tick, index, ticks) => index === 0 || tick.t > ticks[index - 1].t);
+
+  if (trajectory.length < 2) return [];
+
+  const id = String(source.id ?? source.agentId ?? source.agent_id ?? source.vehicleId ?? source.vehicle_id ?? `agent-${trajectory[0].t}`);
+
+  return [
+    {
+      id,
+      agentType: normalizeAgentType(source.agentType ?? source.agent_type ?? source.vehicleType ?? source.vehicle_type ?? source.type),
+      trajectory,
+    },
+  ];
+}
+
+function normalizePhysicsTick(item: unknown): PhysicsTick[] {
+  if (Array.isArray(item)) {
+    const coord = normalizeCoordinate(item.length > 2 ? item.slice(0, 2) : item);
+    const t = optionalNumber(item[2]);
+    if (!coord || t === undefined) return [];
+
+    return [
+      {
+        t,
+        coord,
+        v: optionalNumber(item[3]) ?? 0,
+        a: optionalNumber(item[4]) ?? 0,
+      },
+    ];
+  }
+
+  const source = getRecord(item);
+  if (!source) return [];
+
+  const coord = normalizeCoordinate(source.coord ?? source.coordinate ?? source.coordinates ?? source.position ?? source.location);
+  const t = optionalNumber(source.t ?? source.time ?? source.timestamp);
+
+  if (!coord || t === undefined) return [];
+
+  return [
+    {
+      t,
+      coord,
+      v: optionalNumber(source.v ?? source.speed ?? source.velocity) ?? 0,
+      a: optionalNumber(source.a ?? source.acceleration ?? source.accel) ?? 0,
+    },
+  ];
 }
 
 function normalizeAgentProfile(item: unknown): AgentProfile[] {
@@ -2101,7 +2306,7 @@ function normalizeIntersectionPhysics(item: unknown): IntersectionPhysics[] {
   const source = getRecord(item);
   if (!source) return [];
 
-  const coordinates = normalizeCoordinate(source.coordinates ?? source.point ?? source.location);
+  const coordinates = normalizeCoordinate(source.coord ?? source.coordinates ?? source.point ?? source.center ?? source.location);
   if (!coordinates) return [];
 
   const id = String(source.id ?? source.nodeId ?? source.node_id ?? `intersection-${coordinates.join("-")}`);
@@ -2115,13 +2320,20 @@ function normalizeIntersectionPhysics(item: unknown): IntersectionPhysics[] {
       title: String(source.title ?? source.name ?? source.label ?? (isUncontrolled ? "Uncontrolled intersection" : id)),
       priority: normalizeIntersectionPriority(source.priority ?? source.priorityRule ?? source.priority_rule ?? source.type),
       slowdownRadiusMeters:
-        optionalNumber(source.slowdownRadiusMeters ?? source.slowdown_radius_meters ?? source.radiusMeters) ??
+        optionalNumber(source.slowdownRadiusMeters ?? source.slowdown_radius_meters ?? source.radiusMeters ?? source.radius) ??
         Math.round(54 + seed * 42),
       yieldDelaySeconds:
         optionalNumber(source.yieldDelaySeconds ?? source.yield_delay_seconds ?? source.delaySeconds ?? source.delay) ??
         Math.round(5 + seed * 13),
       activeApproachDensity:
-        optionalImpact(source.activeApproachDensity ?? source.active_approach_density ?? source.density ?? source.load) ??
+        optionalImpact(
+          source.activeApproachDensity ??
+            source.active_approach_density ??
+            source.conflictScore ??
+            source.conflict_score ??
+            source.density ??
+            source.load,
+        ) ??
         0.34 + seed * 0.5,
     },
   ];
@@ -2382,8 +2594,13 @@ function buildAnalyticsSnapshot(
 function buildPhysicsSnapshot(physics: Level6Physics, trips: Trip[]): Level6Physics {
   return {
     ...physics,
+    agents: physics.agents,
     agentProfiles:
-      physics.agentProfiles.length > 0 ? normalizeAgentProfilesTotal(physics.agentProfiles) : deriveAgentProfiles(trips),
+      physics.agentProfiles.length > 0
+        ? normalizeAgentProfilesTotal(physics.agentProfiles)
+        : physics.agents.length > 0
+          ? deriveAgentProfilesFromPhysicsAgents(physics.agents)
+          : deriveAgentProfiles(trips),
     intersections: physics.intersections.length > 0 ? physics.intersections : MOCK_LEVEL6_PHYSICS.intersections,
     pedestrianCrossings:
       physics.pedestrianCrossings.length > 0 ? physics.pedestrianCrossings : MOCK_LEVEL6_PHYSICS.pedestrianCrossings,
@@ -2582,6 +2799,82 @@ function deriveAgentProfiles(trips: Trip[]): AgentProfile[] {
   );
 }
 
+function deriveAgentProfilesFromPhysicsAgents(agents: PhysicsAgent[]): AgentProfile[] {
+  const byType = new Map<AgentType, { count: number; speedTotal: number; speedSamples: number; brakeEvents: number }>();
+
+  for (const agent of agents) {
+    const type = agent.agentType ?? "car";
+    const current = byType.get(type) ?? { count: 0, speedTotal: 0, speedSamples: 0, brakeEvents: 0 };
+
+    current.count += 1;
+
+    for (const tick of agent.trajectory) {
+      if (Number.isFinite(tick.v)) {
+        current.speedTotal += tick.v;
+        current.speedSamples += 1;
+      }
+
+      if (tick.a < -2) {
+        current.brakeEvents += 1;
+      }
+    }
+
+    byType.set(type, current);
+  }
+
+  return ensureAgentProfileOrder(
+    (["car", "truck", "bus"] as AgentType[]).map((type) => {
+      const profile = byType.get(type);
+
+      return {
+        type,
+        count: profile?.count ?? 0,
+        averageSpeedKph: profile && profile.speedSamples > 0 ? (profile.speedTotal / profile.speedSamples) * 3.6 : undefined,
+        delaySeconds: profile && profile.brakeEvents > 0 ? profile.brakeEvents * 0.5 : undefined,
+        brakeEvents: profile?.brakeEvents ?? 0,
+      };
+    }),
+  );
+}
+
+function buildPhysicsTrailSegments(agents: PhysicsAgent[]): PhysicsTrailSegment[] {
+  return agents.flatMap((agent) => {
+    const segments: PhysicsTrailSegment[] = [];
+
+    for (let index = 1; index < agent.trajectory.length; index += 1) {
+      const previous = agent.trajectory[index - 1];
+      const current = agent.trajectory[index];
+
+      if (current.t <= previous.t) continue;
+
+      segments.push({
+        id: `${agent.id}-${index}`,
+        agentId: agent.id,
+        agentType: agent.agentType,
+        source: previous.coord,
+        target: current.coord,
+        startTime: previous.t,
+        endTime: current.t,
+        v: current.v,
+        a: current.a,
+      });
+    }
+
+    return segments;
+  });
+}
+
+function getPhysicsEndTime(agents: PhysicsAgent[]): number {
+  let maxTime = 0;
+
+  for (const agent of agents) {
+    const lastTick = agent.trajectory[agent.trajectory.length - 1];
+    if (lastTick) maxTime = Math.max(maxTime, lastTick.t);
+  }
+
+  return maxTime;
+}
+
 function ensureAgentProfileOrder(profiles: AgentProfile[]): AgentProfile[] {
   const byType = new Map(profiles.map((profile) => [profile.type, profile]));
 
@@ -2639,6 +2932,14 @@ function estimateCoordinateDistanceMeters(a: Coordinate, b: Coordinate): number 
 }
 
 function buildTooltip(object: unknown) {
+  if (isPhysicsTrailSegment(object)) {
+    return {
+      text: `Agent ${object.agentId}\n${shockwaveLabel(object.a)} | v ${formatSpeed(object.v)} | a ${object.a.toFixed(
+        2,
+      )} m/s^2`,
+    };
+  }
+
   if (isJamColumn(object)) {
     return {
       text: `${object.label}\n${object.scenario} queue | ${formatPercent(object.intensity)}`,
@@ -2811,6 +3112,37 @@ function agentTripColor(type: AgentType): [number, number, number] {
   if (type === "truck") return [97, 186, 218];
   if (type === "bus") return [204, 137, 74];
   return [255, 200, 0];
+}
+
+function shockwaveTrailColor(a: number, v: number, type?: AgentType): [number, number, number, number] {
+  if (a < -2) return [255, 38, 34, 245];
+  if (a < -0.75) return [255, 121, 43, 230];
+  if (a > 1.2) return [94, 213, 181, 205];
+
+  const idleLift = Math.min(Math.max(v, 0), 18) / 18;
+  const typeColor = type ? agentTripColor(type) : agentTripColor("car");
+
+  return [
+    Math.round(255 - idleLift * 12),
+    Math.round(205 + idleLift * 18),
+    Math.round(type === "car" ? 36 : typeColor[2] * 0.42),
+    210,
+  ];
+}
+
+function physicsTrailWidth(segment: PhysicsTrailSegment, showAgentClasses: boolean): number {
+  const type = segment.agentType ?? "car";
+  const baseWidth = showAgentClasses && type !== "car" ? (type === "truck" ? 5.8 : 5.2) : 3.6;
+  const brakeLift = segment.a < -2 ? 3 : segment.a < -0.75 ? 1.4 : 0;
+
+  return baseWidth + brakeLift;
+}
+
+function shockwaveLabel(a: number): string {
+  if (a < -2) return "hard braking shock wave";
+  if (a < -0.75) return "braking compression";
+  if (a > 1.2) return "acceleration recovery";
+  return "steady flow";
 }
 
 function agentCssColor(type: AgentType): string {
@@ -2988,6 +3320,13 @@ function isJamColumn(item: unknown): item is JamColumn {
   return typeof candidate.label === "string" && isCoordinate(candidate.coordinates);
 }
 
+function isPhysicsTrailSegment(item: unknown): item is PhysicsTrailSegment {
+  if (!item || typeof item !== "object") return false;
+
+  const candidate = item as Partial<PhysicsTrailSegment>;
+  return typeof candidate.agentId === "string" && isCoordinate(candidate.source) && isCoordinate(candidate.target);
+}
+
 function isCoordinate(point: unknown): point is Coordinate {
   return Array.isArray(point) && point.length === 2 && Number.isFinite(point[0]) && Number.isFinite(point[1]);
 }
@@ -3044,6 +3383,9 @@ function firstArray(...values: unknown[]): unknown[] {
 
 function normalizeCoordinate(value: unknown): Coordinate | undefined {
   if (isCoordinate(value)) return value;
+  if (Array.isArray(value) && value.length >= 2 && Number.isFinite(value[0]) && Number.isFinite(value[1])) {
+    return [value[0], value[1]];
+  }
 
   const record = getRecord(value);
   const lng = Number(record?.lng ?? record?.lon ?? record?.longitude);
@@ -3205,6 +3547,7 @@ function hasAnalyticsData(analytics: Level4Analytics): boolean {
 
 function hasPhysicsData(physics: Level6Physics): boolean {
   return (
+    physics.agents.length > 0 ||
     physics.agentProfiles.length > 0 ||
     physics.intersections.length > 0 ||
     physics.pedestrianCrossings.length > 0
@@ -3254,6 +3597,12 @@ function calendarModeToApiPattern(mode: CalendarMode): string {
 
 function formatPercent(value: number): string {
   return `${Math.round(normalizeRatio(value) * 100)}%`;
+}
+
+function formatSpeed(metersPerSecond: number): string {
+  if (!Number.isFinite(metersPerSecond)) return "n/a";
+
+  return `${Math.round(metersPerSecond * 3.6)} kph`;
 }
 
 function formatSignedPercent(value: number): string {
