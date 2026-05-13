@@ -20,17 +20,44 @@ def haversine(lon1, lat1, lon2, lat2):
 
     return R * c
 
-def generate_trips(num_trips=150):
+def generate_trips(num_trips=150, pattern="normal", closed_streets="", out_file=None):
     print("Loading graph...")
     graph = load_preset_graph("full_almaty_fast")
+
+    if closed_streets:
+        closed_list = [s.strip().lower() for s in closed_streets.split(",") if s.strip()]
+        for road_id, road in graph.roads.items():
+            name = str(road.metadata.get("name", "")).lower()
+            if any(closed in name for closed in closed_list):
+                road.is_open = False
+
+    # Pre-compute weekend bias points
+    attraction_points = []
+    if pattern == "weekend":
+        sorted_nodes = sorted(list(graph.nodes.keys()))
+        # Pick top 20 deterministically pseudo-random nodes as "malls/parks"
+        random.seed(42)
+        attraction_points = random.sample(sorted_nodes, min(20, len(sorted_nodes)))
+        random.seed() # reset seed
+
     nodes_list = list(graph.nodes.keys())
+
 
     trips = []
 
     print(f"Generating {num_trips} trips...")
     for i in range(num_trips):
-        start = random.choice(nodes_list)
-        end = random.choice(nodes_list)
+        if pattern == "weekend" and attraction_points and random.random() < 0.6:
+            # 60% chance to go to or from an attraction point
+            if random.random() < 0.5:
+                start = random.choice(nodes_list)
+                end = random.choice(attraction_points)
+            else:
+                start = random.choice(attraction_points)
+                end = random.choice(nodes_list)
+        else:
+            start = random.choice(nodes_list)
+            end = random.choice(nodes_list)
 
         # Ensure start and end are different
         while start == end:
@@ -65,6 +92,9 @@ def generate_trips(num_trips=150):
                 # Calculate time to traverse road
                 # speed = distance / time => time = distance / speed
                 speed_mps = (road.max_speed_kph * 1000) / 3600
+                if pattern == "night":
+                    speed_mps *= 1.2 # Less traffic, faster travel
+
                 if agent_type == "truck":
                     speed_mps *= 0.8
                 elif agent_type == "bus":
@@ -126,22 +156,33 @@ def generate_trips(num_trips=150):
     }
 
     os.makedirs(os.path.join("data"), exist_ok=True)
-    out_file = os.path.join("data", "trips.json")
+    if not out_file:
+        out_file = os.path.join("data", "trips.json")
     with open(out_file, "w") as f:
         json.dump(output, f)
 
     print(f"Saved trips to {out_file}")
 
 if __name__ == "__main__":
-    num_trips = 150
-    if len(sys.argv) > 1:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("num_trips_pos", nargs="?", type=int, default=None)
+    parser.add_argument("--num_trips", type=int, default=150)
+    parser.add_argument("--pattern", type=str, choices=["normal", "night", "weekend"], default="normal")
+    parser.add_argument("--closed_streets", type=str, default="")
+    parser.add_argument("--out", type=str, default="")
+
+    args, unknown = parser.parse_known_args()
+
+    # Try to parse legacy environment variable if no flags passed
+    if args.num_trips_pos is not None:
+        args.num_trips = args.num_trips_pos
+    elif "NUM_TRIPS" in os.environ and args.num_trips == 150:
         try:
-            num_trips = int(sys.argv[1])
+            args.num_trips = int(os.environ["NUM_TRIPS"])
         except ValueError:
             pass
-    elif "NUM_TRIPS" in os.environ:
-        try:
-            num_trips = int(os.environ["NUM_TRIPS"])
-        except ValueError:
-            pass
-    generate_trips(num_trips)
+
+    out_file = args.out if args.out else None
+
+    generate_trips(num_trips=args.num_trips, pattern=args.pattern, closed_streets=args.closed_streets, out_file=out_file)
