@@ -1721,7 +1721,7 @@ export default function TrafficMap({
         <div className={styles.physicsGrid}>
           <Metric label="IDM agents" value={String(level6Snapshot.agents.length)} />
           <Metric label="Yield nodes" value={String(level6Snapshot.intersections.length)} />
-          <Metric label="Shock waves" value={String(countHardBrakeSegments(physicsTrailSegments))} />
+          <Metric label="Shock waves" value={String(countBrakingSegments(physicsTrailSegments))} />
           <Metric label="Brake load" value={formatPercent(averageCrossingBrake(level6Snapshot.pedestrianCrossings))} />
           <Metric label="Delay" value={`${Math.round(averageYieldDelay(level6Snapshot.intersections))}s`} />
         </div>
@@ -2046,8 +2046,8 @@ function averageYieldDelay(intersections: IntersectionPhysics[]): number {
   return intersections.reduce((total, intersection) => total + intersection.yieldDelaySeconds, 0) / intersections.length;
 }
 
-function countHardBrakeSegments(segments: PhysicsTrailSegment[]): number {
-  return segments.reduce((total, segment) => total + (segment.a < -2 ? 1 : 0), 0);
+function countBrakingSegments(segments: PhysicsTrailSegment[]): number {
+  return segments.reduce((total, segment) => total + (segment.a < 0 ? 1 : 0), 0);
 }
 
 function buildTripsRequestUrl(
@@ -3116,7 +3116,10 @@ function agentTripColor(type: AgentType): [number, number, number] {
 
 function shockwaveTrailColor(a: number, v: number, type?: AgentType): [number, number, number, number] {
   if (a < -2) return [255, 38, 34, 245];
-  if (a < -0.75) return [255, 121, 43, 230];
+  if (a < 0) {
+    const brake = clamp01(Math.abs(a) / 2);
+    return [255, Math.round(190 - brake * 92), Math.round(30 - brake * 18), Math.round(218 + brake * 24)];
+  }
   if (a > 1.2) return [94, 213, 181, 205];
 
   const idleLift = Math.min(Math.max(v, 0), 18) / 18;
@@ -3133,14 +3136,14 @@ function shockwaveTrailColor(a: number, v: number, type?: AgentType): [number, n
 function physicsTrailWidth(segment: PhysicsTrailSegment, showAgentClasses: boolean): number {
   const type = segment.agentType ?? "car";
   const baseWidth = showAgentClasses && type !== "car" ? (type === "truck" ? 5.8 : 5.2) : 3.6;
-  const brakeLift = segment.a < -2 ? 3 : segment.a < -0.75 ? 1.4 : 0;
+  const brakeLift = segment.a < -2 ? 3 : segment.a < 0 ? 1.2 : 0;
 
   return baseWidth + brakeLift;
 }
 
 function shockwaveLabel(a: number): string {
   if (a < -2) return "hard braking shock wave";
-  if (a < -0.75) return "braking compression";
+  if (a < 0) return "braking compression";
   if (a > 1.2) return "acceleration recovery";
   return "steady flow";
 }
