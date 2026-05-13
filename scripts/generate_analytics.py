@@ -4,10 +4,15 @@ import os
 import csv
 from datetime import datetime, timedelta
 
-def generate_analytics():
+def generate_analytics(pattern="normal", closed_streets=""):
     # Attempt to read trips.json for base data if available, or generate synthetic
     try:
-        with open(os.path.join("data", "trips.json"), "r") as f:
+        fileName = f"trips_{pattern}"
+        if closed_streets:
+            fileName += "_" + "".join(c if c.isalnum() else "_" for c in closed_streets)
+        fileName += ".json"
+
+        with open(os.path.join("data", fileName), "r") as f:
             trips_data = json.load(f)
             num_trips = len(trips_data.get("trips", []))
     except Exception:
@@ -41,13 +46,28 @@ def generate_analytics():
     # 24 hour breakdown
     time_series = []
     for hour in range(24):
-        # Base traffic curve: peak at 8-9 and 18-19
-        if hour in (8, 9, 17, 18, 19):
-            base_idx = random.uniform(70, 95)
-        elif hour in range(1, 6):
-            base_idx = random.uniform(5, 20)
+        if pattern == "night":
+            base_idx = random.uniform(5, 15)
+        elif pattern == "weekend":
+            # Peak slightly later in the day, smoother
+            if hour in range(11, 16):
+                base_idx = random.uniform(50, 75)
+            elif hour in range(1, 6):
+                base_idx = random.uniform(5, 20)
+            else:
+                base_idx = random.uniform(25, 45)
         else:
-            base_idx = random.uniform(30, 60)
+            # Base traffic curve: peak at 8-9 and 18-19
+            if hour in (8, 9, 17, 18, 19):
+                base_idx = random.uniform(70, 95)
+            elif hour in range(1, 6):
+                base_idx = random.uniform(5, 20)
+            else:
+                base_idx = random.uniform(30, 60)
+
+        # closed_streets penalize congestion everywhere
+        if closed_streets:
+            base_idx = min(100, base_idx * 1.2)
 
         time_series.append({
             "hour": f"{hour:02d}:00",
@@ -84,12 +104,16 @@ def generate_analytics():
 
     # Save JSON
     os.makedirs("data", exist_ok=True)
-    json_path = os.path.join("data", "analytics.json")
+    json_name = f"analytics_{pattern}"
+    if closed_streets:
+        json_name += "_" + "".join(c if c.isalnum() else "_" for c in closed_streets)
+    json_path = os.path.join("data", f"{json_name}.json")
+
     with open(json_path, "w") as f:
         json.dump(analytics_data, f, indent=2)
 
     # Save CSV Report
-    csv_path = os.path.join("data", "analytics_report.csv")
+    csv_path = os.path.join("data", f"{json_name}_report.csv")
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["Hour", "Congestion_Index", "Avg_Speed_kph", "Predicted_Next_Hour"])
@@ -106,4 +130,10 @@ def generate_analytics():
     print(f"Analytics data generated successfully at {json_path} and {csv_path}")
 
 if __name__ == "__main__":
-    generate_analytics()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--pattern", type=str, choices=["normal", "night", "weekend"], default="normal")
+    parser.add_argument("--closed_streets", type=str, default="")
+    args, _ = parser.parse_known_args()
+
+    generate_analytics(pattern=args.pattern, closed_streets=args.closed_streets)
