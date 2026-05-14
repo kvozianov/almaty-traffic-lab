@@ -31,6 +31,18 @@ const INCIDENT_ICON = {
   mask: true,
 };
 
+const BUS_ICON = {
+  url:
+    "data:image/svg+xml;charset=utf-8," +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72"><rect x="13" y="9" width="46" height="48" rx="10" fill="white"/><rect x="20" y="17" width="32" height="17" rx="3" fill="black"/><path d="M21 43h30" stroke="black" stroke-width="6" stroke-linecap="round"/><circle cx="23" cy="58" r="5" fill="white"/><circle cx="49" cy="58" r="5" fill="white"/></svg>`,
+    ),
+  width: 72,
+  height: 72,
+  anchorY: 64,
+  mask: true,
+};
+
 const TRIP_TRAIL_LENGTH_SECONDS = 50;
 const PHYSICS_TRAIL_LENGTH_SECONDS = 42;
 const DEFAULT_TRIP_ANIMATION_SPEED = 3;
@@ -61,6 +73,10 @@ type RoadProperties = {
   isOpen?: boolean;
   maxSpeedKph?: number;
   capacity?: number;
+  lanes?: number | string;
+  laneCount?: number | string;
+  lanesForward?: number | string;
+  lanesBackward?: number | string;
   [key: string]: unknown;
 };
 
@@ -87,6 +103,7 @@ type LegacyRoad = {
   isOpen?: boolean;
   maxSpeedKph?: number;
   capacity?: number;
+  lanes?: number | string;
 };
 
 type RoadsPayload =
@@ -151,6 +168,14 @@ type PhysicsTrailSegment = {
   a: number;
 };
 
+type TransitAgentMarker = {
+  id: string;
+  label: string;
+  coordinates: Coordinate;
+  speedMps?: number;
+  source: "physics" | "trip";
+};
+
 type MapIncident = {
   id: string;
   coordinates: Coordinate;
@@ -201,6 +226,17 @@ type Level4Analytics = {
   timeSeries: TimeSeriesPoint[];
   forecast: TimeSeriesPoint[];
   bottlenecks: Bottleneck[];
+  validation: ValidationMetric[];
+};
+
+type ValidationMetric = {
+  id: string;
+  corridor: string;
+  modelSpeedKph: number;
+  referenceSpeedKph: number;
+  deltaKph: number;
+  sampleCount?: number;
+  source: "api" | "derived" | "stub";
 };
 
 type AgentProfile = {
@@ -318,6 +354,7 @@ const EMPTY_ANALYTICS: Level4Analytics = {
   timeSeries: [],
   forecast: [],
   bottlenecks: [],
+  validation: [],
 };
 
 const EMPTY_LEVEL7: Level7Patterns = {
@@ -859,12 +896,9 @@ export default function TrafficMap({
         lineJointRounded: true,
         lineCapRounded: true,
         getLineColor: (feature) => roadColor(getRoadProperties(feature)),
-        getLineWidth: (feature) => {
-          const load = Number(getRoadProperties(feature)?.load ?? 0);
-          return 2 + Math.min(Math.max(load, 0), 1.5) * 5;
-        },
+        getLineWidth: (feature) => roadLineWidthMeters(getRoadProperties(feature)),
         lineWidthMinPixels: 1,
-        lineWidthMaxPixels: 8,
+        lineWidthMaxPixels: 13,
         updateTriggers: {
           getLineColor: [roadsWithTraffic],
           getLineWidth: [roadsWithTraffic],
@@ -881,7 +915,7 @@ export default function TrafficMap({
             title: String(properties.name || properties.id || properties.osmid || "Road segment"),
             detail: `density ${formatPercent(Number(properties.density ?? properties.load ?? 0))} | ${
               properties.maxSpeedKph ? `${properties.maxSpeedKph} kph` : "speed n/a"
-            }`,
+            } | ${getRoadLaneCount(properties)} lanes`,
           });
 
           return true;
@@ -1140,6 +1174,24 @@ export default function TrafficMap({
       showPhysicsOverlay,
       tripsLayerOpacity,
     ],
+  );
+
+  const transitAgentLayer = useMemo(
+    () =>
+      createTransitAgentLayer(
+        `${deckLayerNamespace}-level9-transit-bus-agents`,
+        buildTransitAgentMarkers(hasPhysicsAgents ? level6Snapshot.agents : tripsByAgentType.bus, currentTime),
+        (marker) => {
+          setSelectedItem({
+            kind: "agent",
+            title: marker.label,
+            detail: `GTFS public transport | ${marker.source === "physics" ? "IDM trajectory" : "trip route"} | ${formatSpeed(
+              marker.speedMps,
+            )}`,
+          });
+        },
+      ),
+    [currentTime, deckLayerNamespace, hasPhysicsAgents, level6Snapshot.agents, tripsByAgentType.bus],
   );
 
   const intersectionSlowdownLayer = useMemo(
@@ -1463,6 +1515,7 @@ export default function TrafficMap({
     () => [
       roadLayer,
       ...(hasPhysicsAgents ? [physicsShockwaveLayer] : tripLayers),
+      transitAgentLayer,
       trafficLightLayer,
       closureZoneLayer,
       incidentLayer,
@@ -1483,6 +1536,7 @@ export default function TrafficMap({
       roadLayer,
       trafficLightLayer,
       tripLayers,
+      transitAgentLayer,
     ],
   );
 
@@ -1616,7 +1670,20 @@ export default function TrafficMap({
       </div>
 
       <div className={styles.rightRail}>
-      <aside className={styles.dashboard} aria-label="Level 4 analytics dashboard">
+        <aside className={styles.validationPanel} aria-label="Level 9 validation dashboard">
+          <div className={styles.panelHeader}>
+            <span>Валидация</span>
+            <small>{snapshot.validation.some((metric) => metric.source === "api") ? "Jules API" : "safe defaults"}</small>
+          </div>
+
+          <div className={styles.validationList}>
+            {snapshot.validation.slice(0, 3).map((metric) => (
+              <ValidationMetricRow key={metric.id} metric={metric} />
+            ))}
+          </div>
+        </aside>
+
+        <aside className={styles.dashboard} aria-label="Level 4 analytics dashboard">
         <div className={styles.metricHero}>
           <span className={styles.metricLabel}>Congestion index</span>
           <strong className={styles.metricValue}>{Math.round(snapshot.metrics.congestionIndex)}</strong>
@@ -1873,6 +1940,26 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ValidationMetricRow({ metric }: { metric: ValidationMetric }) {
+  const delta = metric.deltaKph;
+  const status = Math.abs(delta) <= 5 ? "ok" : delta < 0 ? "slow" : "fast";
+
+  return (
+    <div className={styles.validationRow} data-status={status}>
+      <div>
+        <span>{metric.corridor}</span>
+        <small>
+          model {metric.modelSpeedKph.toFixed(1)} kph vs ref {metric.referenceSpeedKph.toFixed(1)} kph
+        </small>
+      </div>
+      <b>
+        {delta > 0 ? "+" : ""}
+        {delta.toFixed(1)}
+      </b>
+    </div>
+  );
+}
+
 function ToggleControl({
   checked,
   label,
@@ -1921,14 +2008,14 @@ function createVehicleTripLayer(
     getPath: (trip) => trip.path,
     getTimestamps: (trip) => trip.timestamps,
     getColor: agentTripColor(agentType),
-    getWidth: agentType === "car" ? 5 : agentType === "truck" ? 8 : 7,
+    getWidth: agentType === "car" ? 5 : agentType === "truck" ? 8 : 10,
     opacity,
-    widthMinPixels: agentType === "car" ? 2.5 : 4,
-    widthMaxPixels: agentType === "car" ? 10 : 16,
+    widthMinPixels: agentType === "car" ? 2.5 : agentType === "truck" ? 4 : 5,
+    widthMaxPixels: agentType === "car" ? 10 : agentType === "truck" ? 16 : 19,
     capRounded: true,
     jointRounded: true,
     fadeTrail: true,
-    trailLength: agentType === "car" ? TRIP_TRAIL_LENGTH_SECONDS : TRIP_TRAIL_LENGTH_SECONDS * 1.25,
+    trailLength: agentType === "car" ? TRIP_TRAIL_LENGTH_SECONDS : TRIP_TRAIL_LENGTH_SECONDS * (agentType === "bus" ? 1.5 : 1.25),
     currentTime,
     parameters: {
       depthWriteEnabled: false,
@@ -1936,6 +2023,36 @@ function createVehicleTripLayer(
     updateTriggers: {
       getPath: [data],
       getTimestamps: [data],
+    },
+  });
+}
+
+function createTransitAgentLayer(
+  id: string,
+  data: TransitAgentMarker[],
+  onSelect: (marker: TransitAgentMarker) => void,
+) {
+  return new IconLayer<TransitAgentMarker>({
+    id,
+    data,
+    pickable: true,
+    billboard: true,
+    getPosition: (marker) => marker.coordinates,
+    getIcon: () => BUS_ICON,
+    getColor: (marker) => (marker.source === "physics" ? [65, 213, 185, 245] : [238, 173, 72, 245]),
+    getSize: (marker) => (marker.source === "physics" ? 34 : 30),
+    sizeUnits: "pixels",
+    parameters: {
+      depthWriteEnabled: false,
+    },
+    updateTriggers: {
+      getColor: [data],
+      getSize: [data],
+    },
+    onClick: (info) => {
+      if (!isTransitAgentMarker(info.object)) return false;
+      onSelect(info.object);
+      return true;
     },
   });
 }
@@ -2032,6 +2149,99 @@ function groupTripsByAgentType(trips: Trip[]): Record<AgentType, Trip[]> {
   }
 
   return groups;
+}
+
+function buildTransitAgentMarkers(
+  agentsOrTrips: PhysicsAgent[] | Trip[],
+  currentTime: number,
+): TransitAgentMarker[] {
+  const markers: TransitAgentMarker[] = [];
+
+  agentsOrTrips.forEach((item, index) => {
+    if (isPhysicsAgentLike(item)) {
+      if (item.agentType !== "bus") return;
+
+      const tick = interpolatePhysicsTick(item.trajectory, currentTime);
+      if (!tick) return;
+
+      markers.push({
+        id: `physics-bus-${item.id}`,
+        label: `Bus ${item.id}`,
+        coordinates: tick.coord,
+        speedMps: tick.v,
+        source: "physics",
+      });
+      return;
+    }
+
+    const tick = interpolateTripPoint(item, currentTime);
+    if (!tick) return;
+
+    markers.push({
+      id: `trip-bus-${index}`,
+      label: `Bus route ${index + 1}`,
+      coordinates: tick.coord,
+      speedMps: tick.speedMps,
+      source: "trip",
+    });
+  });
+
+  return markers;
+}
+
+function isPhysicsAgentLike(item: PhysicsAgent | Trip): item is PhysicsAgent {
+  return Array.isArray((item as Partial<PhysicsAgent>).trajectory);
+}
+
+function interpolatePhysicsTick(trajectory: PhysicsTick[], currentTime: number): PhysicsTick | undefined {
+  if (trajectory.length === 0) return undefined;
+  if (currentTime <= trajectory[0].t) return trajectory[0];
+
+  for (let index = 1; index < trajectory.length; index += 1) {
+    const previous = trajectory[index - 1];
+    const next = trajectory[index];
+
+    if (currentTime <= next.t) {
+      const progress = (currentTime - previous.t) / Math.max(0.001, next.t - previous.t);
+
+      return {
+        t: currentTime,
+        coord: interpolateCoordinate(previous.coord, next.coord, progress),
+        v: previous.v + (next.v - previous.v) * progress,
+        a: previous.a + (next.a - previous.a) * progress,
+      };
+    }
+  }
+
+  return trajectory[trajectory.length - 1];
+}
+
+function interpolateTripPoint(trip: Trip, currentTime: number): { coord: Coordinate; speedMps?: number } | undefined {
+  if (trip.path.length === 0 || trip.timestamps.length === 0) return undefined;
+  if (currentTime <= trip.timestamps[0]) return { coord: trip.path[0] };
+
+  for (let index = 1; index < trip.timestamps.length; index += 1) {
+    const previousTime = trip.timestamps[index - 1];
+    const nextTime = trip.timestamps[index];
+
+    if (currentTime <= nextTime) {
+      const progress = (currentTime - previousTime) / Math.max(0.001, nextTime - previousTime);
+      const previous = trip.path[index - 1];
+      const next = trip.path[index];
+
+      return {
+        coord: interpolateCoordinate(previous, next, progress),
+        speedMps: estimateCoordinateDistanceMeters(previous, next) / Math.max(0.001, nextTime - previousTime),
+      };
+    }
+  }
+
+  return { coord: trip.path[trip.path.length - 1] };
+}
+
+function interpolateCoordinate(a: Coordinate, b: Coordinate, progress: number): Coordinate {
+  const clamped = clamp01(progress);
+  return [a[0] + (b[0] - a[0]) * clamped, a[1] + (b[1] - a[1]) * clamped];
 }
 
 function averageCrossingBrake(crossings: PedestrianCrossing[]): number {
@@ -2394,6 +2604,14 @@ function normalizeAnalyticsPayload(payload: unknown): Level4Analytics {
     root.topIntersections,
     root.capacityNodes,
   );
+  const validationSource = firstArray(
+    root.validation,
+    root.validationMetrics,
+    root.validation_metrics,
+    root.corridorValidation,
+    root.corridor_validation,
+    root.corridors,
+  );
 
   return {
     metrics: normalizeAnalyticsMetrics(metricsSource),
@@ -2402,6 +2620,7 @@ function normalizeAnalyticsPayload(payload: unknown): Level4Analytics {
     timeSeries: timeSeriesSource.flatMap(normalizeTimeSeriesPoint),
     forecast: forecastSource.flatMap(normalizeTimeSeriesPoint),
     bottlenecks: bottlenecksSource.flatMap(normalizeBottleneck),
+    validation: validationSource.flatMap(normalizeValidationMetric),
   };
 }
 
@@ -2513,6 +2732,47 @@ function normalizeBottleneck(item: unknown): Bottleneck[] {
   ];
 }
 
+function normalizeValidationMetric(item: unknown): ValidationMetric[] {
+  const source = getRecord(item);
+  if (!source) return [];
+
+  const corridor = optionalString(source.corridor ?? source.name ?? source.label ?? source.roadName ?? source.road_name);
+  if (!corridor) return [];
+
+  const modelSpeedKph = optionalNumber(
+    source.modelSpeedKph ??
+      source.model_speed_kph ??
+      source.currentAverageSpeedKph ??
+      source.current_average_speed_kph ??
+      source.estimatedSpeedKph ??
+      source.estimated_speed_kph,
+  );
+  const referenceSpeedKph = optionalNumber(
+    source.referenceSpeedKph ??
+      source.reference_speed_kph ??
+      source.observedSpeedKph ??
+      source.observed_speed_kph ??
+      source.benchmarkSpeedKph ??
+      source.benchmark_speed_kph ??
+      source.targetSpeedKph ??
+      source.target_speed_kph,
+  );
+
+  if (modelSpeedKph === undefined || referenceSpeedKph === undefined) return [];
+
+  return [
+    {
+      id: String(source.id ?? corridor),
+      corridor,
+      modelSpeedKph,
+      referenceSpeedKph,
+      deltaKph: optionalNumber(source.deltaKph ?? source.delta_kph) ?? modelSpeedKph - referenceSpeedKph,
+      sampleCount: optionalInteger(source.sampleCount ?? source.sample_count ?? source.samples ?? source.matchedRoads),
+      source: "api",
+    },
+  ];
+}
+
 function normalizeRoadsPayload(payload: RoadsPayload): RoadFeatureCollection {
   if (isFeatureCollection(payload)) {
     return {
@@ -2545,6 +2805,7 @@ function normalizeRoadsPayload(payload: RoadsPayload): RoadFeatureCollection {
           isOpen: road.isOpen ?? true,
           maxSpeedKph: road.maxSpeedKph,
           capacity: road.capacity,
+          lanes: road.lanes,
         },
       };
 
@@ -2588,6 +2849,8 @@ function buildAnalyticsSnapshot(
     forecast: analytics.forecast,
     bottlenecks:
       analytics.bottlenecks.length > 0 ? analytics.bottlenecks : deriveBottlenecks(roadsWithTraffic.features),
+    validation:
+      analytics.validation.length > 0 ? analytics.validation : deriveValidationMetrics(roadsWithTraffic.features, trips),
   };
 }
 
@@ -2932,6 +3195,12 @@ function estimateCoordinateDistanceMeters(a: Coordinate, b: Coordinate): number 
 }
 
 function buildTooltip(object: unknown) {
+  if (isTransitAgentMarker(object)) {
+    return {
+      text: `${object.label}\nGTFS public transport | ${object.source} | ${formatSpeed(object.speedMps)}`,
+    };
+  }
+
   if (isPhysicsTrailSegment(object)) {
     return {
       text: `Agent ${object.agentId}\n${shockwaveLabel(object.a)} | v ${formatSpeed(object.v)} | a ${object.a.toFixed(
@@ -2989,8 +3258,9 @@ function buildTooltip(object: unknown) {
   const name = properties.name || properties.id || "Road segment";
   const speed = properties.maxSpeedKph ? `${properties.maxSpeedKph} kph` : "speed n/a";
   const density = Number(properties.density ?? properties.load ?? 0).toFixed(2);
+  const lanes = getRoadLaneCount(properties);
 
-  return { text: `${name}\ndensity ${density} | ${speed}` };
+  return { text: `${name}\ndensity ${density} | ${speed} | ${lanes} lanes` };
 }
 
 function buildDerivedTimeSeries(averageDensity: number, congestionIndex: number): TimeSeriesPoint[] {
@@ -3019,6 +3289,52 @@ function deriveBottlenecks(features: LineStringFeature[]): Bottleneck[] {
     .filter((item) => item.congestion > 0)
     .sort((a, b) => b.congestion - a.congestion)
     .slice(0, 5);
+}
+
+function deriveValidationMetrics(features: LineStringFeature[], trips: Trip[]): ValidationMetric[] {
+  const corridors = [
+    { id: "al-farabi", corridor: "Al-Farabi Ave", aliases: ["al-farabi", "аль-фараби", "al farabi"], referenceSpeedKph: 41 },
+    { id: "abay", corridor: "Abay Ave", aliases: ["abay", "абая"], referenceSpeedKph: 29 },
+    { id: "dostyk", corridor: "Dostyk Ave", aliases: ["dostyk", "достык"], referenceSpeedKph: 26 },
+  ];
+  const fallbackTripSpeed = deriveAverageSpeedKph(trips);
+
+  return corridors.map((corridor) => {
+    const matched = features.filter((feature) => {
+      const name = String(feature.properties.name ?? "").toLowerCase();
+      return corridor.aliases.some((alias) => name.includes(alias));
+    });
+    const modelSpeedKph =
+      deriveCorridorSpeedKph(matched) ??
+      (corridor.id === "al-farabi" ? fallbackTripSpeed : undefined) ??
+      corridor.referenceSpeedKph * (corridor.id === "al-farabi" ? 0.91 : corridor.id === "abay" ? 0.86 : 0.94);
+
+    return {
+      id: corridor.id,
+      corridor: corridor.corridor,
+      modelSpeedKph,
+      referenceSpeedKph: corridor.referenceSpeedKph,
+      deltaKph: modelSpeedKph - corridor.referenceSpeedKph,
+      sampleCount: matched.length,
+      source: matched.length > 0 ? ("derived" as const) : ("stub" as const),
+    };
+  });
+}
+
+function deriveCorridorSpeedKph(features: LineStringFeature[]): number | undefined {
+  const speeds = features
+    .map((feature) => {
+      const speedLimit = optionalNumber(feature.properties.maxSpeedKph ?? feature.properties.maxspeed ?? feature.properties.speedLimit);
+      if (speedLimit === undefined) return undefined;
+
+      const density = clamp01(Number(feature.properties.density ?? feature.properties.load ?? 0));
+      return Math.max(8, speedLimit * (1 - density * 0.55));
+    })
+    .filter((speed): speed is number => speed !== undefined && Number.isFinite(speed));
+
+  if (speeds.length === 0) return undefined;
+
+  return speeds.reduce((total, speed) => total + speed, 0) / speeds.length;
 }
 
 function deriveTrafficIncidents(features: LineStringFeature[]): MapIncident[] {
@@ -3091,6 +3407,37 @@ function isLineStringFeature(feature: unknown): feature is LineStringFeature {
   );
 }
 
+function roadLineWidthMeters(properties: RoadProperties | undefined): number {
+  const lanes = getRoadLaneCount(properties);
+  const load = clamp01(Number(properties?.density ?? properties?.load ?? 0));
+  const laneWidth = Math.sqrt(lanes) * 3.2;
+  const loadLift = load * 5.5;
+
+  return 2.4 + laneWidth + loadLift;
+}
+
+function getRoadLaneCount(properties: RoadProperties | undefined): number {
+  const metadata = getRecord(properties?.metadata);
+  const parsed = parseLaneValue(properties?.lanes ?? properties?.laneCount ?? metadata?.lanes ?? metadata?.lane_count);
+
+  if (parsed !== undefined) return clampInteger(parsed, 1, 8);
+
+  const forward = parseLaneValue(properties?.lanesForward ?? metadata?.lanes_forward);
+  const backward = parseLaneValue(properties?.lanesBackward ?? metadata?.lanes_backward);
+  if (forward !== undefined || backward !== undefined) return clampInteger((forward ?? 0) + (backward ?? 0), 1, 8);
+
+  return 1;
+}
+
+function parseLaneValue(value: unknown): number | undefined {
+  if (typeof value === "string") {
+    const match = value.match(/\d+(\.\d+)?/);
+    return match ? optionalNumber(match[0]) : undefined;
+  }
+
+  return optionalNumber(value);
+}
+
 function roadColor(properties: RoadProperties | undefined): [number, number, number, number] {
   if (properties?.isOpen === false) return [34, 34, 34, 210];
 
@@ -3110,7 +3457,7 @@ function trafficLightColor(color: TrafficLight["color"]): [number, number, numbe
 
 function agentTripColor(type: AgentType): [number, number, number] {
   if (type === "truck") return [97, 186, 218];
-  if (type === "bus") return [204, 137, 74];
+  if (type === "bus") return [65, 213, 185];
   return [255, 200, 0];
 }
 
@@ -3135,7 +3482,7 @@ function shockwaveTrailColor(a: number, v: number, type?: AgentType): [number, n
 
 function physicsTrailWidth(segment: PhysicsTrailSegment, showAgentClasses: boolean): number {
   const type = segment.agentType ?? "car";
-  const baseWidth = showAgentClasses && type !== "car" ? (type === "truck" ? 5.8 : 5.2) : 3.6;
+  const baseWidth = showAgentClasses && type !== "car" ? (type === "truck" ? 5.8 : 6.8) : 3.6;
   const brakeLift = segment.a < -2 ? 3 : segment.a < 0 ? 1.2 : 0;
 
   return baseWidth + brakeLift;
@@ -3320,6 +3667,13 @@ function isJamColumn(item: unknown): item is JamColumn {
   if (!item || typeof item !== "object") return false;
 
   const candidate = item as Partial<JamColumn>;
+  return typeof candidate.label === "string" && isCoordinate(candidate.coordinates);
+}
+
+function isTransitAgentMarker(item: unknown): item is TransitAgentMarker {
+  if (!item || typeof item !== "object") return false;
+
+  const candidate = item as Partial<TransitAgentMarker>;
   return typeof candidate.label === "string" && isCoordinate(candidate.coordinates);
 }
 
@@ -3544,7 +3898,8 @@ function hasAnalyticsData(analytics: Level4Analytics): boolean {
     analytics.closureZones.length > 0 ||
     analytics.timeSeries.length > 0 ||
     analytics.forecast.length > 0 ||
-    analytics.bottlenecks.length > 0
+    analytics.bottlenecks.length > 0 ||
+    analytics.validation.length > 0
   );
 }
 
@@ -3602,8 +3957,8 @@ function formatPercent(value: number): string {
   return `${Math.round(normalizeRatio(value) * 100)}%`;
 }
 
-function formatSpeed(metersPerSecond: number): string {
-  if (!Number.isFinite(metersPerSecond)) return "n/a";
+function formatSpeed(metersPerSecond: number | undefined): string {
+  if (metersPerSecond === undefined || !Number.isFinite(metersPerSecond)) return "n/a";
 
   return `${Math.round(metersPerSecond * 3.6)} kph`;
 }
