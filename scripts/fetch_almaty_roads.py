@@ -1,12 +1,18 @@
 import os
 import json
 import osmnx as ox
+import networkx as nx
 
 def get_almaty_roads_geojson():
     print("Fetching Almaty major roads...")
+
+    # Add additional useful tags for simulation
+    ox.settings.useful_tags_way += ['turn:lanes', 'turn:lanes:forward', 'turn:lanes:backward', 'maxspeed:forward', 'maxspeed:backward', 'restriction']
+
     custom_filter = '["highway"~"motorway|trunk|primary|secondary"]'
     G = ox.graph_from_place('Almaty, Kazakhstan', network_type='drive', custom_filter=custom_filter)
 
+    # Convert to standard directed graph to handle parallel edges more easily, or keep as MultiDiGraph
     nodes, edges = ox.graph_to_gdfs(G)
 
     features = []
@@ -25,6 +31,11 @@ def get_almaty_roads_geojson():
             "properties": properties
         }
         features.append(feature)
+
+    # Fetch turn restrictions which are relations in OSM
+    # osmnx currently doesn't fetch relations easily in graph_from_place, but we can query them with overpass
+    # For now, turn restrictions might be encoded in nodes or edges attributes if they were part of the way
+    # If not, we still have lanes, maxspeed and basic routing
 
     geojson = {
         "type": "FeatureCollection",
