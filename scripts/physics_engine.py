@@ -73,14 +73,18 @@ def offset_coord(lon, lat, heading, offset_m):
 
 
 class Agent:
-    def __init__(self, agent_id, route_roads, start_time):
+    def __init__(self, agent_id, route_roads, start_time, agent_type="car"):
         self.id = agent_id
         self.route_roads = route_roads
         self.start_time = start_time
+        self.type = agent_type
 
         # Stochastic parameters
         # aggressiveness ~ N(1.0, 0.2)
         aggressiveness = max(0.5, min(1.5, random.gauss(1.0, 0.2)))
+
+        if self.type == "bus":
+            aggressiveness *= 0.6  # Buses are less aggressive
 
         # reaction_time ~ N(1.5, 0.3)
         self.T = max(0.5, random.gauss(1.5, 0.3)) / aggressiveness
@@ -92,6 +96,8 @@ class Agent:
         self.a_max = 1.0 * aggressiveness  # max acceleration m/s^2
         self.b = 1.5 * aggressiveness      # comfortable deceleration m/s^2
         self.s0 = 2.0                      # minimum gap
+        if self.type == "bus":
+            self.s0 = 4.0 # Buses need bigger gaps
         self.delta = 4                     # acceleration exponent
 
         # MOBIL parameters
@@ -110,9 +116,16 @@ class Agent:
 
         self.trajectory = []
 
+        # Bus specific state
+        self.bus_stops = []
+        self.next_stop_idx = 0
+        self.dwell_time_remaining = 0.0
+
     def get_desired_speed(self, graph, road_id):
         road = graph.roads[road_id]
         v0 = (road.max_speed_kph * 1000 / 3600) * self.v_factor
+        if self.type == "bus":
+            v0 = min(v0, 16.6) # max 60 km/h for buses
         return v0
 
 def idm_acceleration(v, v0, s, delta_v, a_max, b, s0, T):
@@ -156,7 +169,12 @@ def run_physics_simulation():
             road_lengths[r_id] = r.length_m
 
     print(f"Generating routes for {num_agents} agents...")
-    for i in range(num_agents):
+
+    # Generate some buses
+    num_buses = max(1, int(num_agents * 0.1))
+    num_cars = num_agents - num_buses
+
+    for i in range(num_cars):
         start = random.choice(nodes_list)
         end = random.choice(nodes_list)
         while start == end:
@@ -169,10 +187,36 @@ def run_physics_simulation():
         except Exception:
             continue
 
-        agent = Agent(str(i+1), path.roads, random.uniform(0, 10))
+        agent = Agent(f"car_{i+1}", path.roads, random.uniform(0, 10), agent_type="car")
         agents.append(agent)
 
-    print(f"Starting simulation for {len(agents)} agents...")
+    for i in range(num_buses):
+        # Buses have longer routes typically
+        start = random.choice(nodes_list)
+        end = random.choice(nodes_list)
+        while start == end:
+            end = random.choice(nodes_list)
+
+        try:
+            path = graph.shortest_path(start, end, algorithm="astar")
+            if not path.nodes or len(path.roads) < 1:
+                continue
+        except Exception:
+            continue
+
+        agent = Agent(f"bus_{i+1}", path.roads, random.uniform(0, 5), agent_type="bus")
+
+        # Add random bus stops along the route
+        stops = []
+        for j, r_id in enumerate(path.roads):
+            if random.random() < 0.2: # 20% chance of a stop on this road
+                # stop around middle of the road
+                stops.append({"road_idx": j, "pos": road_lengths[r_id] / 2.0, "dwell_time": random.uniform(10.0, 30.0)})
+        agent.bus_stops = stops
+
+        agents.append(agent)
+
+    print(f"Starting simulation for {len(agents)} agents ({num_cars} cars, {num_buses} buses)...")
 
     dt = 0.5 # Simulation tick step (seconds)
     max_time = 300.0 # 5 minutes max simulation
@@ -212,6 +256,29 @@ def run_physics_simulation():
             lanes = road.lanes
             v0 = agent.get_desired_speed(graph, road_id)
 
+            # Handle bus stops
+            if agent.type == "bus" and agent.dwell_time_remaining > 0:
+                agent.dwell_time_remaining -= dt
+                agent.v = 0
+                agent.a = 0
+
+                # Still record trajectory while stopped
+                geom_raw = road.metadata.get('geometry')
+                geom = list(geom_raw.coords) if hasattr(geom_raw, 'coords') else geom_raw
+                if geom:
+                    lon, lat, heading, _ = interpolate_segment(geom, agent.pos)
+                    if lanes > 1:
+                        offset_m = (agent.lane - (lanes - 1) / 2) * 3.0
+                        lon, lat = offset_coord(lon, lat, heading, offset_m)
+                    agent.trajectory.append({
+                        "t": round(current_time, 2),
+                        "coord": [lon, lat],
+                        "v": 0.0,
+                        "a": 0.0,
+                        "state": "stopped"
+                    })
+                continue
+
             # Find leader in the same lane
             leader = None
             leader_dist = float('inf')
@@ -226,13 +293,35 @@ def run_physics_simulation():
 
             v = agent.v
 
+            # Check for upcoming bus stops
+            bus_stop_dist = float('inf')
+            if agent.type == "bus" and agent.next_stop_idx < len(agent.bus_stops):
+                next_stop = agent.bus_stops[agent.next_stop_idx]
+                if next_stop["road_idx"] == agent.current_road_idx:
+                    bus_stop_dist = next_stop["pos"] - agent.pos
+                    if bus_stop_dist <= 0:
+                        # Arrived at stop
+                        agent.dwell_time_remaining = next_stop["dwell_time"]
+                        agent.next_stop_idx += 1
+                        agent.v = 0
+                        agent.a = 0
+                        continue
+
             if leader:
                 delta_v = v - leader.v
                 s = leader_dist - 5.0 # Vehicle length
-                a = idm_acceleration(v, v0, max(0.1, s), delta_v, agent.a_max, agent.b, agent.s0, agent.T)
+                # If approaching a bus stop, minimum of leader and stop distance
+                if agent.type == "bus" and bus_stop_dist < s and bus_stop_dist > 0:
+                    a = idm_acceleration(v, v0, max(0.1, bus_stop_dist), v, agent.a_max, agent.b, agent.s0, agent.T)
+                else:
+                    a = idm_acceleration(v, v0, max(0.1, s), delta_v, agent.a_max, agent.b, agent.s0, agent.T)
             else:
                 # Approach intersection / end of road
                 dist_to_end = road_length - agent.pos
+
+                # Check for bus stop first
+                if agent.type == "bus" and bus_stop_dist < dist_to_end and bus_stop_dist > 0:
+                    a = idm_acceleration(v, v0, max(0.1, bus_stop_dist), v, agent.a_max, agent.b, agent.s0, agent.T)
 
                 # Check if it's the final road
                 if agent.current_road_idx == len(agent.route_roads) - 1:
@@ -261,7 +350,7 @@ def run_physics_simulation():
                         a = idm_acceleration(v, v0, float('inf'), 0, agent.a_max, agent.b, agent.s0, agent.T)
 
 
-            # MOBIL (Lane changing) - simple logic
+            # MOBIL (Lane changing) - simple logic (buses change lanes less often)
             if lanes > 1 and leader and leader.v < v0 * 0.8 and agent.pos > 10.0 and (road_length - agent.pos) > 50.0:
                 # Check other lane
                 other_lane = (agent.lane + 1) % lanes
@@ -332,6 +421,7 @@ def run_physics_simulation():
         if a.trajectory:
             output_agents.append({
                 "id": a.id,
+                "type": a.type,
                 "trajectory": a.trajectory
             })
 

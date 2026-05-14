@@ -20,6 +20,8 @@ def haversine(lon1, lat1, lon2, lat2):
 
     return R * c
 
+from traffic_sim.zones import load_zones, load_od_matrix, build_zone_index, choose_od_zones
+
 def generate_trips(num_trips=150, pattern="normal", closed_streets="", out_file=None):
     print("Loading graph...")
     graph = load_preset_graph("full_almaty_fast")
@@ -31,37 +33,61 @@ def generate_trips(num_trips=150, pattern="normal", closed_streets="", out_file=
             if any(closed in name for closed in closed_list):
                 road.is_open = False
 
-    # Pre-compute weekend bias points
-    attraction_points = []
-    if pattern == "weekend":
-        sorted_nodes = sorted(list(graph.nodes.keys()))
-        # Pick top 20 deterministically pseudo-random nodes as "malls/parks"
-        random.seed(42)
-        attraction_points = random.sample(sorted_nodes, min(20, len(sorted_nodes)))
-        random.seed() # reset seed
+    print("Loading OD zones and matrix...")
+    zones = load_zones()
+    od_matrix = load_od_matrix()
+    zone_index = build_zone_index(graph, zones, limit=100)
 
-    nodes_list = list(graph.nodes.keys())
+    # Determine simulated minute of day to apply peak multipliers
+    # Assume: 'morning' peak around 08:30, 'evening' peak around 18:30
+    # For a general 'normal' pattern without specific time, we'll randomize time
+    # but weight towards peaks to make it interesting.
 
+    # Scale number of trips based on pattern peak multipliers
+    if pattern == "normal":
+        minute_of_day = random.choice([8*60+30, 18*60+30, 13*60]) # Morning, Evening, Lunch
+    elif pattern == "night":
+        minute_of_day = 2*60 # 02:00 AM
+        num_trips = max(10, int(num_trips * 0.2)) # Fewer trips at night
+    elif pattern == "weekend":
+        minute_of_day = 14*60 # 14:00 PM
+        num_trips = int(num_trips * 0.8) # Moderate trips on weekend
+    else:
+        minute_of_day = 12*60
+
+    rng = random.Random()
 
     trips = []
 
-    print(f"Generating {num_trips} trips...")
-    for i in range(num_trips):
-        if pattern == "weekend" and attraction_points and random.random() < 0.6:
-            # 60% chance to go to or from an attraction point
-            if random.random() < 0.5:
-                start = random.choice(nodes_list)
-                end = random.choice(attraction_points)
-            else:
-                start = random.choice(attraction_points)
-                end = random.choice(nodes_list)
-        else:
+    print(f"Generating {num_trips} trips for time {minute_of_day//60:02d}:{minute_of_day%60:02d}...")
+
+    attempts = 0
+    max_attempts = num_trips * 10
+
+    while len(trips) < num_trips and attempts < max_attempts:
+        attempts += 1
+
+        try:
+            origin_zone, dest_zone = choose_od_zones(zones, rng, minute_of_day, preset=pattern, od_matrix=od_matrix)
+            origin_nodes = zone_index.get(origin_zone.zone_id, {}).get("nodes", [])
+            dest_nodes = zone_index.get(dest_zone.zone_id, {}).get("nodes", [])
+
+            if not origin_nodes or not dest_nodes:
+                continue
+
+            start = random.choice(origin_nodes)
+            end = random.choice(dest_nodes)
+
+            # Ensure start and end are different
+            if start == end:
+                continue
+        except ValueError:
+            # Fallback if zones fail
+            nodes_list = list(graph.nodes.keys())
             start = random.choice(nodes_list)
             end = random.choice(nodes_list)
-
-        # Ensure start and end are different
-        while start == end:
-            end = random.choice(nodes_list)
+            while start == end:
+                end = random.choice(nodes_list)
 
 
         agent_type = random.choices(["car", "truck", "bus"], weights=[0.8, 0.1, 0.1])[0]

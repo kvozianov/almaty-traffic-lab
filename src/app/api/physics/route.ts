@@ -13,8 +13,9 @@ const execAsync = util.promisify(exec);
  *   "agents": [
  *     {
  *       "id": "1",
+ *       "type": "car" | "truck" | "bus", // Type of the agent, added for level 9 public transport integration
  *       "trajectory": [
- *         {"t": 0, "coord": [lng, lat], "v": 15.2, "a": 0.5},
+ *         {"t": 0, "coord": [lng, lat], "v": 15.2, "a": 0.5, "state": "stopped"}, // optional state for stopped agents (e.g. buses at a stop)
  *         ...
  *       ]
  *     }
