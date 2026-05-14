@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Almaty Traffic Research Report</title>
+  <style>
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #1f2729; }
+    h1 { margin-bottom: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { border: 1px solid #d8d1c4; border-radius: 8px; padding: 14px; }
+    .card span { display: block; color: #65706f; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .card strong { display: block; margin-top: 8px; font-size: 24px; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0 28px; }
+    th, td { border-bottom: 1px solid #e4ded2; padding: 9px; text-align: left; }
+    pre { background: #f5f1e8; padding: 16px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Almaty Traffic Research Report</h1>
+  <p>Run 77bfc009-f70d-44b8-84c2-40fee38078b4 | preset demo | time 17:00</p>
+  <section class="grid">
+    <div class="card"><span>Vehicles</span><strong>60</strong></div>
+    <div class="card"><span>Max load</span><strong>1.50</strong></div>
+    <div class="card"><span>Avg trip</span><strong>0.00 min</strong></div>
+    <div class="card"><span>Reroutes</span><strong>0</strong></div>
+    <div class="card"><span>Route coverage</span><strong>100.0%</strong></div>
+  </section>
+  <h2>Top Loaded Roads</h2>
+  <table><thead><tr><th>Road</th><th>Load</th></tr></thead><tbody><tr><td>diag_ne_ab</td><td>1.50</td></tr>
+<tr><td>diag_sw_ba</td><td>1.48</td></tr>
+<tr><td>diag_ne_ba</td><td>1.12</td></tr>
+<tr><td>diag_sw_ab</td><td>1.09</td></tr>
+<tr><td>abay_ab</td><td>1.00</td></tr>
+<tr><td>abay_ba</td><td>1.00</td></tr>
+<tr><td>diag_se_ba</td><td>0.86</td></tr>
+<tr><td>satpayev_ab</td><td>0.82</td></tr>
+<tr><td>outer_southwest_ab</td><td>0.78</td></tr>
+<tr><td>outer_southeast_ab</td><td>0.72</td></tr></tbody></table>
+  <h2>Corridor Stats</h2>
+  <table><thead><tr><th>Corridor</th><th>Roads</th><th>Average load</th><th>Estimated speed</th></tr></thead><tbody><tr><td>Al-Farabi Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Abay Avenue</td><td>2</td><td>1.00</td><td>36.2</td></tr>
+<tr><td>Tole Bi Street</td><td>2</td><td>0.66</td><td>45.0</td></tr>
+<tr><td>Raimbek Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Ryskulov Avenue</td><td>2</td><td>0.37</td><td>55.0</td></tr>
+<tr><td>Seifullin Avenue</td><td>2</td><td>0.39</td><td>40.0</td></tr>
+<tr><td>Dostyk Avenue</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Nazarbayev Avenue</td><td>2</td><td>0.45</td><td>35.0</td></tr>
+<tr><td>Saina Street</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Rozybakiev Street</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Zhandosov Street</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Timiryazev Street</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Zheltoksan Street</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>VOAD</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Kulja Tract</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Talgar Tract</td><td>0</td><td>0.00</td><td>0.0</td></tr>
+<tr><td>Severnoe Koltso</td><td>0</td><td>0.00</td><td>0.0</td></tr></tbody></table>
+  <h2>Top OD Flows</h2>
+  <table><thead><tr><th>Origin</th><th>Destination</th><th>Vehicles</th></tr></thead><tbody><tr><td>east_gate</td><td>north_gate</td><td>10</td></tr>
+<tr><td>north_gate</td><td>west_gate</td><td>9</td></tr>
+<tr><td>east_gate</td><td>center_core</td><td>8</td></tr>
+<tr><td>east_gate</td><td>west_gate</td><td>8</td></tr>
+<tr><td>north_gate</td><td>northwest_logistics</td><td>4</td></tr>
+<tr><td>north_gate</td><td>east_gate</td><td>4</td></tr>
+<tr><td>east_gate</td><td>northwest_logistics</td><td>4</td></tr>
+<tr><td>north_gate</td><td>upper_south</td><td>3</td></tr>
+<tr><td>east_gate</td><td>southwest_districts</td><td>2</td></tr>
+<tr><td>north_gate</td><td>center_core</td><td>2</td></tr></tbody></table>
+  <h2>Calibration Segments</h2>
+  <table><thead><tr><th>Segment</th><th>Average load</th><th>Estimated speed</th></tr></thead><tbody><tr><td>Node Abay-Rozybakiev</td><td>1.00</td><td>36.2</td></tr>
+<tr><td>Abay: Rozybakiev-Nazarbayev</td><td>1.00</td><td>36.2</td></tr>
+<tr><td>Abay: Nazarbayev-Dostyk</td><td>1.00</td><td>36.2</td></tr>
+<tr><td>Node Abay-Nazarbayev</td><td>0.72</td><td>35.6</td></tr>
+<tr><td>Node Abay-Seifullin</td><td>0.69</td><td>38.1</td></tr>
+<tr><td>Node Satpayev-Auezov</td><td>0.67</td><td>45.0</td></tr>
+<tr><td>Satpayev: Auezov-Rozybakiev</td><td>0.67</td><td>45.0</td></tr>
+<tr><td>Node Tole Bi-Rozybakiev</td><td>0.66</td><td>45.0</td></tr>
+<tr><td>Tole Bi: Rozybakiev-Nazarbayev</td><td>0.66</td><td>45.0</td></tr>
+<tr><td>Tole Bi: Nazarbayev-Kaldayakov</td><td>0.66</td><td>45.0</td></tr>
+<tr><td>Node Tole Bi-Momyshuly</td><td>0.66</td><td>45.0</td></tr>
+<tr><td>Auezov-Tole Bi-Zharokov</td><td>0.66</td><td>45.0</td></tr></tbody></table>
+  <h2>Embedded Summary JSON</h2>
+  <pre>{
+  &quot;request&quot;: {
+    &quot;preset_id&quot;: &quot;demo&quot;,
+    &quot;vehicles&quot;: 60,
+    &quot;steps&quot;: 30,
+    &quot;tick_seconds&quot;: 10,
+    &quot;seed&quot;: 6,
+    &quot;refresh_cache&quot;: false,
+    &quot;compare&quot;: true,
+    &quot;manual_time&quot;: &quot;17:00&quot;,
+    &quot;time_preset&quot;: &quot;evening_peak&quot;,
+    &quot;auto_time&quot;: false,
+    &quot;time_speed_multiplier&quot;: 1.0,
+    &quot;policy&quot;: &quot;heuristic&quot;,
+    &quot;demand_mode&quot;: &quot;od_zones&quot;,
+    &quot;reroute_interval_ticks&quot;: 12,
+    &quot;random_events&quot;: true,
+    &quot;events&quot;: [
+      {
+        &quot;id&quot;: null,
+        &quot;type&quot;: &quot;accident&quot;,
+        &quot;road_id&quot;: &quot;abay_ab&quot;,
+        &quot;start_time&quot;: &quot;17:00&quot;,
+        &quot;duration_minutes&quot;: 30,
+        &quot;enabled&quot;: true,
+        &quot;capacity_factor&quot;: 0.35,
+        &quot;speed_factor&quot;: 0.45,
+        &quot;signal_delay_s&quot;: 60.0,
+        &quot;intensity&quot;: 1.0
+      }
+    ],
+    &quot;scenario&quot;: {
+      &quot;type&quot;: &quot;none&quot;,
+      &quot;road_id&quot;: null,
+      &quot;capacity_factor&quot;: 0.3,
+      &quot;speed_factor&quot;: 0.45,
+      &quot;signal_delay_s&quot;: 60.0,
+      &quot;demand_surge&quot;: false,
+      &quot;duration_minutes&quot;: 60,
+      &quot;start_time&quot;: null,
+      &quot;enabled&quot;: true
+    }
+  },
+  &quot;stats&quot;: {
+    &quot;tick&quot;: 30,
+    &quot;sim_time_s&quot;: 300,
+    &quot;active_vehicles&quot;: 60,
+    &quot;arrived_vehicles&quot;: 0,
+    &quot;stuck_vehicles&quot;: 0,
+    &quot;average_trip_time_s&quot;: 0.0,
+    &quot;max_road_load&quot;: 1.5,
+    &quot;average_road_load&quot;: 0.6725057494588743,
+    &quot;time&quot;: &quot;17:00&quot;,
+    &quot;demand_multiplier&quot;: 1.0,
+    &quot;reroutes&quot;: 0
+  },
+  &quot;analytics&quot;: {
+    &quot;runId&quot;: &quot;77bfc009-f70d-44b8-84c2-40fee38078b4&quot;,
+    &quot;congestionOverTime&quot;: [
+      {
+        &quot;tick&quot;: 0,
+        &quot;value&quot;: 0.6725
+      },
+      {
+        &quot;tick&quot;: 2,
+        &quot;value&quot;: 0.6945
+      },
+      {
+        &quot;tick&quot;: 5,
+        &quot;value&quot;: 0.7165
+      },
+      {
+        &quot;tick&quot;: 8,
+        &quot;value&quot;: 0.7385
+      },
+      {
+        &quot;tick&quot;: 10,
+        &quot;value&quot;: 0.7605
+      },
+      {
+        &quot;tick&quot;: 13,
+        &quot;value&quot;: 0.7826
+      },
+      {
+        &quot;tick&quot;: 16,
+        &quot;value&quot;: 0.7826
+      },
+      {
+        &quot;tick&quot;: 19,
+        &quot;value&quot;: 0.7605
+      },
+      {
+        &quot;tick&quot;: 21,
+        &quot;value&quot;: 0.7385
+      },
+      {
+        &quot;tick&quot;: 24,
+        &quot;value&quot;: 0.7165
+      },
+      {
+        &quot;tick&quot;: 27,
+        &quot;value&quot;: 0.6945
+      },
+      {
+        &quot;tick&quot;: 30,
+        &quot;value&quot;: 0.6725
+      }
+    ],
+    &quot;averageSpeedOverTime&quot;: [
+      {
+        &quot;tick&quot;: 0,
+        &quot;value&quot;: 38.5617
+      },
+      {
+        &quot;tick&quot;: 2,
+        &quot;value&quot;: 39.403
+      },
+      {
+        &quot;tick&quot;: 5,
+        &quot;value&quot;: 40.2444
+      },
+      {
+        &quot;tick&quot;: 8,
+        &quot;value&quot;: 41.0857
+      },
+      {
+        &quot;tick&quot;: 10,
+        &quot;value&quot;: 41.927
+      },
+      {
+        &quot;tick&quot;: 13,
+        &quot;value&quot;: 42.7684
+      },
+      {
+        &quot;tick&quot;: 16,
+        &quot;value&quot;: 42.7684
+      },
+      {
+        &quot;tick&quot;: 19,
+        &quot;value&quot;: 41.927
+      },
+      {
+        &quot;tick&quot;: 21,
+        &quot;value&quot;: 41.0857
+      },
+      {
+        &quot;tick&quot;: 24,
+        &quot;value&quot;: 40.2444
+      },
+      {
+        &quot;tick&quot;: 27,
+        &quot;value&quot;: 39.403
+      },
+      {
+        &quot;tick&quot;: 30,
+        &quot;value&quot;: 38.5617
+      }
+    ],
+    &quot;topRoads&quot;: [
+      {
+        &quot;roadId&quot;: &quot;diag_ne_ab&quot;,
+        &quot;name&quot;: &quot;diag_ne_ab&quot;,
+        &quot;load&quot;: 1.5
+      },
+      {
+        &quot;roadId&quot;: &quot;diag_sw_ba&quot;,
+        &quot;name&quot;: &quot;diag_sw_ba&quot;,
+        &quot;load&quot;: 1.475
+      },
+      {
+        &quot;roadId&quot;: &quot;diag_ne_ba&quot;,
+        &quot;name&quot;: &quot;diag_ne_ba&quot;,
+        &quot;load&quot;: 1.125
+      },
+      {
+        &quot;roadId&quot;: &quot;diag_sw_ab&quot;,
+        &quot;name&quot;: &quot;diag_sw_ab&quot;,
+        &quot;load&quot;: 1.0875
+      },
+      {
+        &quot;roadId&quot;: &quot;abay_ab&quot;,
+        &quot;name&quot;: &quot;abay_ab&quot;,
+        &quot;load&quot;: 1.0
+      },
+      {
+        &quot;roadId&quot;: &quot;abay_ba&quot;,
+        &quot;name&quot;: &quot;abay_ba&quot;,
+        &quot;load&quot;: 1.0
+      },
+      {
+        &quot;roadId&quot;: &quot;diag_se_ba&quot;,
+        &quot;name&quot;: &quot;diag_se_ba&quot;,
+        &quot;load&quot;: 0.8625
+      },
+      {
+        &quot;roadId&quot;: &quot;satpayev_ab&quot;,
+        &quot;name&quot;: &quot;satpayev_ab&quot;,
+        &quot;load&quot;: 0.825
+      },
+      {
+        &quot;roadId&quot;: &quot;outer_southwest_ab&quot;,
+        &quot;name&quot;: &quot;outer_southwest_ab&quot;,
+        &quot;load&quot;: 0.7792
+      },
+      {
+        &quot;roadId&quot;: &quot;outer_southeast_ab&quot;,
+        &quot;name&quot;: &quot;outer_southeast_ab&quot;,
+        &quot;load&quot;: 0.7208
+      }
+    ],
+    &quot;corridorStats&quot;: [
+      {
+        &quot;id&quot;: &quot;al_farabi&quot;,
+        &quot;name&quot;: &quot;Al-Farabi Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;abay&quot;,
+        &quot;name&quot;: &quot;Abay Avenue&quot;,
+        &quot;roadCount&quot;: 2,
+        &quot;averageLoad&quot;: 1.0,
+        &quot;maxLoad&quot;: 1.0,
+        &quot;estimatedSpeedKph&quot;: 36.2
+      },
+      {
+        &quot;id&quot;: &quot;tole_bi&quot;,
+        &quot;name&quot;: &quot;Tole Bi Street&quot;,
+        &quot;roadCount&quot;: 2,
+        &quot;averageLoad&quot;: 0.6554,
+        &quot;maxLoad&quot;: 0.7179,
+        &quot;estimatedSpeedKph&quot;: 45.0
+      },
+      {
+        &quot;id&quot;: &quot;raimbek&quot;,
+        &quot;name&quot;: &quot;Raimbek Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;ryskulov&quot;,
+        &quot;name&quot;: &quot;Ryskulov Avenue&quot;,
+        &quot;roadCount&quot;: 2,
+        &quot;averageLoad&quot;: 0.3693,
+        &quot;maxLoad&quot;: 0.3773,
+        &quot;estimatedSpeedKph&quot;: 55.0
+      },
+      {
+        &quot;id&quot;: &quot;seifullin&quot;,
+        &quot;name&quot;: &quot;Seifullin Avenue&quot;,
+        &quot;roadCount&quot;: 2,
+        &quot;averageLoad&quot;: 0.3854,
+        &quot;maxLoad&quot;: 0.4875,
+        &quot;estimatedSpeedKph&quot;: 40.0
+      },
+      {
+        &quot;id&quot;: &quot;dostyk&quot;,
+        &quot;name&quot;: &quot;Dostyk Avenue&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;nazarbayev&quot;,
+        &quot;name&quot;: &quot;Nazarbayev Avenue&quot;,
+        &quot;roadCount&quot;: 2,
+        &quot;averageLoad&quot;: 0.445,
+        &quot;maxLoad&quot;: 0.585,
+        &quot;estimatedSpeedKph&quot;: 35.0
+      },
+      {
+        &quot;id&quot;: &quot;saina&quot;,
+        &quot;name&quot;: &quot;Saina Street&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;rozybakiev&quot;,
+        &quot;name&quot;: &quot;Rozybakiev Street&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;zhandosov&quot;,
+        &quot;name&quot;: &quot;Zhandosov Street&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;timiryazev&quot;,
+        &quot;name&quot;: &quot;Timiryazev Street&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;zheltoksan&quot;,
+        &quot;name&quot;: &quot;Zheltoksan Street&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;voad&quot;,
+        &quot;name&quot;: &quot;VOAD&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;kulja&quot;,
+        &quot;name&quot;: &quot;Kulja Tract&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;talgar&quot;,
+        &quot;name&quot;: &quot;Talgar Tract&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      },
+      {
+        &quot;id&quot;: &quot;north_ring&quot;,
+        &quot;name&quot;: &quot;Severnoe Koltso&quot;,
+        &quot;roadCount&quot;: 0,
+        &quot;averageLoad&quot;: 0.0,
+        &quot;maxLoad&quot;: 0.0,
+        &quot;estimatedSpeedKph&quot;: 0.0
+      }
+    ],
+    &quot;odPairs&quot;: [
+      {
+        &quot;origin&quot;: &quot;east_gate&quot;,
+        &quot;destination&quot;: &quot;north_gate&quot;,
+        &quot;vehicles&quot;: 10
+      },
+      {
+        &quot;origin&quot;: &quot;north_gate&quot;,
+        &quot;destination&quot;: &quot;west_gate&quot;,
+        &quot;vehicles&quot;: 9
+      },
+      {
+        &quot;origin&quot;: &quot;east_gate&quot;,
+        &quot;destination&quot;: &quot;center_core&quot;,
+        &quot;vehicles&quot;: 8
+      },
+      {
+        &quot;origin&quot;: &quot;east_gate&quot;,
+        &quot;destination&quot;: &quot;west_gate&quot;,
+        &quot;vehicles&quot;: 8
+      },
+      {
+        &quot;origin&quot;: &quot;north_gate&quot;,
+        &quot;destination&quot;: &quot;northwest_logistics&quot;,
+        &quot;vehicles&quot;: 4
+      },
+      {
+        &quot;origin&quot;: &quot;north_gate&quot;,
+        &quot;destination&quot;: &quot;east_gate&quot;,
+        &quot;vehicles&quot;: 4
+      },
+      {
+        &quot;origin&quot;: &quot;east_gate&quot;,
+        &quot;destination&quot;: &quot;northwest_logistics&quot;,
+        &quot;vehicles&quot;: 4
+      },
+      {
+        &quot;origin&quot;: &quot;north_gate&quot;,
+        &quot;destination&quot;: &quot;upper_south&quot;,
+        &quot;vehicles&quot;: 3
+      },
+      {
+        &quot;origin&quot;: &quot;east_gate&quot;,
+        &quot;destination&quot;: &quot;southwest_districts&quot;,
+        &quot;vehicles&quot;: 2
+      },
+      {
+        &quot;origin&quot;: &quot;north_gate&quot;,
+        &quot;destination&quot;: &quot;center_core&quot;,
+        &quot;vehicles&quot;: 2
+      }
+    ],
+    &quot;routeCoverage&quot;: {
+      &quot;coveredRoads&quot;: 32,
+      &quot;totalRoads&quot;: 32,
+      &quot;coverageRatio&quot;: 1.0,
+      &quot;routedVehicles&quot;: 60,
+      &quot;averageRouteRoads&quot;: 15.92
+    },
+    &quot;beforeAfter&quot;: null,
+    &quot;heatmap&quot;: [
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 1.0
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.8624999999999998
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.8249999999999996
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.7791666666666663
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.7208333333333331
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.7178571428571425
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.6937499999999999
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.6666666666666664
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.6424999999999997
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.6333333333333332
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.5928571428571426
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.585
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.5549999999999997
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.5549999999999997
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.5549999999999997
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.5187499999999998
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.4875
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.4849999999999999
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.48499999999999976
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 0.0,
+        &quot;weight&quot;: 0.42500000000000004
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.42500000000000004
+      },
+      {
+        &quot;lat&quot;: 1000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.41499999999999987
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.3799999999999999
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 2000.0,
+        &quot;weight&quot;: 0.37727272727272715
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.3613636363636363
+      },
+      {
+        &quot;lat&quot;: 0.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.30500000000000005
+      },
+      {
+        &quot;lat&quot;: 2000.0,
+        &quot;lng&quot;: 1000.0,
+        &quot;weight&quot;: 0.2833333333333334
+      }
+    ],
+    &quot;events&quot;: [
+      {
+        &quot;id&quot;: &quot;event-1&quot;,
+        &quot;type&quot;: &quot;accident&quot;,
+        &quot;roadId&quot;: &quot;abay_ab&quot;,
+        &quot;startTime&quot;: &quot;17:00&quot;,
+        &quot;durationMinutes&quot;: 30,
+        &quot;endTime&quot;: &quot;17:30&quot;,
+        &quot;enabled&quot;: true,
+        &quot;capacityFactor&quot;: 0.35,
+        &quot;speedFactor&quot;: 0.45,
+        &quot;signalDelayS&quot;: 60.0,
+        &quot;intensity&quot;: 1.0,
+        &quot;active&quot;: true
+      },
+      {
+        &quot;id&quot;: &quot;random-1&quot;,
+        &quot;type&quot;: &quot;capacity_reduction&quot;,
+        &quot;roadId&quot;: &quot;abay_ba&quot;,
+        &quot;startTime&quot;: &quot;17:06&quot;,
+        &quot;durationMinutes&quot;: 34,
+        &quot;endTime&quot;: &quot;17:40&quot;,
+        &quot;enabled&quot;: true,
+        &quot;capacityFactor&quot;: 0.378907258532278,
+        &quot;speedFactor&quot;: 0.28253194222723743,
+        &quot;signalDelayS&quot;: 88.12935636599997,
+        &quot;intensity&quot;: 1.0,
+        &quot;active&quot;: false
+      }
+    ],
+    &quot;zones&quot;: [
+      {
+        &quot;id&quot;: &quot;center_core&quot;,
+        &quot;name&quot;: &quot;Center / Upper Business Belt&quot;,
+        &quot;lat&quot;: 43.2389,
+        &quot;lng&quot;: 76.9454,
+        &quot;radiusM&quot;: 5200.0,
+        &quot;kind&quot;: &quot;business&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.7,
+          &quot;lunch&quot;: 1.2,
+          &quot;evening&quot;: 1.45,
+          &quot;night&quot;: 0.65,
+          &quot;weekend&quot;: 0.95
+        }
+      },
+      {
+        &quot;id&quot;: &quot;west_gate&quot;,
+        &quot;name&quot;: &quot;West Gate / Altyn Orda / Tashkent Tract&quot;,
+        &quot;lat&quot;: 43.235,
+        &quot;lng&quot;: 76.815,
+        &quot;radiusM&quot;: 6200.0,
+        &quot;kind&quot;: &quot;residential&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.85,
+          &quot;lunch&quot;: 0.9,
+          &quot;evening&quot;: 1.75,
+          &quot;night&quot;: 0.95,
+          &quot;weekend&quot;: 1.15
+        }
+      },
+      {
+        &quot;id&quot;: &quot;northwest_logistics&quot;,
+        &quot;name&quot;: &quot;Northwest Logistics / Markets&quot;,
+        &quot;lat&quot;: 43.29,
+        &quot;lng&quot;: 76.87,
+        &quot;radiusM&quot;: 5600.0,
+        &quot;kind&quot;: &quot;logistics&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.35,
+          &quot;lunch&quot;: 1.05,
+          &quot;evening&quot;: 1.2,
+          &quot;night&quot;: 1.15,
+          &quot;weekend&quot;: 1.1
+        }
+      },
+      {
+        &quot;id&quot;: &quot;north_gate&quot;,
+        &quot;name&quot;: &quot;North Gate / Pervomayskaya / Suyunbai&quot;,
+        &quot;lat&quot;: 43.328,
+        &quot;lng&quot;: 76.935,
+        &quot;radiusM&quot;: 6300.0,
+        &quot;kind&quot;: &quot;transport&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.55,
+          &quot;lunch&quot;: 0.95,
+          &quot;evening&quot;: 1.4,
+          &quot;night&quot;: 1.0,
+          &quot;weekend&quot;: 1.05
+        }
+      },
+      {
+        &quot;id&quot;: &quot;east_gate&quot;,
+        &quot;name&quot;: &quot;East Gate / Kulja / Talgar / VOAD&quot;,
+        &quot;lat&quot;: 43.245,
+        &quot;lng&quot;: 77.04,
+        &quot;radiusM&quot;: 7000.0,
+        &quot;kind&quot;: &quot;transport&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.45,
+          &quot;lunch&quot;: 0.95,
+          &quot;evening&quot;: 1.35,
+          &quot;night&quot;: 0.95,
+          &quot;weekend&quot;: 1.0
+        }
+      },
+      {
+        &quot;id&quot;: &quot;upper_south&quot;,
+        &quot;name&quot;: &quot;Upper South / Foothills&quot;,
+        &quot;lat&quot;: 43.205,
+        &quot;lng&quot;: 76.955,
+        &quot;radiusM&quot;: 5600.0,
+        &quot;kind&quot;: &quot;mixed&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.2,
+          &quot;lunch&quot;: 1.0,
+          &quot;evening&quot;: 1.2,
+          &quot;night&quot;: 0.75,
+          &quot;weekend&quot;: 1.2
+        }
+      },
+      {
+        &quot;id&quot;: &quot;southwest_districts&quot;,
+        &quot;name&quot;: &quot;Southwest Districts&quot;,
+        &quot;lat&quot;: 43.216,
+        &quot;lng&quot;: 76.87,
+        &quot;radiusM&quot;: 6100.0,
+        &quot;kind&quot;: &quot;residential&quot;,
+        &quot;weights&quot;: {
+          &quot;morning&quot;: 1.65,
+          &quot;lunch&quot;: 0.95,
+          &quot;evening&quot;: 1.6,
+          &quot;night&quot;: 0.9,
+          &quot;weekend&quot;: 1.15
+        }
+      }
+    ],
+    &quot;calibration&quot;: {
+      &quot;segmentRows&quot;: [
+        {
+          &quot;id&quot;: &quot;seg_43&quot;,
+          &quot;name&quot;: &quot;Node Abay-Rozybakiev&quot;,
+          &quot;rank&quot;: 43,
+          &quot;averageLoad&quot;: 1.0,
+          &quot;estimatedSpeedKph&quot;: 36.2,
+          &quot;congestionIndex&quot;: 10.0,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_01&quot;,
+          &quot;name&quot;: &quot;Abay: Rozybakiev-Nazarbayev&quot;,
+          &quot;rank&quot;: 1,
+          &quot;averageLoad&quot;: 1.0,
+          &quot;estimatedSpeedKph&quot;: 36.2,
+          &quot;congestionIndex&quot;: 9.8,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_02&quot;,
+          &quot;name&quot;: &quot;Abay: Nazarbayev-Dostyk&quot;,
+          &quot;rank&quot;: 2,
+          &quot;averageLoad&quot;: 1.0,
+          &quot;estimatedSpeedKph&quot;: 36.2,
+          &quot;congestionIndex&quot;: 9.6,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_44&quot;,
+          &quot;name&quot;: &quot;Node Abay-Nazarbayev&quot;,
+          &quot;rank&quot;: 44,
+          &quot;averageLoad&quot;: 0.7225,
+          &quot;estimatedSpeedKph&quot;: 35.6,
+          &quot;congestionIndex&quot;: 9.9,
+          &quot;matchedRoads&quot;: 4
+        },
+        {
+          &quot;id&quot;: &quot;seg_46&quot;,
+          &quot;name&quot;: &quot;Node Abay-Seifullin&quot;,
+          &quot;rank&quot;: 46,
+          &quot;averageLoad&quot;: 0.6927,
+          &quot;estimatedSpeedKph&quot;: 38.1,
+          &quot;congestionIndex&quot;: 9.5,
+          &quot;matchedRoads&quot;: 4
+        },
+        {
+          &quot;id&quot;: &quot;seg_48&quot;,
+          &quot;name&quot;: &quot;Node Satpayev-Auezov&quot;,
+          &quot;rank&quot;: 48,
+          &quot;averageLoad&quot;: 0.6719,
+          &quot;estimatedSpeedKph&quot;: 45.0,
+          &quot;congestionIndex&quot;: 9.0,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_26&quot;,
+          &quot;name&quot;: &quot;Satpayev: Auezov-Rozybakiev&quot;,
+          &quot;rank&quot;: 26,
+          &quot;averageLoad&quot;: 0.6719,
+          &quot;estimatedSpeedKph&quot;: 45.0,
+          &quot;congestionIndex&quot;: 8.6,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_45&quot;,
+          &quot;name&quot;: &quot;Node Tole Bi-Rozybakiev&quot;,
+          &quot;rank&quot;: 45,
+          &quot;averageLoad&quot;: 0.6554,
+          &quot;estimatedSpeedKph&quot;: 45.0,
+          &quot;congestionIndex&quot;: 9.8,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_03&quot;,
+          &quot;name&quot;: &quot;Tole Bi: Rozybakiev-Nazarbayev&quot;,
+          &quot;rank&quot;: 3,
+          &quot;averageLoad&quot;: 0.6554,
+          &quot;estimatedSpeedKph&quot;: 45.0,
+          &quot;congestionIndex&quot;: 9.5,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_04&quot;,
+          &quot;name&quot;: &quot;Tole Bi: Nazarbayev-Kaldayakov&quot;,
+          &quot;rank&quot;: 4,
+          &quot;averageLoad&quot;: 0.6554,
+          &quot;estimatedSpeedKph&quot;: 45.0,
+          &quot;congestionIndex&quot;: 9.2,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_49&quot;,
+          &quot;name&quot;: &quot;Node Tole Bi-Momyshuly&quot;,
+          &quot;rank&quot;: 49,
+          &quot;averageLoad&quot;: 0.6554,
+          &quot;estimatedSpeedKph&quot;: 45.0,
+          &quot;congestionIndex&quot;: 8.8,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;seg_22&quot;,
+          &quot;name&quot;: &quot;Auezov-Tole Bi-Zharokov&quot;,
+          &quot;rank&quot;: 22,
+          &quot;averageLoad&quot;: 0.6554,
+          &quot;estimatedSpeedKph&quot;: 45.0,
+          &quot;congestionIndex&quot;: 8.3,
+          &quot;matchedRoads&quot;: 2
+        }
+      ],
+      &quot;intersectionRows&quot;: [
+        {
+          &quot;id&quot;: &quot;int_01&quot;,
+          &quot;name&quot;: &quot;Abay-Rozybakiev&quot;,
+          &quot;priority&quot;: 10.0,
+          &quot;averageLoad&quot;: 1.0,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_05&quot;,
+          &quot;name&quot;: &quot;Abay-Baitursynov&quot;,
+          &quot;priority&quot;: 9.2,
+          &quot;averageLoad&quot;: 1.0,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_09&quot;,
+          &quot;name&quot;: &quot;Abay-Zheltoksan&quot;,
+          &quot;priority&quot;: 8.9,
+          &quot;averageLoad&quot;: 1.0,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_14&quot;,
+          &quot;name&quot;: &quot;Abay-Brusilovskiy&quot;,
+          &quot;priority&quot;: 8.6,
+          &quot;averageLoad&quot;: 1.0,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_15&quot;,
+          &quot;name&quot;: &quot;Abay-Auezov&quot;,
+          &quot;priority&quot;: 8.5,
+          &quot;averageLoad&quot;: 1.0,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_02&quot;,
+          &quot;name&quot;: &quot;Abay-Nazarbayev&quot;,
+          &quot;priority&quot;: 9.9,
+          &quot;averageLoad&quot;: 0.7225,
+          &quot;matchedRoads&quot;: 4
+        },
+        {
+          &quot;id&quot;: &quot;int_04&quot;,
+          &quot;name&quot;: &quot;Abay-Seifullin&quot;,
+          &quot;priority&quot;: 9.5,
+          &quot;averageLoad&quot;: 0.6927,
+          &quot;matchedRoads&quot;: 4
+        },
+        {
+          &quot;id&quot;: &quot;int_10&quot;,
+          &quot;name&quot;: &quot;Satpayev-Auezov&quot;,
+          &quot;priority&quot;: 9.0,
+          &quot;averageLoad&quot;: 0.6719,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_11&quot;,
+          &quot;name&quot;: &quot;Satpayev-Rozybakiev&quot;,
+          &quot;priority&quot;: 8.8,
+          &quot;averageLoad&quot;: 0.6719,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_03&quot;,
+          &quot;name&quot;: &quot;Tole Bi-Rozybakiev&quot;,
+          &quot;priority&quot;: 9.8,
+          &quot;averageLoad&quot;: 0.6554,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_13&quot;,
+          &quot;name&quot;: &quot;Tole Bi-Auezov&quot;,
+          &quot;priority&quot;: 8.7,
+          &quot;averageLoad&quot;: 0.6554,
+          &quot;matchedRoads&quot;: 2
+        },
+        {
+          &quot;id&quot;: &quot;int_07&quot;,
+          &quot;name&quot;: &quot;Tole Bi-Nazarbayev&quot;,
+          &quot;priority&quot;: 9.1,
+          &quot;averageLoad&quot;: 0.5502,
+          &quot;matchedRoads&quot;: 4
+        }
+      ],
+      &quot;summary&quot;: {
+        &quot;segmentsMatched&quot;: 21,
+        &quot;intersectionsMatched&quot;: 4,
+        &quot;segmentCount&quot;: 50,
+        &quot;intersectionCount&quot;: 15
+      }
+    }
+  }
+}</pre>
+</body>
+</html>
