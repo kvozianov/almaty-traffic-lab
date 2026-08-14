@@ -7,6 +7,7 @@ import html
 import json
 
 from .calibration import calibration_stats_from_roads
+from .executive_kpis import build_executive_kpi_block
 from .network import CityGraph
 from .simulation import TrafficSimulation
 from .visualization import SimulationFrame, _vehicle_position
@@ -134,7 +135,7 @@ def build_run_analytics(run: dict[str, object]) -> dict[str, object]:
 
     comparison = run.get("comparison")
     calibration_layer = run.get("calibrationLayer")
-    return {
+    payload = {
         "runId": run.get("id"),
         "congestionOverTime": congestion_over_time,
         "averageSpeedOverTime": average_speed_over_time,
@@ -148,6 +149,13 @@ def build_run_analytics(run: dict[str, object]) -> dict[str, object]:
         "zones": run.get("zones", []),
         "calibration": calibration_stats_from_roads(roads, calibration_layer, limit=12) if isinstance(calibration_layer, dict) else {"segmentRows": [], "intersectionRows": [], "summary": {}},
     }
+    baseline_stats = dict(run.get("baseline_stats") or stats)
+    payload["executiveKpis"] = build_executive_kpi_block(
+        _analytics_payload_from_stats(baseline_stats, payload.get("averageSpeedOverTime", [])),
+        _analytics_payload_from_stats(stats, payload.get("averageSpeedOverTime", [])),
+        claim_level="proxy",
+    )
+    return payload
 
 
 def corridor_stats_from_roads(roads: list[object], corridor_path: str | Path = "data/corridors/almaty_major_roads.json") -> list[dict[str, object]]:
@@ -331,3 +339,24 @@ def export_road_loads_csv(path: str | Path, sim: TrafficSimulation) -> Path:
         for road_id, peak_load in sim.peak_road_loads().items():
             writer.writerow({"road_id": road_id, "peak_load": peak_load, "current_load": current_loads.get(road_id, 0.0)})
     return output
+
+
+def _analytics_payload_from_stats(stats: dict[str, object], speed_series: object) -> dict[str, object]:
+    average_trip_s = float(stats.get("average_trip_time_s") or 0.0)
+    active_vehicles = int(float(stats.get("active_vehicles") or 0))
+    congestion_index = float(stats.get("average_road_load") or stats.get("max_road_load") or 0.0) * 100
+    series = []
+    if isinstance(speed_series, list):
+        series = [
+            {"hour": str(item.get("tick", index)), "avg_speed_kph": float(item.get("value", 0.0))}
+            for index, item in enumerate(speed_series)
+            if isinstance(item, dict)
+        ]
+    return {
+        "summary": {
+            "average_trip_time_seconds": average_trip_s,
+            "congestion_index": congestion_index,
+            "total_active_vehicles": active_vehicles,
+        },
+        "time_series": series,
+    }

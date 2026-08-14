@@ -26,8 +26,13 @@ from .analytics import (
 from .calibration import match_calibration_to_graph
 from .config import app_config
 from .demand import generate_vehicle_demand
+from .data_sources import write_provider_registry
 from .graph_cache import list_presets, load_preset_graph
 from .network import CityGraph
+from .operations import generate_operational_playbook
+from .research_metrics import generate_research_metrics_pack
+from .run_metadata import build_run_passport
+from .scenario_library import load_scenario_presets
 from .scenarios import (
     add_bypass_road,
     apply_accident,
@@ -50,6 +55,7 @@ from .timeline import (
 )
 from .traffic_providers import build_provider, list_provider_statuses
 from .visualization import record_frames
+from .workflow import generate_decision_workflow
 from .zones import build_zone_index, load_zones, zones_payload
 from .zones import load_od_matrix
 
@@ -233,6 +239,10 @@ def create_app() -> FastAPI:
     def traffic_providers() -> dict[str, object]:
         return {"providers": list_provider_statuses()}
 
+    @app.get("/api/data-sources")
+    def data_sources() -> dict[str, object]:
+        return write_provider_registry()
+
     @app.post("/api/traffic/import")
     def import_traffic(request: TrafficImportRequest) -> dict[str, object]:
         provider = build_provider(request.provider, request.path)
@@ -242,6 +252,34 @@ def create_app() -> FastAPI:
                 raise HTTPException(status_code=400, detail=f"CSV file does not exist: {request.path}")
             TRAFFIC_IMPORTS["csv"] = request.path
         return {"provider": status, "message": "Provider configured. External raw traffic is not scraped or redistributed."}
+
+    @app.get("/api/operations/playbook/sample")
+    def sample_operation_playbook() -> dict[str, object]:
+        incident = json.loads(Path("data/operations/sample_incident_abay.json").read_text(encoding="utf-8"))
+        return generate_operational_playbook(incident)
+
+    @app.post("/api/operations/playbook")
+    def create_operation_playbook(incident: dict[str, Any]) -> dict[str, object]:
+        try:
+            return generate_operational_playbook(incident)
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.get("/api/workflow/sample")
+    def sample_decision_workflow() -> dict[str, object]:
+        return generate_decision_workflow()
+
+    @app.get("/api/research-metrics/sample")
+    def sample_research_metrics() -> dict[str, object]:
+        return generate_research_metrics_pack()
+
+    @app.post("/api/workflow")
+    def create_decision_workflow(payload: dict[str, Any]) -> dict[str, object]:
+        dossier_path = str(payload.get("dossierPath") or "reports/dossiers/abay-signal-retiming/dossier.json")
+        try:
+            return generate_decision_workflow(dossier_path)
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/statistics/road/{road_id:path}")
     def road_statistics(road_id: str, provider_id: str = "synthetic") -> dict[str, object]:
@@ -394,6 +432,11 @@ def _run_request(request: SimulationRequest) -> dict[str, Any]:
         "calibrationLayer": calibration_layer,
     }
     result["analytics"] = build_run_analytics(result)
+    result["run_passport"] = build_run_passport(
+        run_id=run_id,
+        scenario_params=request.model_dump(),
+        seed=request.seed,
+    )
     return result
 
 
@@ -475,6 +518,11 @@ def _run_preview(request: SimulationRequest) -> dict[str, Any]:
         "calibrationLayer": calibration_layer,
     }
     result["analytics"] = build_run_analytics(result)
+    result["run_passport"] = build_run_passport(
+        run_id=run_id,
+        scenario_params=request.model_dump(),
+        seed=request.seed,
+    )
     return result
 
 
@@ -922,8 +970,7 @@ def _time_presets() -> list[dict[str, object]]:
 
 
 def _load_scenario_presets() -> list[dict[str, object]]:
-    payload = json.loads(SCENARIO_PRESETS_PATH.read_text(encoding="utf-8"))
-    return list(payload.get("presets", []))
+    return load_scenario_presets(SCENARIO_PRESETS_PATH)
 
 
 def _pick_representative_road(graph: CityGraph) -> str:
@@ -992,6 +1039,7 @@ def _run_metadata(run: dict[str, Any]) -> dict[str, object]:
         "procedural": run.get("procedural", False),
         "frameCount": len(run["frames"]),
         "roadCount": len(run["roads"]),
+        "runPassport": run.get("run_passport"),
     }
 
 

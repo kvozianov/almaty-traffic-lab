@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "dossier-compatibility-v1",
+  "scenarioId": "abay-signal-retiming",
+  "claimLevel": "proxy",
+  "requiredTopLevelKeys": [
+    "id",
+    "claimLevel",
+    "corridor",
+    "decisionQuestion",
+    "baseline",
+    "proposedMeasure",
+    "experiment",
+    "executiveKpis",
+    "assumptions",
+    "sources",
+    "risks",
+    "capexOpex",
+    "trustMetadata",
+    "limitations",
+    "recommendation",
+    "outputs"
+  ],
+  "kpis": [
+    {"id": "person_hours", "direction": "lower_is_better", "claimLevel": "proxy", "placeholder": false},
+    {"id": "person_hours_saved", "direction": "higher_is_better", "claimLevel": "proxy", "placeholder": false},
+    {"id": "corridor_speed_delta", "direction": "higher_is_better", "claimLevel": "proxy", "placeholder": false},
+    {"id": "queue_load_proxy", "direction": "lower_is_better", "claimLevel": "proxy", "placeholder": false},
+    {"id": "bus_reliability_proxy", "direction": "higher_is_better", "claimLevel": "proxy", "placeholder": false},
+    {"id": "co2_proxy", "direction": "lower_is_better", "claimLevel": "proxy", "placeholder": false},
+    {"id": "nox_proxy", "direction": "lower_is_better", "claimLevel": "proxy", "placeholder": false},
+    {"id": "capex_placeholder", "direction": "lower_is_better", "claimLevel": "proxy", "placeholder": true},
+    {"id": "opex_placeholder", "direction": "lower_is_better", "claimLevel": "proxy", "placeholder": true},
+    {"id": "annual_time_savings_proxy", "direction": "higher_is_better", "claimLevel": "proxy", "placeholder": false},
+    {"id": "roi_proxy", "direction": "higher_is_better", "claimLevel": "proxy", "placeholder": true},
+    {"id": "payback_proxy", "direction": "lower_is_better", "claimLevel": "proxy", "placeholder": true}
+  ],
+  "recommendation": {
+    "decision": "request_more_evidence",
+    "ruleId": "M5",
+    "mobilityState": "M5_favorable_only",
+    "economicsState": "E1_incomplete",
+    "matrixCell": "proxy:E1_incomplete",
+    "allowedDecisions": [
+      "request_more_evidence",
+      "investigate_further",
+      "defer",
+      "fund_conditional_on_evidence",
+      "reject"
+    ]
+  },
+  "artifactRoles": ["json", "markdown", "html", "kpisCsv"]
+}

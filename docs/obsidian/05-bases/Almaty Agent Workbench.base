@@ -1,0 +1,29 @@
+filters:
+  or:
+    - file.hasTag("ai-agent/workbench")
+    - file.hasTag("almaty/goal")
+    - file.hasTag("ai-agent/evidence")
+
+properties:
+  type:
+    displayName: "Type"
+  status:
+    displayName: "Status"
+  goal_id:
+    displayName: "Goal"
+  priority:
+    displayName: "Priority"
+  next_action:
+    displayName: "Next Action"
+
+views:
+  - type: table
+    name: "Agent Workbench"
+    order:
+      - file.name
+      - type
+      - status
+      - goal_id
+      - priority
+      - next_action
+      - file.mtime

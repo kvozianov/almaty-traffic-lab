@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from .network import CityGraph
@@ -20,6 +20,7 @@ class ScenarioEvent:
     speed_factor: float = 0.45
     signal_delay_s: float = 60.0
     intensity: float = 1.0
+    road_tags: list[str] = field(default_factory=list)
 
     @property
     def end_time(self) -> str:
@@ -43,6 +44,7 @@ class ScenarioEvent:
             "speedFactor": self.speed_factor,
             "signalDelayS": self.signal_delay_s,
             "intensity": self.intensity,
+            "roadTags": self.road_tags,
             "active": active,
         }
 
@@ -78,6 +80,7 @@ def normalize_events(raw_events: list[Any] | None) -> list[ScenarioEvent]:
                 speed_factor=float(item.get("speed_factor") or item.get("speedFactor") or 0.45),
                 signal_delay_s=float(item.get("signal_delay_s") or item.get("signalDelayS") or 60.0),
                 intensity=float(item.get("intensity", 1.0)),
+                road_tags=[str(tag) for tag in item.get("road_tags") or item.get("roadTags") or []],
             )
         )
     return events
@@ -148,21 +151,29 @@ def apply_active_events(graph: CityGraph, events: list[ScenarioEvent], minute_of
                 road.capacity_modifier *= event.capacity_factor
                 road.speed_modifier *= event.speed_factor
                 road.metadata["scenario"] = "timeline accident"
-            elif event.type == "repair":
+            elif event.type in {"repair", "road_repair"}:
                 road.is_open = False
                 road.metadata["scenario"] = "timeline repair"
             elif event.type == "closure":
                 road.is_open = False
                 road.metadata["scenario"] = "timeline closure"
-            elif event.type == "capacity_reduction":
+            elif event.type in {"capacity_reduction", "paid_parking"}:
                 road.capacity_modifier *= event.capacity_factor
                 road.metadata["scenario"] = "timeline capacity"
-            elif event.type == "signal":
+            elif event.type in {"signal", "signal_retiming"}:
                 road.signal_delay_s += event.signal_delay_s
                 road.metadata["scenario"] = "timeline signal"
-            elif event.type == "weather":
+            elif event.type in {"weather", "snow_weather", "school_zone"}:
                 road.speed_modifier *= event.speed_factor
                 road.metadata["scenario"] = "timeline weather"
+            elif event.type in {"bus_priority", "dedicated_bus_lane", "brt_corridor"}:
+                road.capacity_modifier *= event.capacity_factor
+                road.speed_modifier *= event.speed_factor
+                road.signal_delay_s = max(0.0, road.signal_delay_s + event.signal_delay_s)
+                road.metadata["scenario"] = f"timeline {event.type}"
+            elif event.type in {"demand_surge", "event_surge", "new_development"}:
+                road.capacity_modifier *= event.capacity_factor
+                road.metadata["scenario"] = f"timeline {event.type}"
     return sorted(affected)
 
 
@@ -171,10 +182,25 @@ def events_payload(events: list[ScenarioEvent], minute_of_day: int | None = None
 
 
 def _target_roads(graph: CityGraph, event: ScenarioEvent) -> list[str]:
-    if event.type == "weather":
+    if event.type in {"weather", "snow_weather"}:
         return list(graph.roads)[: max(25, min(len(graph.roads), 250))]
     if event.road_id in graph.roads:
         return [str(event.road_id)]
+    if event.road_tags:
+        tags = [tag.lower() for tag in event.road_tags if tag]
+        matched = [
+            road_id
+            for road_id, road in graph.roads.items()
+            if any(tag in _road_search_text(road_id, road.metadata) for tag in tags)
+        ]
+        if matched:
+            return sorted(matched)
     if not graph.roads:
         return []
     return [max(graph.roads, key=lambda road_id: graph.roads[road_id].length_m)]
+
+
+def _road_search_text(road_id: str, metadata: dict[str, object]) -> str:
+    values = [road_id, str(metadata.get("name", "")), str(metadata.get("ref", ""))]
+    values.extend(str(tag) for tag in metadata.get("tags", []) if isinstance(metadata.get("tags"), list))
+    return " ".join(values).lower()

@@ -19,7 +19,31 @@ pnpm-debug.log*
 
 # macOS
 .DS_Store
-data/
+
+# Generated evidence stays local. Canonical inputs for the bounded Abay
+# portfolio release are narrowly allowlisted below.
+reports/
+data/*
+!data/almaty_roads.geojson
+!data/traffic_data.json
+!data/calibration/
+data/calibration/*
+!data/calibration/almaty_calibration_layer.json
+!data/fixtures/
+data/fixtures/*
+!data/fixtures/abay/
+data/fixtures/abay/*
+!data/fixtures/abay/aggregate-demand.proxy-v1.json
+!data/fixtures/abay/source-analytics.proxy-v1.json
+!data/scenarios/
+data/scenarios/*
+!data/scenarios/dossier_abay_signal.json
+!data/scenarios/library/
+data/scenarios/library/*
+!data/scenarios/library/municipal_presets.json
+!data/traffic_profiles/
+data/traffic_profiles/*
+!data/traffic_profiles/sample_almaty.csv
 
 # Python
 __pycache__/

@@ -1,0 +1,60 @@
+{
+  "id": "abay-signal-retiming",
+  "corridor": {
+    "id": "abay",
+    "name": "Abay Avenue",
+    "anchor": "docs/obsidian/03-registries/First Corridor Pack - Abay.md"
+  },
+  "decisionQuestion": "Should Almaty leadership fund, defer, reject, or request more evidence for signal retiming on the Abay corridor?",
+  "claimLevel": "proxy",
+  "pairedExperimentPath": "reports/repro/abay/pair/paired-experiment.json",
+  "baseline": {
+    "label": "Current modeled baseline",
+    "analyticsPath": "reports/repro/abay/pair/baseline.analytics.json",
+    "scenario": {
+      "pattern": "normal",
+      "signal_delay_s": 36,
+      "claim_level": "proxy"
+    }
+  },
+  "measure": {
+    "label": "Signal retiming proxy",
+    "type": "signal_retiming",
+    "analyticsPath": "reports/repro/abay/pair/measure.analytics.json",
+    "scenario": {
+      "pattern": "normal",
+      "signal_delay_s": 32,
+      "claim_level": "proxy"
+    },
+    "description": "Retiming-sensitive Abay proxy using the current analytics contract and transparent executive KPI formulas."
+  },
+  "runPassportPath": "data/runs/abay-signal-retiming-run-passport.json",
+  "outputDir": "reports/dossiers/abay-signal-retiming",
+  "costs": {
+    "capexKzt": 350000000,
+    "opexKztPerYear": 25000000,
+    "capexPlaceholder": true,
+    "opexPlaceholder": true,
+    "roiPaybackPlaceholder": true,
+    "claimLevel": "proxy",
+    "notes": "Placeholder until supplied by akimat or engineering estimate."
+  },
+  "assumptions": [
+    "Baseline and measure use the seed declared by the reproduction config.",
+    "Executive KPIs use transparent formulas from src/traffic_sim/executive_kpis.py.",
+    "The measure represents signal-retiming sensitivity, not a field-approved signal plan.",
+    "Abay corridor is anchored to docs/obsidian/03-registries/First Corridor Pack - Abay.md."
+  ],
+  "risks": [
+    "Observed detector, bus AVL, and queue validation data are not attached per run.",
+    "CAPEX/OPEX are placeholders.",
+    "Signal timing feasibility and legal/operations approvals are not validated.",
+    "Current analytics are proxy-level and should not be presented as measured city impact."
+  ],
+  "decisionOptions": [
+    "fund_conditional_on_evidence",
+    "defer",
+    "reject",
+    "request_more_evidence"
+  ]
+}

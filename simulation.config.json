@@ -1,0 +1,92 @@
+{
+  "id": "abay-first-epic-reproduction",
+  "version": 2,
+  "claimLevel": "demo",
+  "seed": 7,
+  "scenario": {
+    "id": "abay-signal-retiming",
+    "corridor": {
+      "id": "abay",
+      "name": "Abay Avenue",
+      "anchor": "docs/obsidian/03-registries/First Corridor Pack - Abay.md"
+    },
+    "decisionQuestion": "Should Almaty leadership fund, defer, reject, or request more evidence for signal retiming on the Abay corridor?",
+    "claimLevel": "proxy",
+    "baseline": {
+      "label": "Current modeled baseline",
+      "analyticsPath": "reports/repro/abay/pair/baseline.analytics.json",
+      "scenario": {
+        "pattern": "normal",
+        "signal_delay_s": 36,
+        "claim_level": "proxy"
+      }
+    },
+    "measure": {
+      "label": "Signal retiming proxy",
+      "type": "signal_retiming",
+      "analyticsPath": "reports/repro/abay/pair/measure.analytics.json",
+      "scenario": {
+        "pattern": "normal",
+        "signal_delay_s": 32,
+        "claim_level": "proxy"
+      },
+      "description": "Retiming-sensitive Abay proxy using the current analytics contract and transparent executive KPI formulas."
+    },
+    "costs": {
+      "capexKzt": 350000000,
+      "opexKztPerYear": 25000000,
+      "capexPlaceholder": true,
+      "opexPlaceholder": true,
+      "roiPaybackPlaceholder": true,
+      "claimLevel": "proxy",
+      "notes": "Placeholder until supplied by akimat or engineering estimate."
+    },
+    "assumptions": [
+      "Baseline and measure use the seed declared by the reproduction config.",
+      "Executive KPIs use transparent formulas from src/traffic_sim/executive_kpis.py.",
+      "The measure represents signal-retiming sensitivity, not a field-approved signal plan.",
+      "Abay corridor is anchored to docs/obsidian/03-registries/First Corridor Pack - Abay.md."
+    ],
+    "risks": [
+      "Observed detector, bus AVL, and queue validation data are not attached per run.",
+      "CAPEX/OPEX are placeholders.",
+      "Signal timing feasibility and legal/operations approvals are not validated.",
+      "Current analytics are proxy-level and should not be presented as measured city impact."
+    ],
+    "decisionOptions": [
+      "fund_conditional_on_evidence",
+      "defer",
+      "reject",
+      "request_more_evidence"
+    ]
+  },
+  "outputRoot": "reports/repro/abay",
+  "pairedExperiment": {
+    "modelId": "abay-signal-delay-proxy-v1",
+    "sourceAnalyticsPath": "data/fixtures/abay/source-analytics.proxy-v1.json",
+    "aggregateDemandPath": "data/fixtures/abay/aggregate-demand.proxy-v1.json",
+    "contextNetworkPath": "data/almaty_roads.geojson",
+    "outputPath": "pair",
+    "baselineDelaySeconds": 36,
+    "measureDelaySeconds": 32,
+    "affectedSignalsPerTrip": 4,
+    "realizationFactor": 0.55
+  },
+  "trajectoryExport": {
+    "format": "csv",
+    "path": "trajectory.csv",
+    "source": "baseline and measure hourly analytics time_series"
+  },
+  "analytics": [
+    {
+      "role": "baseline",
+      "pattern": "normal",
+      "path": "pair/baseline.analytics.json"
+    },
+    {
+      "role": "measure",
+      "pattern": "normal",
+      "path": "pair/measure.analytics.json"
+    }
+  ]
+}

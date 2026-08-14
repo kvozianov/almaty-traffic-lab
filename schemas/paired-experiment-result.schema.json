@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://almaty-mobility.local/schemas/paired-experiment-result.schema.json",
+  "title": "Abay signal-delay paired experiment result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "modelId", "scenarioId", "corridorId", "claimLevel", "generatedAt", "semanticFingerprint", "provenance", "experiment", "proxyModel", "baseline", "measure", "outputs"],
+  "properties": {
+    "schemaVersion": {"const": "1.0.0"},
+    "modelId": {"const": "abay-signal-delay-proxy-v1"},
+    "scenarioId": {"const": "abay-signal-retiming"},
+    "corridorId": {"const": "abay"},
+    "claimLevel": {"const": "proxy"},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "semanticFingerprint": {"$ref": "#/$defs/sha256"},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "experiment": {"$ref": "#/$defs/experiment"},
+    "proxyModel": {"$ref": "#/$defs/proxyModel"},
+    "baseline": {"$ref": "#/$defs/variant"},
+    "measure": {"$ref": "#/$defs/variant"},
+    "outputs": {"$ref": "#/$defs/outputs"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relativePath", "sha256"],
+      "properties": {
+        "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sourceControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gitHash": {"type": ["string", "null"]},
+        "dirty": {"type": "boolean"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generatedAt", "sourceControl", "sourceAnalytics", "aggregateDemand", "sourcePrimitiveVehicleCount"],
+      "properties": {
+        "generatedAt": {"type": "string", "format": "date-time"},
+        "sourceControl": {"$ref": "#/$defs/sourceControl"},
+        "sourceAnalytics": {"$ref": "#/$defs/artifactRef"},
+        "aggregateDemand": {"$ref": "#/$defs/artifactRef"},
+        "sourcePrimitiveVehicleCount": {"type": "integer", "minimum": 1}
+      }
+    },
+    "demandSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relativePath", "sha256", "sampleTripCount", "originalSnapshotSha256", "rawTripsIncluded"],
+      "properties": {
+        "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sampleTripCount": {"type": "integer", "minimum": 1},
+        "originalSnapshotSha256": {"$ref": "#/$defs/sha256"},
+        "rawTripsIncluded": {"const": false}
+      }
+    },
+    "expansion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator", "rounding"],
+      "properties": {
+        "numerator": {"type": "integer", "minimum": 1},
+        "denominator": {"type": "integer", "minimum": 1},
+        "rounding": {"const": "exact-required"}
+      }
+    },
+    "demandControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "modeledVehicleCount", "sourcePrimitiveVehicleCount", "seed", "pattern", "source", "expansion"],
+      "properties": {
+        "mode": {"const": "aggregate-count-v1"},
+        "modeledVehicleCount": {"type": "integer", "minimum": 1},
+        "sourcePrimitiveVehicleCount": {"type": "integer", "minimum": 1},
+        "seed": {"type": "integer"},
+        "pattern": {"type": "string", "minLength": 1},
+        "source": {"$ref": "#/$defs/demandSource"},
+        "expansion": {"$ref": "#/$defs/expansion"}
+      }
+    },
+    "networkFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "usedByModel", "description"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "usedByModel": {"const": false},
+        "description": {"type": "string", "minLength": 1}
+      }
+    },
+    "controlledDifference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "baseline", "measure"],
+      "properties": {
+        "path": {"const": "/signalDelaySeconds"},
+        "baseline": {"type": "number", "minimum": 0, "maximum": 120},
+        "measure": {"type": "number", "minimum": 0, "maximum": 120}
+      }
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "baselineSignalDelaySeconds", "measureSignalDelaySeconds", "controlledDifferences", "unchangedFields", "demandControl", "baseSeriesFingerprint", "contextNetworkFingerprint"],
+      "properties": {
+        "seed": {"type": "integer"},
+        "baselineSignalDelaySeconds": {"type": "number", "minimum": 0, "maximum": 120},
+        "measureSignalDelaySeconds": {"type": "number", "minimum": 0, "maximum": 120},
+        "controlledDifferences": {"type": "array", "maxItems": 1, "items": {"$ref": "#/$defs/controlledDifference"}},
+        "unchangedFields": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "/analytics/ml_forecast"},
+            {"const": "/analytics/node_throughput"},
+            {"const": "/analytics/demandControl"}
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "demandControl": {"$ref": "#/$defs/demandControl"},
+        "baseSeriesFingerprint": {"$ref": "#/$defs/sha256"},
+        "contextNetworkFingerprint": {"$ref": "#/$defs/networkFingerprint"}
+      }
+    },
+    "numericRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum"],
+      "properties": {
+        "minimum": {"type": "number"},
+        "maximum": {"type": "number"}
+      }
+    },
+    "proxyModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["formula", "units", "bounds", "rounding", "assumptions", "limitations", "computed"],
+      "properties": {
+        "formula": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signalComponent", "runningTime", "tripTime", "ratio"],
+          "properties": {
+            "signalComponent": {"const": "S(d) = affected_signals_per_trip * d * realization_factor"},
+            "runningTime": {"const": "R = baseline.average_trip_time_seconds - S(baseline_delay_s)"},
+            "tripTime": {"const": "T(d) = R + S(d)"},
+            "ratio": {"const": "q(d) = T(d) / T(baseline_delay_s)"}
+          }
+        },
+        "units": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signalDelay", "tripTime", "congestionIndex", "averageSpeed"],
+          "properties": {
+            "signalDelay": {"const": "seconds"},
+            "tripTime": {"const": "seconds"},
+            "congestionIndex": {"const": "0-100"},
+            "averageSpeed": {"const": "km/h"}
+          }
+        },
+        "bounds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signalDelaySeconds", "affectedSignalsPerTrip", "realizationFactor", "congestionIndex", "averageSpeedKph"],
+          "properties": {
+            "signalDelaySeconds": {"$ref": "#/$defs/numericRange"},
+            "affectedSignalsPerTrip": {"$ref": "#/$defs/numericRange"},
+            "realizationFactor": {"$ref": "#/$defs/numericRange"},
+            "congestionIndex": {"$ref": "#/$defs/numericRange"},
+            "averageSpeedKph": {"$ref": "#/$defs/numericRange"}
+          }
+        },
+        "rounding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["averageTripTimeDecimals", "congestionIndexDecimals", "averageSpeedDecimals", "kpiDecimals", "calculationRule"],
+          "properties": {
+            "averageTripTimeDecimals": {"const": 2},
+            "congestionIndexDecimals": {"const": 2},
+            "averageSpeedDecimals": {"const": 1},
+            "kpiDecimals": {"const": 3},
+            "calculationRule": {"const": "calculate with unrounded finite floats, then serialize at field precision"}
+          }
+        },
+        "assumptions": {"type": "array", "minItems": 3, "items": {"type": "string", "minLength": 1}},
+        "limitations": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}},
+        "computed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["affectedSignalsPerTrip", "realizationFactor", "baselineSignalComponentSeconds", "measureSignalComponentSeconds", "runningTimeSeconds", "baselineTripTimeSeconds", "measureTripTimeSeconds", "baselineRatio", "measureRatio"],
+          "properties": {
+            "affectedSignalsPerTrip": {"type": "integer", "minimum": 1, "maximum": 20},
+            "realizationFactor": {"type": "number", "minimum": 0, "maximum": 1},
+            "baselineSignalComponentSeconds": {"type": "number"},
+            "measureSignalComponentSeconds": {"type": "number"},
+            "runningTimeSeconds": {"type": "number", "exclusiveMinimum": 0},
+            "baselineTripTimeSeconds": {"type": "number", "exclusiveMinimum": 0},
+            "measureTripTimeSeconds": {"type": "number", "exclusiveMinimum": 0},
+            "baselineRatio": {"type": "number", "exclusiveMinimum": 0},
+            "measureRatio": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["average_trip_time_seconds", "congestion_index", "total_active_vehicles"],
+      "properties": {
+        "average_trip_time_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "congestion_index": {"type": "number", "minimum": 0, "maximum": 100},
+        "total_active_vehicles": {"type": "integer", "minimum": 1}
+      }
+    },
+    "nodeThroughput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_id", "vehicles_per_hour", "status"],
+      "properties": {
+        "node_id": {"type": "string", "minLength": 1},
+        "vehicles_per_hour": {"type": "integer", "minimum": 0},
+        "status": {"type": "string", "minLength": 1}
+      }
+    },
+    "timeSeriesPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hour", "congestion_index", "avg_speed_kph"],
+      "properties": {
+        "hour": {"type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"},
+        "congestion_index": {"type": "number", "minimum": 0, "maximum": 100},
+        "avg_speed_kph": {"type": "number", "minimum": 5, "maximum": 80}
+      }
+    },
+    "forecastPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["offset_hours", "predicted_congestion", "confidence"],
+      "properties": {
+        "offset_hours": {"type": "integer", "minimum": 1},
+        "predicted_congestion": {"type": "number", "minimum": 0, "maximum": 100},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "analyticsExperiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "modelId", "scenarioId", "signalDelaySeconds", "seed", "baseSeriesFingerprint", "contextNetworkFingerprint", "clampedFields"],
+      "properties": {
+        "schemaVersion": {"const": "1.0.0"},
+        "modelId": {"const": "abay-signal-delay-proxy-v1"},
+        "scenarioId": {"const": "abay-signal-retiming"},
+        "signalDelaySeconds": {"type": "number", "minimum": 0, "maximum": 120},
+        "seed": {"type": "integer"},
+        "baseSeriesFingerprint": {"$ref": "#/$defs/sha256"},
+        "contextNetworkFingerprint": {"$ref": "#/$defs/networkFingerprint"},
+        "clampedFields": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^/"}}
+      }
+    },
+    "analytics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "node_throughput", "time_series", "ml_forecast", "demandControl", "pairedExperiment"],
+      "properties": {
+        "summary": {"$ref": "#/$defs/summary"},
+        "node_throughput": {"type": "array", "items": {"$ref": "#/$defs/nodeThroughput"}},
+        "time_series": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/timeSeriesPoint"}},
+        "ml_forecast": {"type": "array", "items": {"$ref": "#/$defs/forecastPoint"}},
+        "demandControl": {"$ref": "#/$defs/demandControl"},
+        "pairedExperiment": {"$ref": "#/$defs/analyticsExperiment"}
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "signalDelaySeconds", "analytics"],
+      "properties": {
+        "role": {"enum": ["baseline", "measure"]},
+        "signalDelaySeconds": {"type": "number", "minimum": 0, "maximum": 120},
+        "analytics": {"$ref": "#/$defs/analytics"}
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pairResult": {"type": "string", "minLength": 1},
+        "baselineAnalytics": {"type": "string", "minLength": 1},
+        "measureAnalytics": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

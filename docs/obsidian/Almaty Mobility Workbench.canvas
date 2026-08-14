@@ -1,0 +1,111 @@
+{
+  "nodes": [
+    {
+      "id": "command-center",
+      "type": "file",
+      "file": "docs/obsidian/00-command-center/Almaty Mobility Command Center.md",
+      "x": 0,
+      "y": 0,
+      "width": 420,
+      "height": 260
+    },
+    {
+      "id": "manual",
+      "type": "file",
+      "file": "docs/obsidian/00-command-center/AI Agent Operating Manual.md",
+      "x": -520,
+      "y": 0,
+      "width": 420,
+      "height": 260
+    },
+    {
+      "id": "council",
+      "type": "file",
+      "file": "docs/obsidian/02-council/LLM Council - Implementation Audit.md",
+      "x": 520,
+      "y": 0,
+      "width": 420,
+      "height": 260
+    },
+    {
+      "id": "g002",
+      "type": "file",
+      "file": "docs/obsidian/01-goals/G002 - Scenario Dossier MVP.md",
+      "x": 0,
+      "y": 360,
+      "width": 420,
+      "height": 260
+    },
+    {
+      "id": "abay",
+      "type": "file",
+      "file": "docs/obsidian/03-registries/First Corridor Pack - Abay.md",
+      "x": -520,
+      "y": 360,
+      "width": 420,
+      "height": 260
+    },
+    {
+      "id": "artifact-registry",
+      "type": "file",
+      "file": "docs/obsidian/03-registries/Artifact Registry.md",
+      "x": 520,
+      "y": 360,
+      "width": 420,
+      "height": 260
+    },
+    {
+      "id": "goals-base",
+      "type": "file",
+      "file": "docs/obsidian/05-bases/Almaty Goals.base",
+      "x": 0,
+      "y": 720,
+      "width": 420,
+      "height": 220
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-command-manual",
+      "fromNode": "command-center",
+      "fromSide": "left",
+      "toNode": "manual",
+      "toSide": "right"
+    },
+    {
+      "id": "edge-command-council",
+      "fromNode": "command-center",
+      "fromSide": "right",
+      "toNode": "council",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-command-g002",
+      "fromNode": "command-center",
+      "fromSide": "bottom",
+      "toNode": "g002",
+      "toSide": "top"
+    },
+    {
+      "id": "edge-abay-g002",
+      "fromNode": "abay",
+      "fromSide": "right",
+      "toNode": "g002",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-g002-artifacts",
+      "fromNode": "g002",
+      "fromSide": "right",
+      "toNode": "artifact-registry",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-g002-goals",
+      "fromNode": "g002",
+      "fromSide": "bottom",
+      "toNode": "goals-base",
+      "toSide": "top"
+    }
+  ]
+}
