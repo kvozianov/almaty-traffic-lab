@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "mode": "aggregate-count-v1",
+  "modeledVehicleCount": 500,
+  "pattern": "normal",
+  "sampleTripCount": 500,
+  "rawTripsIncluded": false,
+  "originalSnapshot": {
+    "relativePath": "data/trips_normal.json",
+    "sha256": "b7ea1bfeef889e695ccfbbf4cb115de51b330b064601c89184677060e5f6eab3"
+  },
+  "expansion": {
+    "numerator": 1,
+    "denominator": 1,
+    "rounding": "exact-required"
+  },
+  "claimLevel": "proxy",
+  "limitations": [
+    "This fixture records only an aggregate vehicle count; raw trips and OD paths are intentionally excluded.",
+    "The 1:1 expansion controls modeled demand but does not establish route-level or observed-demand equivalence."
+  ]
+}

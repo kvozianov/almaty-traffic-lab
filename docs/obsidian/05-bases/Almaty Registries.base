@@ -1,0 +1,22 @@
+filters:
+  and:
+    - file.hasTag("almaty/registry")
+    - 'file.ext == "md"'
+
+properties:
+  type:
+    displayName: "Type"
+  status:
+    displayName: "Status"
+  created:
+    displayName: "Created"
+
+views:
+  - type: table
+    name: "Registries"
+    order:
+      - file.name
+      - type
+      - status
+      - created
+      - file.mtime

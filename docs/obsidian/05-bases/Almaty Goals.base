@@ -1,0 +1,67 @@
+filters:
+  and:
+    - file.hasTag("almaty/goal")
+    - 'file.ext == "md"'
+
+properties:
+  goal_id:
+    displayName: "Goal"
+  goal_status:
+    displayName: "Goal Status"
+  product_status:
+    displayName: "Product Status"
+  priority:
+    displayName: "Priority"
+  owner:
+    displayName: "Owner"
+  first_epic:
+    displayName: "First Epic"
+  claim_level:
+    displayName: "Claim"
+  next_action:
+    displayName: "Next Action"
+  acceptance_gate:
+    displayName: "Acceptance Gate"
+
+views:
+  - type: table
+    name: "Goal Workbench"
+    order:
+      - file.name
+      - goal_id
+      - priority
+      - owner
+      - product_status
+      - claim_level
+      - first_epic
+      - next_action
+      - acceptance_gate
+    groupBy:
+      property: priority
+      direction: ASC
+
+  - type: table
+    name: "First Epic"
+    filters:
+      and:
+        - 'first_epic == true'
+    order:
+      - file.name
+      - goal_id
+      - owner
+      - product_status
+      - claim_level
+      - next_action
+      - acceptance_gate
+
+  - type: table
+    name: "By Owner"
+    order:
+      - file.name
+      - goal_id
+      - owner
+      - priority
+      - next_action
+    groupBy:
+      property: owner
+      direction: ASC

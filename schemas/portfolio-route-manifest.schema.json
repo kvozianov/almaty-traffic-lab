@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://almaty-mobility.local/schemas/portfolio-route-manifest.schema.json",
+  "title": "Almaty Mobility portfolio route manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "scenarioId",
+    "claimLevel",
+    "generatedAt",
+    "status",
+    "sourceManifest",
+    "artifacts",
+    "aliases"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "portfolio-route-manifest/v1"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "scenarioId": {
+      "const": "abay-signal-retiming"
+    },
+    "claimLevel": {
+      "$ref": "#/$defs/claimLevel"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "const": "promoted"
+    },
+    "sourceManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "const": "portfolio.sources.json"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "aliases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "errors", "paths"],
+      "properties": {
+        "status": {
+          "enum": ["pending", "synced", "failed"]
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/alias"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "claimLevel": {
+      "enum": ["demo", "proxy", "calibrated", "real-data", "procurement-ready"]
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "logicalPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.staging(?:/|$))(?!.*\\\\).+$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "runId",
+        "logicalPath",
+        "sha256",
+        "bytes",
+        "mediaType",
+        "claimLevel"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "dossier",
+            "runPassport",
+            "providers",
+            "workflow",
+            "procurement",
+            "reproduction",
+            "manifest",
+            "dataReadiness",
+            "procurementPack",
+            "applicationPack",
+            "pilotPlan"
+          ]
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+        },
+        "logicalPath": {
+          "$ref": "#/$defs/logicalPath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mediaType": {
+          "const": "application/json"
+        },
+        "claimLevel": {
+          "$ref": "#/$defs/claimLevel"
+        }
+      }
+    },
+    "alias": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path"],
+      "properties": {
+        "role": {
+          "enum": [
+            "dossier",
+            "runPassport",
+            "providers",
+            "workflow",
+            "procurement",
+            "reproduction",
+            "manifest",
+            "dataReadiness",
+            "procurementPack",
+            "applicationPack",
+            "pilotPlan"
+          ]
+        },
+        "path": {
+          "$ref": "#/$defs/logicalPath"
+        }
+      }
+    }
+  }
+}

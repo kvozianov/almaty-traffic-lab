@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "portfolio-route-manifest/v1",
+  "runId": "portfolio-test-001",
+  "scenarioId": "abay-signal-retiming",
+  "claimLevel": "demo",
+  "generatedAt": "2026-08-12T00:00:00+00:00",
+  "status": "promoted",
+  "sourceManifest": {
+    "path": "portfolio.sources.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "artifacts": [
+    {"role": "dossier", "runId": "portfolio-test-001", "logicalPath": "artifacts/dossier.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "proxy"},
+    {"role": "runPassport", "runId": "portfolio-test-001", "logicalPath": "artifacts/run-passport.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "providers", "runId": "portfolio-test-001", "logicalPath": "artifacts/providers.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "workflow", "runId": "portfolio-test-001", "logicalPath": "artifacts/workflow.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "procurement", "runId": "portfolio-test-001", "logicalPath": "artifacts/procurement.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "reproduction", "runId": "portfolio-test-001", "logicalPath": "artifacts/reproduction.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "manifest", "runId": "portfolio-test-001", "logicalPath": "artifacts/reproduction-manifest.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "dataReadiness", "runId": "portfolio-test-001", "logicalPath": "artifacts/data-readiness.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "procurementPack", "runId": "portfolio-test-001", "logicalPath": "artifacts/procurement-pack.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "applicationPack", "runId": "portfolio-test-001", "logicalPath": "artifacts/application-pack.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
+    {"role": "pilotPlan", "runId": "portfolio-test-001", "logicalPath": "artifacts/pilot-plan.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"}
+  ],
+  "aliases": {
+    "status": "pending",
+    "errors": [],
+    "paths": [
+      {"role": "dossier", "path": "aliases/dossier.json"},
+      {"role": "runPassport", "path": "aliases/run-passport.json"},
+      {"role": "providers", "path": "aliases/providers.json"},
+      {"role": "workflow", "path": "aliases/workflow.json"},
+      {"role": "procurement", "path": "aliases/procurement.json"},
+      {"role": "reproduction", "path": "aliases/reproduction.json"},
+      {"role": "manifest", "path": "aliases/reproduction-manifest.json"},
+      {"role": "dataReadiness", "path": "aliases/data-readiness.json"},
+      {"role": "procurementPack", "path": "aliases/procurement-pack.json"},
+      {"role": "applicationPack", "path": "aliases/application-pack.json"},
+      {"role": "pilotPlan", "path": "aliases/pilot-plan.json"}
+    ]
+  }
+}

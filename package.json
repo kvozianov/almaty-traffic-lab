@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "portfolio:bootstrap": "PYTHONPATH=src sh -c 'if [ -n \"$TRAFFIC_SIM_PYTHON\" ]; then exec \"$TRAFFIC_SIM_PYTHON\" scripts/bootstrap_portfolio.py; elif [ -x .venv/bin/python ]; then exec .venv/bin/python scripts/bootstrap_portfolio.py; else exec python3 scripts/bootstrap_portfolio.py; fi'"
   },
   "dependencies": {
     "@deck.gl/core": "^9.3.2",
@@ -15,7 +16,7 @@
     "@deck.gl/react": "^9.3.2",
     "@vis.gl/react-maplibre": "^8.1.1",
     "maplibre-gl": "^5.24.0",
-    "next": "^16.2.6",
+    "next": "^16.3.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -25,7 +26,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.6",
+    "eslint-config-next": "^16.3.0",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3"
   }

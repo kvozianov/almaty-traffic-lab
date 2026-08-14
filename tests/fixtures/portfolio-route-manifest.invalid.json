@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "portfolio-route-manifest/v1",
+  "runId": "../mixed-run",
+  "scenarioId": "another-scenario",
+  "claimLevel": "verified",
+  "generatedAt": "not-a-date",
+  "status": "promoted",
+  "sourceManifest": {
+    "path": "portfolio.sources.json",
+    "sha256": "not-a-hash"
+  },
+  "artifacts": [],
+  "aliases": {
+    "status": "synced",
+    "errors": [],
+    "paths": []
+  }
+}

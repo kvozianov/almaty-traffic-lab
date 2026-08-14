@@ -2,32 +2,48 @@ import json
 import random
 import os
 import csv
-from datetime import datetime, timedelta
+import sys
+from pathlib import Path
 
-def generate_analytics(pattern="normal", closed_streets=""):
-    # Attempt to read trips.json for base data if available, or generate synthetic
-    try:
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from traffic_sim.executive_kpis import build_executive_kpi_block
+
+
+def generate_analytics(pattern="normal", closed_streets="", seed=7):
+    rng = random.Random(f"{pattern}:{closed_streets}:{seed}")
+    deterministic_synthetic = os.getenv("TRAFFIC_SIM_REPRODUCIBLE_SYNTHETIC") == "1"
+
+    if deterministic_synthetic:
+        num_trips = 150
+    else:
         fileName = f"trips_{pattern}"
         if closed_streets:
             fileName += "_" + "".join(c if c.isalnum() else "_" for c in closed_streets)
         fileName += ".json"
-
-        with open(os.path.join("data", fileName), "r") as f:
-            trips_data = json.load(f)
+        try:
+            with open(os.path.join("data", fileName), "r", encoding="utf-8") as f:
+                trips_data = json.load(f)
             num_trips = len(trips_data.get("trips", []))
-    except Exception:
-        num_trips = 150
+        except (FileNotFoundError, json.JSONDecodeError):
+            num_trips = 150
 
-    try:
-        with open(os.path.join("data", "traffic_data.json"), "r") as f:
-            traffic_data = json.load(f)
+    if deterministic_synthetic:
+        roads = [{"id": f"road_{i}", "density": rng.uniform(0, 1)} for i in range(100)]
+    else:
+        try:
+            with open(os.path.join("data", "traffic_data.json"), "r", encoding="utf-8") as f:
+                traffic_data = json.load(f)
             roads = traffic_data.get("roads", [])
-    except Exception:
-        roads = [{"id": f"road_{i}", "density": random.uniform(0, 1)} for i in range(100)]
+        except (FileNotFoundError, json.JSONDecodeError):
+            roads = [{"id": f"road_{i}", "density": rng.uniform(0, 1)} for i in range(100)]
 
     # 1. Overall Analytics
     # Average time in trips: e.g. 15-45 minutes
-    average_trip_time_s = random.uniform(900, 2700)
+    average_trip_time_s = rng.uniform(900, 2700)
 
     # Calculate congestion index (0-100%)
     avg_density = sum(r.get("density", 0) for r in roads) / len(roads) if roads else 0
@@ -37,9 +53,9 @@ def generate_analytics(pattern="normal", closed_streets=""):
     node_throughput = []
     for i in range(10):
         node_throughput.append({
-            "node_id": f"node_{random.randint(1000, 9999)}",
-            "vehicles_per_hour": random.randint(500, 3000),
-            "status": random.choice(["normal", "heavy", "congested"])
+            "node_id": f"node_{rng.randint(1000, 9999)}",
+            "vehicles_per_hour": rng.randint(500, 3000),
+            "status": rng.choice(["normal", "heavy", "congested"])
         })
 
     # 2. Time-of-day charts
@@ -47,23 +63,23 @@ def generate_analytics(pattern="normal", closed_streets=""):
     time_series = []
     for hour in range(24):
         if pattern == "night":
-            base_idx = random.uniform(5, 15)
+            base_idx = rng.uniform(5, 15)
         elif pattern == "weekend":
             # Peak slightly later in the day, smoother
             if hour in range(11, 16):
-                base_idx = random.uniform(50, 75)
+                base_idx = rng.uniform(50, 75)
             elif hour in range(1, 6):
-                base_idx = random.uniform(5, 20)
+                base_idx = rng.uniform(5, 20)
             else:
-                base_idx = random.uniform(25, 45)
+                base_idx = rng.uniform(25, 45)
         else:
             # Base traffic curve: peak at 8-9 and 18-19
             if hour in (8, 9, 17, 18, 19):
-                base_idx = random.uniform(70, 95)
+                base_idx = rng.uniform(70, 95)
             elif hour in range(1, 6):
-                base_idx = random.uniform(5, 20)
+                base_idx = rng.uniform(5, 20)
             else:
-                base_idx = random.uniform(30, 60)
+                base_idx = rng.uniform(30, 60)
 
         # closed_streets penalize congestion everywhere
         if closed_streets:
@@ -77,16 +93,16 @@ def generate_analytics(pattern="normal", closed_streets=""):
 
     # 3. ML Forecast (Next hour prediction)
     # Simple mock forecast
-    current_hour = datetime.now().hour
+    current_hour = 17
     current_idx = next((t["congestion_index"] for t in time_series if t["hour"] == f"{current_hour:02d}:00"), 50)
 
     forecasts = []
     for i in range(1, 4):
-        future_idx = max(0, min(100, current_idx + random.uniform(-10, 15)))
+        future_idx = max(0, min(100, current_idx + rng.uniform(-10, 15)))
         forecasts.append({
             "offset_hours": i,
             "predicted_congestion": round(future_idx, 2),
-            "confidence": round(random.uniform(0.7, 0.95), 2)
+            "confidence": round(rng.uniform(0.7, 0.95), 2)
         })
         current_idx = future_idx
 
@@ -95,12 +111,18 @@ def generate_analytics(pattern="normal", closed_streets=""):
         "summary": {
             "average_trip_time_seconds": round(average_trip_time_s, 2),
             "congestion_index": congestion_index,
-            "total_active_vehicles": num_trips * random.randint(10, 50),
+            "total_active_vehicles": num_trips * rng.randint(10, 50),
         },
         "node_throughput": sorted(node_throughput, key=lambda x: x["vehicles_per_hour"], reverse=True),
         "time_series": time_series,
-        "ml_forecast": forecasts
+        "ml_forecast": forecasts,
     }
+    baseline_data = _load_baseline(pattern) if closed_streets else analytics_data
+    analytics_data["executive_kpis"] = build_executive_kpi_block(
+        baseline_data or analytics_data,
+        analytics_data,
+        claim_level="proxy",
+    )
 
     # Save JSON
     os.makedirs("data", exist_ok=True)
@@ -129,11 +151,22 @@ def generate_analytics(pattern="normal", closed_streets=""):
 
     print(f"Analytics data generated successfully at {json_path} and {csv_path}")
 
+
+def _load_baseline(pattern):
+    path = os.path.join("data", f"analytics_{pattern}.json")
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return None
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--pattern", type=str, choices=["normal", "night", "weekend"], default="normal")
     parser.add_argument("--closed_streets", type=str, default="")
+    parser.add_argument("--seed", type=int, default=7)
     args, _ = parser.parse_known_args()
 
-    generate_analytics(pattern=args.pattern, closed_streets=args.closed_streets)
+    generate_analytics(pattern=args.pattern, closed_streets=args.closed_streets, seed=args.seed)

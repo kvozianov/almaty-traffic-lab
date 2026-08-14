@@ -1,0 +1,229 @@
+{
+  "schemaVersion": "portfolio-sources/v1",
+  "scenarioId": "abay-signal-retiming",
+  "sources": [
+    {
+      "role": "reproductionConfig",
+      "path": "simulation.config.json",
+      "kind": "config",
+      "required": true,
+      "sha256": "483e98818bd7c7f4819a0ce79ecf21ed1e0c0389f71e9efeb2197ae59ece3ddc"
+    },
+    {
+      "role": "dossierScenarioConfig",
+      "path": "data/scenarios/dossier_abay_signal.json",
+      "kind": "config",
+      "required": true,
+      "sha256": "d91c6e7034ee635431825f3cb0f2235dc846be98fc195605f10fa4e35ad28f36"
+    },
+    {
+      "role": "sourceAnalytics",
+      "path": "data/fixtures/abay/source-analytics.proxy-v1.json",
+      "kind": "data",
+      "required": true,
+      "sha256": "209b48a5b45c18b7b8b3a45e49387da1d13145d8debf617adb27af09b35242e0"
+    },
+    {
+      "role": "aggregateDemand",
+      "path": "data/fixtures/abay/aggregate-demand.proxy-v1.json",
+      "kind": "data",
+      "required": true,
+      "sha256": "67a7fbeec2d008655e3c977da7350084a324e7679cb52f9c31775be3fd79c5f6"
+    },
+    {
+      "role": "roadsGeojson",
+      "path": "data/almaty_roads.geojson",
+      "kind": "data",
+      "required": true,
+      "sha256": "e7d065055f5e0720fe0e19f8972dc3ec0ebb132277c940451a101db1fc35a675"
+    },
+    {
+      "role": "trafficDensity",
+      "path": "data/traffic_data.json",
+      "kind": "data",
+      "required": true,
+      "sha256": "229e9011283253e7d3330e53ebe5cca966416f7b1b6a2a791183a2a320a02ea5"
+    },
+    {
+      "role": "trafficProfileCsv",
+      "path": "data/traffic_profiles/sample_almaty.csv",
+      "kind": "data",
+      "required": true,
+      "sha256": "41054653cc6265e95a44be0fb6d8d5e98926517f7f0e421523648a70f6c4114c"
+    },
+    {
+      "role": "scenarioLibrary",
+      "path": "data/scenarios/library/municipal_presets.json",
+      "kind": "data",
+      "required": true,
+      "sha256": "54cec7056eeadde2bfa5e7dca3a4bba73be054ad6e6abcaf2b19f4f316e2b4a8"
+    },
+    {
+      "role": "calibrationLayer",
+      "path": "data/calibration/almaty_calibration_layer.json",
+      "kind": "data",
+      "required": true,
+      "sha256": "3ad78942c60d18fd61bf2aba9638c896226d336024399f0cd9a968767d8ae19c"
+    },
+    {
+      "role": "pairedExperimentSchema",
+      "path": "schemas/paired-experiment-result.schema.json",
+      "kind": "schema",
+      "required": true,
+      "sha256": "60011ad678158c9678f59864bce004da92a580611da080399ef9f1cb4e939cac"
+    },
+    {
+      "role": "routeManifestSchema",
+      "path": "schemas/portfolio-route-manifest.schema.json",
+      "kind": "schema",
+      "required": true,
+      "sha256": "0cea9b716e9beb1920f8dbefdf3b75fd3b973909d2cbc1d5aa6d1e73d61c00ca"
+    },
+    {
+      "role": "portfolioScreenshot",
+      "path": "docs/assets/abay-dossier-portfolio.png",
+      "kind": "asset",
+      "required": true,
+      "sha256": "cc4f007566fad158977ff72dc83db107c01dab6f6804f3c13d3a0b3a92c39b1d"
+    },
+    {
+      "role": "corridorPack",
+      "path": "docs/obsidian/03-registries/First Corridor Pack - Abay.md",
+      "kind": "documentation",
+      "required": true
+    },
+    {
+      "role": "claimLedger",
+      "path": "docs/obsidian/03-registries/Claim Ledger.md",
+      "kind": "documentation",
+      "required": true
+    },
+    {
+      "role": "artifactRegistry",
+      "path": "docs/obsidian/03-registries/Artifact Registry.md",
+      "kind": "documentation",
+      "required": true
+    },
+    {
+      "role": "procurementReadiness",
+      "path": "docs/procurement_readiness.md",
+      "kind": "documentation",
+      "required": true
+    },
+    {
+      "role": "dataSourcesDocumentation",
+      "path": "docs/data_sources.md",
+      "kind": "documentation",
+      "required": true
+    },
+    {
+      "role": "methodsReadme",
+      "path": "README_METHODS.md",
+      "kind": "documentation",
+      "required": true
+    },
+    {
+      "role": "dockerfile",
+      "path": "Dockerfile",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "composeFile",
+      "path": "docker-compose.yml",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "pythonProject",
+      "path": "pyproject.toml",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "pythonRequirementsLock",
+      "path": "requirements.lock",
+      "kind": "config",
+      "required": true,
+      "sha256": "2b6dbfab7e95eddc607896c498655fe0bc5ea270d65c40b821420a3e944f1045"
+    },
+    {
+      "role": "contractsSource",
+      "path": "src/traffic_sim/contracts.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "configSource",
+      "path": "src/traffic_sim/config.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "pairedExperimentSource",
+      "path": "src/traffic_sim/paired_experiment.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "dossierSource",
+      "path": "src/traffic_sim/dossier.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "executiveKpiSource",
+      "path": "src/traffic_sim/executive_kpis.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "runMetadataSource",
+      "path": "src/traffic_sim/run_metadata.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "dataSourcesSource",
+      "path": "src/traffic_sim/data_sources.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "workflowSource",
+      "path": "src/traffic_sim/workflow.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "procurementSource",
+      "path": "src/traffic_sim/procurement.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "researchSource",
+      "path": "src/traffic_sim/research_metrics.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "akimatPackSource",
+      "path": "src/traffic_sim/akimat_pack.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "releaseSource",
+      "path": "src/traffic_sim/portfolio_release.py",
+      "kind": "code",
+      "required": true
+    },
+    {
+      "role": "bootstrapSource",
+      "path": "scripts/bootstrap_portfolio.py",
+      "kind": "code",
+      "required": true
+    }
+  ]
+}

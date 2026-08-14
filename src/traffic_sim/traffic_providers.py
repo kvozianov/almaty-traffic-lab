@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import os
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -30,7 +31,17 @@ class SyntheticTrafficProvider:
     provider_id = "synthetic"
 
     def status(self) -> dict[str, object]:
-        return {"id": self.provider_id, "available": True, "mode": "synthetic"}
+        return {
+            "id": self.provider_id,
+            "available": True,
+            "mode": "synthetic",
+            "claimLevel": "demo",
+            "sourceType": "generated fallback observations",
+            "legalMode": "local demo generator",
+            "freshness": "generated at request time",
+            "lastRefresh": None,
+            "fallbackBehavior": "Used when no approved provider is configured.",
+        }
 
     def observations_for_road(self, road_id: str) -> list[RoadTrafficObservation]:
         base = 0.75 if "al" in road_id.lower() or "farabi" in road_id.lower() else 0.45
@@ -49,7 +60,17 @@ class CsvTrafficProvider:
         self.path = Path(path)
 
     def status(self) -> dict[str, object]:
-        return {"id": self.provider_id, "available": self.path.exists(), "path": str(self.path)}
+        return {
+            "id": self.provider_id,
+            "available": self.path.exists(),
+            "path": str(self.path),
+            "claimLevel": "demo",
+            "sourceType": "local CSV traffic profile",
+            "legalMode": "local/demo file; replace with approved feed before real-data claims",
+            "freshness": "local file modification time",
+            "lastRefresh": _mtime_iso(self.path) if self.path.exists() else None,
+            "fallbackBehavior": "Synthetic provider can be used if CSV is absent.",
+        }
 
     def observations_for_road(self, road_id: str) -> list[RoadTrafficObservation]:
         if not self.path.exists():
@@ -78,6 +99,11 @@ class YandexTrafficProvider:
             "id": self.provider_id,
             "available": bool(os.getenv("YANDEX_MAPS_API_KEY")),
             "mode": "display-layer-or-approved-api-only",
+            "claimLevel": "demo",
+            "sourceType": "commercial display/API adapter placeholder",
+            "legalMode": "Do not store raw Yandex traffic data unless API terms explicitly allow it.",
+            "freshness": "not connected",
+            "lastRefresh": None,
             "note": "Raw Yandex traffic data must not be stored unless the API terms explicitly allow it.",
         }
 
@@ -93,6 +119,11 @@ class TwoGisTrafficProvider:
             "id": self.provider_id,
             "available": bool(os.getenv("2GIS_API_KEY")),
             "mode": "mapgl-visual-layer-or-approved-api-only",
+            "claimLevel": "demo",
+            "sourceType": "commercial display/API adapter placeholder",
+            "legalMode": "Do not store raw 2GIS traffic data unless API terms explicitly allow it.",
+            "freshness": "not connected",
+            "lastRefresh": None,
         }
 
     def observations_for_road(self, road_id: str) -> list[RoadTrafficObservation]:
@@ -116,3 +147,7 @@ def list_provider_statuses() -> list[dict[str, object]]:
         YandexTrafficProvider().status(),
         TwoGisTrafficProvider().status(),
     ]
+
+
+def _mtime_iso(path: Path) -> str:
+    return datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).replace(microsecond=0).isoformat()

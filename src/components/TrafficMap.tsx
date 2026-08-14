@@ -3431,8 +3431,11 @@ function getRoadLaneCount(properties: RoadProperties | undefined): number {
 
 function parseLaneValue(value: unknown): number | undefined {
   if (typeof value === "string") {
-    const match = value.match(/\d+(\.\d+)?/);
-    return match ? optionalNumber(match[0]) : undefined;
+    const laneNumbers = Array.from(value.matchAll(/\d+(\.\d+)?/g))
+      .map((match) => optionalNumber(match[0]))
+      .filter((number): number is number => number !== undefined);
+
+    return laneNumbers.length > 0 ? Math.max(...laneNumbers) : undefined;
   }
 
   return optionalNumber(value);
