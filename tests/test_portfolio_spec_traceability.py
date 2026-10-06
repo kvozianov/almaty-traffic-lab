@@ -9,7 +9,12 @@ import unittest
 from scripts.check_portfolio_spec_traceability import main, validate
 
 
+SPEC = Path(__file__).resolve().parents[1] / ".omx/plans/portfolio-idealization-technical-specification.md"
+
+
 class PortfolioSpecTraceabilityTests(unittest.TestCase):
+    # The specification lives in the author's local planning folder, which is not published.
+    @unittest.skipUnless(SPEC.exists(), "local .omx planning specification is not part of the public repository")
     def test_repository_specification_has_exact_traceability_coverage(self) -> None:
         root = Path(__file__).resolve().parents[1]
         result = validate(
