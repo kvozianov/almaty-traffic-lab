@@ -10,6 +10,7 @@
     "sha256": "not-a-hash"
   },
   "artifacts": [],
+  "downloads": [],
   "aliases": {
     "status": "synced",
     "errors": [],

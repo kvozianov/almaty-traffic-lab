@@ -108,6 +108,14 @@ def _generator(
 ):
     def generate(context: release.GenerationContext) -> None:
         context.materialize_sources()
+        context.write_text(
+            release.DEFAULT_DOWNLOAD_SPECS["dossier-html"]["logicalPath"],
+            "<!doctype html><title>Test dossier</title>\n",
+        )
+        context.write_text(
+            release.DEFAULT_DOWNLOAD_SPECS["kpis-csv"]["logicalPath"],
+            "kpi,value\ntravel_time,32\n",
+        )
         if support_path is not None:
             context.write_json(support_path, {"kind": "support", "releaseRunId": context.run_id})
         for role in release.REQUIRED_ROUTE_ROLES:
@@ -401,6 +409,65 @@ class PortfolioReleaseTests(unittest.TestCase):
             with self.assertRaisesRegex(release.ArtifactValidationError, "byte count mismatch|hash mismatch"):
                 release.read_current_manifest(repository_root=self.root)
 
+    def test_manifest_download_allowlist_is_closed_and_bound_to_the_immutable_run(self) -> None:
+        with _closed_support():
+            self.promote("download-allowlist")
+        manifest = release.read_current_manifest(repository_root=self.root)
+        downloads = manifest["downloads"]
+        self.assertEqual([item["id"] for item in downloads], list(release.REQUIRED_DOWNLOAD_IDS))
+        self.assertEqual(len(manifest["artifacts"]), 11)
+        run_root = self.root / "reports" / "portfolio" / "runs" / "download-allowlist"
+        for entry in downloads:
+            spec = release.DEFAULT_DOWNLOAD_SPECS[entry["id"]]
+            path = run_root / entry["logicalPath"]
+            self.assertEqual(entry["runId"], "download-allowlist")
+            self.assertEqual(entry["logicalPath"], spec["logicalPath"])
+            self.assertEqual(entry["mediaType"], spec["mediaType"])
+            self.assertEqual(entry["filename"], spec["filename"])
+            self.assertEqual(entry["bytes"], path.stat().st_size)
+            self.assertEqual(entry["sha256"], _sha(path))
+
+    def test_missing_or_mixed_download_allowlist_is_rejected(self) -> None:
+        for label, mutate, message in (
+            ("missing", lambda downloads: downloads.pop(), "schema validation failed"),
+            (
+                "mixed-run",
+                lambda downloads: downloads[0].__setitem__("runId", "another-run"),
+                "Mixed release run binding for download",
+            ),
+            (
+                "wrong-media",
+                lambda downloads: downloads[0].__setitem__("mediaType", "application/json"),
+                "schema validation failed",
+            ),
+        ):
+            with self.subTest(label=label), _closed_support():
+                self.promote(f"download-{label}")
+                current_path = self.root / "reports" / "portfolio" / "current.json"
+                current = json.loads(current_path.read_text(encoding="utf-8"))
+                mutate(current["downloads"])
+                _write_json(current_path, current)
+                with self.assertRaisesRegex(release.ArtifactValidationError, message):
+                    release.read_current_manifest(repository_root=self.root)
+
+    def test_download_hash_or_bytes_tamper_is_rejected(self) -> None:
+        with _closed_support():
+            self.promote("download-tamper")
+        downloaded_html = (
+            self.root
+            / "reports"
+            / "portfolio"
+            / "runs"
+            / "download-tamper"
+            / release.DEFAULT_DOWNLOAD_SPECS["dossier-html"]["logicalPath"]
+        )
+        downloaded_html.write_text("tampered\n", encoding="utf-8")
+        with self.assertRaisesRegex(
+            release.ArtifactValidationError,
+            "Download artifact byte count mismatch|Download artifact hash mismatch",
+        ):
+            release.read_current_manifest(repository_root=self.root)
+
     def test_nested_manifest_lie_is_rejected_before_promotion(self) -> None:
         with _closed_support(), self.assertRaisesRegex(
             release.ArtifactValidationError,
@@ -434,6 +501,9 @@ class PortfolioReleaseTests(unittest.TestCase):
             _write_json(dossier, payload)
             entry["sha256"] = _sha(dossier)
             entry["bytes"] = dossier.stat().st_size
+            download = next(item for item in current["downloads"] if item["id"] == "dossier-json")
+            download["sha256"] = _sha(dossier)
+            download["bytes"] = dossier.stat().st_size
             _write_json(current_path, current)
             with self.assertRaisesRegex(release.ArtifactValidationError, "Mixed release run binding"):
                 release.read_current_manifest(repository_root=self.root)

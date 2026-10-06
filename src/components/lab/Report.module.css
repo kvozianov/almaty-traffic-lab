@@ -1,0 +1,162 @@
+.report {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 32px 0 96px;
+}
+
+.message {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  max-width: 560px;
+  padding: 96px 0 160px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.toolbarActions {
+  display: flex;
+  gap: 8px;
+}
+
+.header {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.title {
+  font-size: clamp(28px, 3.6vw, 40px);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.section {
+  display: grid;
+  gap: 16px;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.muted {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.changes {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.changes li {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  align-items: baseline;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.table th,
+.table td {
+  padding: 12px 12px 12px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  padding-top: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.table tbody th {
+  font-weight: 500;
+}
+
+.table td {
+  white-space: nowrap;
+}
+
+.trust {
+  margin: 0;
+}
+
+.trust > div {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.trust dt {
+  font-weight: 500;
+}
+
+.trust dd {
+  margin: 0;
+}
+
+.passport {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.passport > div {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
+}
+
+.passport dt {
+  color: var(--ink-3);
+}
+
+.passport dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .table td {
+    white-space: normal;
+  }
+
+  .trust > div,
+  .passport > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+@media print {
+  .report {
+    padding-top: 0;
+  }
+}

@@ -1,0 +1,17 @@
+rules:
+  - id: no-server-secret-to-client
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Do not expose process environment values through a browser response.
+    patterns:
+      - pattern-either:
+          - pattern: "NextResponse.json({..., $ENV: process.env.$NAME, ...}, ...)"
+          - pattern: "return {..., $ENV: process.env.$NAME, ...}"
+  - id: no-unbounded-child-process
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Public Next.js routes must not start child processes.
+    pattern-either:
+      - pattern: child_process.exec(...)
+      - pattern: child_process.execFile(...)
+      - pattern: child_process.spawn(...)

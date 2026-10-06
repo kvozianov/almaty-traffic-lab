@@ -22,6 +22,13 @@
     {"role": "applicationPack", "runId": "portfolio-test-001", "logicalPath": "artifacts/application-pack.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"},
     {"role": "pilotPlan", "runId": "portfolio-test-001", "logicalPath": "artifacts/pilot-plan.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "claimLevel": "demo"}
   ],
+  "downloads": [
+    {"id": "dossier-html", "runId": "portfolio-test-001", "logicalPath": "reports/dossiers/abay-signal-retiming/dossier.html", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "text/html", "filename": "abay-signal-retiming-dossier.html"},
+    {"id": "dossier-json", "runId": "portfolio-test-001", "logicalPath": "reports/dossiers/abay-signal-retiming/dossier.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "filename": "abay-signal-retiming-evidence.json"},
+    {"id": "kpis-csv", "runId": "portfolio-test-001", "logicalPath": "reports/dossiers/abay-signal-retiming/kpis.csv", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "text/csv", "filename": "abay-signal-retiming-kpis.csv"},
+    {"id": "run-passport-json", "runId": "portfolio-test-001", "logicalPath": "data/runs/abay-signal-retiming-run-passport.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "filename": "abay-signal-retiming-run-passport.json"},
+    {"id": "procurement-index-json", "runId": "portfolio-test-001", "logicalPath": "reports/akimat/abay-signal-retiming/procurement_pack_index.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "bytes": 1, "mediaType": "application/json", "filename": "abay-signal-retiming-procurement-index.json"}
+  ],
   "aliases": {
     "status": "pending",
     "errors": [],

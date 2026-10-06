@@ -108,6 +108,15 @@ One scenario can move from draft to post-audit with decision history and compari
 
 ## Agent Handoff
 
+### 2026-08-15 Fresh Adversarial Workflow QA
+
+- What changed: exercised the complete seven-state workflow, artifact locks, current promoted hashes, negative transitions, malformed/tampered evidence, path traversal/symlink cases, Unicode/injection-like inert data and concurrent writers in isolated temporary roots. No workflow behavior was changed.
+- Files touched: `.omx/evidence/portfolio-fresh-end-to-end-qa-20260815.md`; `docs/obsidian/01-goals/G008 - Closed Decision Workflow.md`; `docs/obsidian/01-goals/G002 - Scenario Dossier MVP.md`; `docs/obsidian/03-registries/Artifact Registry.md`.
+- Verification: workflow/context tests 5/5; full `draft → reviewed → approved → assigned → deployed → monitored → audited`; 7/7 history hashes and 5/5 locks; 12 concurrent CLI and 12 concurrent API calls returned parseable artifacts; promoted alias/immutable workflow files match the manifest now.
+- Unresolved risks: directories can satisfy evidence without a hash; later tampering does not recalculate completeness; GET mutates workflow artifacts; in-root symlink escape is followed; one procurement task names a nonexistent status; endpoints have no auth, production gate, strict body/path validation, atomic/append-only custody or human approval semantics.
+- Claim labels changed: none. This remains a `demo` evidence-artifact generator, not an authenticated, signed or field-connected municipal workflow.
+- Next action: make GET read-only and production writes unavailable, require canonical regular-file evidence with ongoing hash verification, then add authenticated actors, valid state contracts and atomic/append-only custody before any deployment claim.
+
 ### 2026-06-05 Checkpoint
 
 - What changed: implemented a file-based closed decision workflow from the Abay signal-retiming dossier. The state machine moves through `draft -> reviewed -> approved -> assigned -> deployed -> monitored -> audited`, stores owner/timestamp/evidence path/hash/comments/next action for every transition, locks dossier artifact hashes, exports engineer tasks, creates a monitoring plan, and attaches forecast-vs-fact post-audit evidence with a recalibration flag.
