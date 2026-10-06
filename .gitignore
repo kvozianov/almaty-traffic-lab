@@ -75,3 +75,4 @@ playwright-report/
 
 # Copied from node_modules by scripts/copy-maplibre-worker.mjs
 public/vendor/
+.vercel
