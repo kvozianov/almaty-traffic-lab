@@ -7,6 +7,7 @@ import path from "node:path";
 import {
   PortfolioReleaseError,
   REQUIRED_PORTFOLIO_ARTIFACT_ROLES,
+  REQUIRED_PORTFOLIO_DOWNLOAD_IDS,
   loadPromotedPortfolioRelease,
   parseRouteManifest,
   validateRoadProviderEvidence,
@@ -53,6 +54,10 @@ assert.deepEqual(
   new Set(parsed.artifacts.map((artifact) => artifact.role)),
   new Set(REQUIRED_PORTFOLIO_ARTIFACT_ROLES),
 );
+assert.deepEqual(
+  new Set(parsed.downloads.map((download) => download.id)),
+  new Set(REQUIRED_PORTFOLIO_DOWNLOAD_IDS),
+);
 
 expectReleaseError(readFixture("portfolio-route-manifest.invalid.json"), "manifest_contract_invalid");
 
@@ -67,6 +72,12 @@ const traversal = JSON.parse(JSON.stringify(validFixture)) as {
 };
 traversal.artifacts[0].logicalPath = "../outside.json";
 expectReleaseError(traversal, "manifest_path_invalid");
+
+const unknownDownload = JSON.parse(JSON.stringify(validFixture)) as {
+  downloads: Array<{ id: string }>;
+};
+unknownDownload.downloads[0].id = "outside-the-allowlist";
+expectReleaseError(unknownDownload, "manifest_contract_invalid");
 
 const duplicateAlias = JSON.parse(JSON.stringify(validFixture)) as {
   aliases: { paths: Array<{ role: string; path: string }> };
@@ -201,6 +212,43 @@ async function verifyImmutableFilesystemBindings() {
       marker: "immutable-promoted-pack",
     },
   };
+  const downloadDefinitions = [
+    {
+      id: "dossier-html",
+      logicalPath: "reports/dossiers/abay-signal-retiming/dossier.html",
+      content: Buffer.from("<!doctype html><title>Test dossier</title>"),
+      mediaType: "text/html",
+      filename: "abay-signal-retiming-dossier.html",
+    },
+    {
+      id: "dossier-json",
+      logicalPath: "reports/dossiers/abay-signal-retiming/dossier.json",
+      content: Buffer.from(JSON.stringify({ trustMetadata: { runId } })),
+      mediaType: "application/json",
+      filename: "abay-signal-retiming-evidence.json",
+    },
+    {
+      id: "kpis-csv",
+      logicalPath: "reports/dossiers/abay-signal-retiming/kpis.csv",
+      content: Buffer.from("id,value\ntravel_time,32\n"),
+      mediaType: "text/csv",
+      filename: "abay-signal-retiming-kpis.csv",
+    },
+    {
+      id: "run-passport-json",
+      logicalPath: "data/runs/abay-signal-retiming-run-passport.json",
+      content: Buffer.from(JSON.stringify({ runId })),
+      mediaType: "application/json",
+      filename: "abay-signal-retiming-run-passport.json",
+    },
+    {
+      id: "procurement-index-json",
+      logicalPath: "reports/akimat/abay-signal-retiming/procurement_pack_index.json",
+      content: Buffer.from(JSON.stringify({ scenarioId: "abay-signal-retiming" })),
+      mediaType: "application/json",
+      filename: "abay-signal-retiming-procurement-index.json",
+    },
+  ];
 
   try {
     mkdirSync(runRoot, { recursive: true });
@@ -223,6 +271,20 @@ async function verifyImmutableFilesystemBindings() {
     mkdirSync(path.join(runRoot, "data"), { recursive: true });
     writeFileSync(path.join(runRoot, "data", "roads.geojson"), roadsContent);
     writeFileSync(path.join(runRoot, "portfolio.sources.json"), sourceContent);
+    const downloads = downloadDefinitions.map((definition) => {
+      const destination = path.join(runRoot, definition.logicalPath);
+      mkdirSync(path.dirname(destination), { recursive: true });
+      writeFileSync(destination, definition.content);
+      return {
+        id: definition.id,
+        runId,
+        logicalPath: definition.logicalPath,
+        sha256: digest(definition.content),
+        bytes: definition.content.byteLength,
+        mediaType: definition.mediaType,
+        filename: definition.filename,
+      };
+    });
     const manifest = {
       schemaVersion: "portfolio-route-manifest/v1",
       runId,
@@ -232,6 +294,7 @@ async function verifyImmutableFilesystemBindings() {
       status: "promoted",
       sourceManifest: { path: "portfolio.sources.json", sha256: digest(sourceContent) },
       artifacts,
+      downloads,
       aliases: {
         status: "synced",
         errors: [],

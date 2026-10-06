@@ -5,6 +5,8 @@ import path from "node:path";
 import type {
   ClaimLevel,
   PortfolioArtifactRole,
+  PortfolioDownloadArtifact,
+  PortfolioDownloadId,
   PortfolioRouteArtifact,
   PortfolioRouteManifest,
 } from "./types";
@@ -33,6 +35,19 @@ const CLAIM_LEVELS = new Set<ClaimLevel>([
   "procurement-ready",
 ]);
 const REQUIRED_ROLE_SET = new Set<string>(REQUIRED_PORTFOLIO_ARTIFACT_ROLES);
+export const REQUIRED_PORTFOLIO_DOWNLOAD_IDS = [
+  "dossier-html",
+  "dossier-json",
+  "kpis-csv",
+  "run-passport-json",
+  "procurement-index-json",
+] as const satisfies readonly PortfolioDownloadId[];
+const REQUIRED_DOWNLOAD_ID_SET = new Set<string>(REQUIRED_PORTFOLIO_DOWNLOAD_IDS);
+const DOWNLOAD_MEDIA_TYPES = new Set<PortfolioDownloadArtifact["mediaType"]>([
+  "text/html",
+  "application/json",
+  "text/csv",
+]);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const RUN_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const ISO_DATE_TIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -59,6 +74,7 @@ export type LoadedPortfolioRelease = {
   manifest: PortfolioRouteManifest;
   artifacts: Record<PortfolioArtifactRole, unknown>;
   sources: Record<string, LoadedPortfolioSource>;
+  runRoot: string;
 };
 
 export class PortfolioReleaseError extends Error {
@@ -157,6 +173,40 @@ function parseArtifact(value: unknown): PortfolioRouteArtifact {
   };
 }
 
+function parseDownloadArtifact(value: unknown): PortfolioDownloadArtifact {
+  if (!isRecord(value)) fail("manifest_contract_invalid", "Download entry must be an object.");
+  assertExactKeys(
+    value,
+    ["id", "runId", "logicalPath", "sha256", "bytes", "mediaType", "filename"],
+    "Download entry",
+  );
+  const id = parseString(value.id, "download.id");
+  if (!REQUIRED_DOWNLOAD_ID_SET.has(id)) {
+    fail("manifest_contract_invalid", `Unknown download id: ${id}.`);
+  }
+  const bytes = value.bytes;
+  if (!Number.isSafeInteger(bytes) || (bytes as number) <= 0) {
+    fail("manifest_contract_invalid", "download.bytes must be a positive safe integer.");
+  }
+  const mediaType = parseString(value.mediaType, "download.mediaType") as PortfolioDownloadArtifact["mediaType"];
+  if (!DOWNLOAD_MEDIA_TYPES.has(mediaType)) {
+    fail("manifest_contract_invalid", `Download ${id} has an unsupported media type.`);
+  }
+  const filename = parseString(value.filename, "download.filename");
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(filename)) {
+    fail("manifest_contract_invalid", "download.filename must be ASCII-safe.");
+  }
+  return {
+    id: id as PortfolioDownloadId,
+    runId: parseString(value.runId, "download.runId"),
+    logicalPath: parseSafeRelativePath(value.logicalPath, "download.logicalPath"),
+    sha256: parseSha256(value.sha256, "download.sha256"),
+    bytes: bytes as number,
+    mediaType,
+    filename,
+  };
+}
+
 export function parseRouteManifest(value: unknown): PortfolioRouteManifest {
   if (!isRecord(value)) fail("manifest_contract_invalid", "Route manifest must be an object.");
   assertExactKeys(
@@ -170,6 +220,7 @@ export function parseRouteManifest(value: unknown): PortfolioRouteManifest {
       "status",
       "sourceManifest",
       "artifacts",
+      "downloads",
       "aliases",
     ],
     "Route manifest",
@@ -217,6 +268,27 @@ export function parseRouteManifest(value: unknown): PortfolioRouteManifest {
   }
   if (artifacts.some((artifact) => artifact.runId !== runId)) {
     fail("mixed_release", "Artifact entries do not all belong to the promoted run.");
+  }
+
+  if (!Array.isArray(value.downloads)) {
+    fail("manifest_contract_invalid", "manifest.downloads must be an array.");
+  }
+  const downloads = value.downloads.map(parseDownloadArtifact);
+  if (downloads.length !== REQUIRED_PORTFOLIO_DOWNLOAD_IDS.length) {
+    fail("manifest_contract_invalid", "The promoted release must contain the complete download allowlist.");
+  }
+  const downloadIds = new Set(downloads.map((download) => download.id));
+  if (
+    downloadIds.size !== downloads.length ||
+    REQUIRED_PORTFOLIO_DOWNLOAD_IDS.some((id) => !downloadIds.has(id))
+  ) {
+    fail("manifest_contract_invalid", "Download IDs must be complete and unique.");
+  }
+  if (new Set(downloads.map((download) => download.logicalPath)).size !== downloads.length) {
+    fail("manifest_contract_invalid", "Download logical paths must be unique.");
+  }
+  if (downloads.some((download) => download.runId !== runId)) {
+    fail("mixed_release", "Download entries do not all belong to the promoted run.");
   }
 
   if (!isRecord(value.aliases)) {
@@ -273,6 +345,7 @@ export function parseRouteManifest(value: unknown): PortfolioRouteManifest {
       sha256: parseSha256(value.sourceManifest.sha256, "manifest.sourceManifest.sha256"),
     },
     artifacts,
+    downloads,
     aliases: {
       status: value.aliases.status as "pending" | "synced" | "failed",
       errors: [...(value.aliases.errors as string[])],
@@ -511,7 +584,24 @@ export async function loadPromotedPortfolioRelease(
     }),
   );
 
-  return { manifest, artifacts: loaded, sources };
+  return { manifest, artifacts: loaded, sources, runRoot: canonicalRunRoot };
+}
+
+export async function loadVerifiedPortfolioDownload(
+  release: LoadedPortfolioRelease,
+  requestedId: string,
+): Promise<{ artifact: PortfolioDownloadArtifact; content: Buffer }> {
+  const artifact = release.manifest.downloads.find((download) => download.id === requestedId);
+  if (!artifact) {
+    fail("download_not_found", "The requested evidence download is not available.");
+  }
+  if (artifact.runId !== release.manifest.runId) {
+    fail("mixed_release", "The requested evidence download belongs to another release run.");
+  }
+  return {
+    artifact,
+    content: await readVerifiedFile(release.runRoot, artifact.logicalPath, artifact.bytes, artifact.sha256),
+  };
 }
 
 export function validateRoadProviderEvidence(

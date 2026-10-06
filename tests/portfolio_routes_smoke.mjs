@@ -19,6 +19,24 @@ async function expectJson(name, path, init, expectedStatus, verify = () => {}) {
   return body;
 }
 
+async function expectDownload(id, mediaType, filename) {
+  const response = await fetch(
+    `${baseUrl}/api/downloads/${id}?runId=${encodeURIComponent(promotedRunId)}`,
+  );
+  const content = new Uint8Array(await response.arrayBuffer());
+  assert.equal(response.status, 200, `${id}: ${new TextDecoder().decode(content)}`);
+  assert.ok(content.byteLength > 0, `${id} must not return an empty body`);
+  assert.match(response.headers.get("content-type") || "", new RegExp(`^${mediaType}`));
+  assert.equal(response.headers.get("content-disposition"), `attachment; filename="${filename}"`);
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("x-portfolio-run-id"), promotedRunId);
+  assert.equal(response.headers.get("x-portfolio-source-manifest-sha"), promotedSourceManifestSha);
+  assert.equal(response.headers.get("x-portfolio-download-id"), id);
+  assert.match(response.headers.get("x-portfolio-artifact-sha256") || "", /^[a-f0-9]{64}$/);
+  assert.match(response.headers.get("cache-control") || "", /immutable/);
+  results.push({ name: `GET download ${id}`, status: response.status });
+}
+
 await expectJson("GET promoted dossier", "/api/dossier", undefined, 200, (body, response) => {
   assert.equal(body.id, "abay-signal-retiming");
   promotedRunId = response.headers.get("x-portfolio-run-id") || "";
@@ -44,6 +62,31 @@ await expectJson(
     );
     assert.match(response.headers.get("cache-control") || "", /no-store/);
   },
+);
+
+for (const [id, mediaType, filename] of [
+  ["dossier-html", "text/html", "abay-signal-retiming-dossier.html"],
+  ["dossier-json", "application/json", "abay-signal-retiming-evidence.json"],
+  ["kpis-csv", "text/csv", "abay-signal-retiming-kpis.csv"],
+  ["run-passport-json", "application/json", "abay-signal-retiming-run-passport.json"],
+  ["procurement-index-json", "application/json", "abay-signal-retiming-procurement-index.json"],
+]) {
+  await expectDownload(id, mediaType, filename);
+}
+
+await expectJson(
+  "GET unknown download fails closed",
+  `/api/downloads/not-an-artifact?runId=${encodeURIComponent(promotedRunId)}`,
+  undefined,
+  404,
+  (body) => assert.equal(body.code, "download_not_found"),
+);
+await expectJson(
+  "GET download rejects unsafe pinned run",
+  "/api/downloads/dossier-html?runId=..%2Fescape",
+  undefined,
+  400,
+  (body) => assert.equal(body.code, "manifest_contract_invalid"),
 );
 
 await expectJson(
@@ -83,6 +126,16 @@ const pageResponse = await fetch(`${baseUrl}/scenarios/abay-signal-retiming/doss
 const pageHtml = await pageResponse.text();
 assert.equal(pageResponse.status, 200, pageHtml.slice(0, 500));
 assert.match(pageHtml, /Abay|Абая/);
+for (const label of [
+  "Download HTML dossier",
+  "Download JSON evidence",
+  "Download KPI CSV",
+  "Download run passport",
+  "Download procurement index",
+  "Print / save as PDF",
+]) {
+  assert.match(pageHtml, new RegExp(label));
+}
 results.push({ name: "GET dossier page", status: pageResponse.status });
 
 const validBody = JSON.stringify({ scenarioId: "abay-signal-retiming" });

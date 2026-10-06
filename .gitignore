@@ -8,8 +8,9 @@ out/
 # production
 build/
 
-# local env files
-.env*.local
+# local environment files (the checked-in example is value-free)
+.env*
+!.env.example
 
 # logs
 npm-debug.log*

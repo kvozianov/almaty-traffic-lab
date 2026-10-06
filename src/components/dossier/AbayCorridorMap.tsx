@@ -174,12 +174,16 @@ export default function AbayCorridorMap({
   );
 
   return (
-    <div
+    <figure
       data-testid="abay-corridor-map"
       data-portfolio-run-id={runId}
       data-source-sha256={expectedSourceSha256}
       className={`${styles.shell} relative h-full min-h-[320px] overflow-hidden bg-[#11110f] sm:min-h-[420px]`}
+      aria-describedby="abay-map-description"
     >
+      <figcaption id="abay-map-description" className="sr-only">
+        A non-live road snapshot highlights the Abay Avenue corridor. It provides context only and does not show live traffic or a calibrated outcome.
+      </figcaption>
       <DeckGL
         initialViewState={ALMATY_ABAY_VIEW_STATE}
         controller={{ dragRotate: false }}
@@ -198,12 +202,12 @@ export default function AbayCorridorMap({
       >
         <span title={evidence.freshness}>
           {loadState === "loading"
-            ? "Геометрия дорог загружается"
+            ? "Loading road geometry"
             : loadState === "unavailable"
-              ? "Геометрия дорог недоступна"
+              ? "Road geometry unavailable"
               : evidence.available
-                ? `Снимок дорог · ${evidence.claimLevel}`
-                : "Геометрия загружена · доказательство источника отсутствует"}
+                ? `Road snapshot · ${evidence.claimLevel}`
+                : "Road geometry loaded · source evidence unavailable"}
         </span>
         <a
           href="https://www.openstreetmap.org/copyright"
@@ -214,6 +218,6 @@ export default function AbayCorridorMap({
           © OpenStreetMap contributors
         </a>
       </div>
-    </div>
+    </figure>
   );
 }

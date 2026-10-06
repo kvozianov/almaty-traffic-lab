@@ -1,7 +1,10 @@
 .git
 .next
 .venv
+.env*
+!.env.example
 build
+reports
 node_modules
 npm-debug.log*
 yarn-error.log*

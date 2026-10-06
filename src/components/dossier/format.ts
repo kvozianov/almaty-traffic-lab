@@ -3,7 +3,7 @@ import type { ClaimInput, ClaimLevel } from "./types";
 export function formatNumber(value: number, unit?: string) {
   const absolute = Math.abs(value);
   const compact = absolute >= 1_000_000;
-  const formatter = new Intl.NumberFormat("ru-KZ", {
+  const formatter = new Intl.NumberFormat("en-KZ", {
     notation: compact ? "compact" : "standard",
     maximumFractionDigits: absolute >= 100 ? 0 : 3,
   });
@@ -17,7 +17,7 @@ export function formatNumber(value: number, unit?: string) {
 
 export function formatDateTime(value?: string | null) {
   if (!value) {
-    return "не указано";
+    return "not provided";
   }
 
   const date = new Date(value);
@@ -25,7 +25,7 @@ export function formatDateTime(value?: string | null) {
     return value;
   }
 
-  return new Intl.DateTimeFormat("ru-KZ", {
+  return new Intl.DateTimeFormat("en-KZ", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "UTC",
@@ -34,12 +34,12 @@ export function formatDateTime(value?: string | null) {
 
 export function formatDecision(value: string) {
   const labels: Record<string, string> = {
-    investigate_further: "проверить дальше",
-    request_more_evidence: "запросить доказательства",
-    defer: "отложить",
-    fund_conditional_on_evidence: "условное испытание",
-    reject: "отклонить",
-    fund: "финансировать сразу",
+    investigate_further: "investigate further",
+    request_more_evidence: "request more evidence",
+    defer: "defer",
+    fund_conditional_on_evidence: "conditional pilot",
+    reject: "reject",
+    fund: "fund unconditionally",
   };
 
   return labels[value] ?? value.replaceAll("_", " ");
@@ -58,7 +58,7 @@ export function getClaimSortKey(level: ClaimInput) {
 }
 
 export function commandToString(command?: string[]) {
-  return command?.join(" ") ?? "не указано";
+  return command?.join(" ") ?? "not provided";
 }
 
 export function buyerSafeText(value?: string | null) {

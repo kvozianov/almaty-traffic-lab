@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "security-tools-lock/v1",
+  "updatedAt": "2026-08-14T18:10:00Z",
+  "owner": "Kirill",
+  "tools": [
+    {
+      "name": "syft",
+      "version": "1.50.0",
+      "officialSourceUrl": "https://github.com/anchore/syft/releases/tag/v1.50.0",
+      "artifactUrl": "https://github.com/anchore/syft/releases/download/v1.50.0/syft_1.50.0_darwin_arm64.tar.gz",
+      "sha256": "e32fdb9f47823fa633748a1efca2528fd77c37469ea93c9e40ab835da44e4cce",
+      "containerImage": "docker.io/anchore/syft:v1.50.0@sha256:1288ea4c8b38767b4e620c1e312c8cb26b6e887a99b4f07ab6cd19fc6f225026",
+      "containerDigest": "sha256:1288ea4c8b38767b4e620c1e312c8cb26b6e887a99b4f07ab6cd19fc6f225026",
+      "supportedPlatforms": ["darwin/arm64", "linux/amd64", "linux/arm64"],
+      "updateOwner": "Kirill"
+    },
+    {
+      "name": "grype",
+      "version": "0.116.1",
+      "officialSourceUrl": "https://github.com/anchore/grype/releases/tag/v0.116.1",
+      "artifactUrl": "https://github.com/anchore/grype/releases/download/v0.116.1/grype_0.116.1_darwin_arm64.tar.gz",
+      "sha256": "f493f169cbaae48bade169532b20235fc16653d2a044a5bc6fe6f69a3923f975",
+      "containerImage": "docker.io/anchore/grype:v0.116.1@sha256:1e71065c0a4cff3e6bd3b8add525ffac4343eb4971694eb90a31cf6d4d3e85db",
+      "containerDigest": "sha256:1e71065c0a4cff3e6bd3b8add525ffac4343eb4971694eb90a31cf6d4d3e85db",
+      "supportedPlatforms": ["darwin/arm64", "linux/amd64", "linux/arm64"],
+      "updateOwner": "Kirill"
+    },
+    {
+      "name": "gitleaks",
+      "version": "8.30.1",
+      "officialSourceUrl": "https://github.com/gitleaks/gitleaks/pkgs/container/gitleaks",
+      "containerDigest": "sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f",
+      "supportedPlatforms": ["linux/amd64", "darwin/arm64"],
+      "updateOwner": "Kirill"
+    },
+    {
+      "name": "semgrep",
+      "version": "1.153.0",
+      "officialSourceUrl": "https://github.com/semgrep/semgrep/releases/tag/v1.153.0",
+      "containerImage": "docker.io/semgrep/semgrep:1.153.0@sha256:6fe804189b0cc51d2f174882a228666ddb8835685bced62ab3aa8b231b7e6af1",
+      "containerDigest": "sha256:6fe804189b0cc51d2f174882a228666ddb8835685bced62ab3aa8b231b7e6af1",
+      "supportedPlatforms": ["linux/amd64", "darwin/arm64"],
+      "updateOwner": "Kirill"
+    },
+    {
+      "name": "lighthouse-ci",
+      "version": "0.15.1",
+      "officialSourceUrl": "https://github.com/GoogleChrome/lighthouse-ci",
+      "npmPackage": "@lhci/cli@0.15.1",
+      "containerImage": "mcr.microsoft.com/playwright:v1.62.0-noble@sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07",
+      "containerDigest": "sha256:baed2032d533817f3dbe6425de795788430ba345e819a1201337009ba17c9d07",
+      "supportedPlatforms": ["linux/amd64", "linux/arm64"],
+      "updateOwner": "Kirill"
+    }
+  ],
+  "constraints": {
+    "allowLatest": false,
+    "allowFloatingTags": false,
+    "requireExactVersion": true,
+    "requireArtifactOrContainerDigestBeforeExecution": true
+  }
+}

@@ -363,6 +363,23 @@ export interface PortfolioRouteArtifact {
   claimLevel: ClaimLevel;
 }
 
+export type PortfolioDownloadId =
+  | "dossier-html"
+  | "dossier-json"
+  | "kpis-csv"
+  | "run-passport-json"
+  | "procurement-index-json";
+
+export interface PortfolioDownloadArtifact {
+  id: PortfolioDownloadId;
+  runId: string;
+  logicalPath: string;
+  sha256: string;
+  bytes: number;
+  mediaType: "text/html" | "application/json" | "text/csv";
+  filename: string;
+}
+
 export interface PortfolioRouteManifest {
   schemaVersion: "portfolio-route-manifest/v1";
   runId: string;
@@ -375,6 +392,7 @@ export interface PortfolioRouteManifest {
     sha256: string;
   };
   artifacts: PortfolioRouteArtifact[];
+  downloads: PortfolioDownloadArtifact[];
   aliases: {
     status: "pending" | "synced" | "failed";
     errors: string[];

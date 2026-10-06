@@ -5,33 +5,28 @@ import type { ClaimInput } from "./types";
 const ACTIONS = [
   {
     id: "request_more_evidence",
-    label: "Запросить доказательства",
-    description: "Нужны фактические скорости, надёжность автобусов, планы светофоров и оценка затрат.",
+    label: "Request evidence",
+    description: "Observed speeds, bus reliability, signal plans, and cost estimates are needed.",
   },
   {
     id: "investigate_further",
-    label: "Проверить дальше",
-    description: "Устаревшее имя статуса, сохранённое только для совместимости прежних досье.",
+    label: "Investigate further",
+    description: "A legacy status name retained only for compatibility with earlier dossiers.",
   },
   {
     id: "defer",
-    label: "Отложить",
-    description: "Мера остаётся на рассмотрении, но не переходит к финансированию.",
+    label: "Defer",
+    description: "The measure remains under consideration but does not proceed to funding.",
   },
   {
     id: "fund_conditional_on_evidence",
-    label: "Условное испытание",
-    description: "Допустимо только после выполнения явно записанных условий по доказательствам.",
+    label: "Conditional pilot",
+    description: "Allowed only after explicitly recorded evidence conditions are met.",
   },
   {
     id: "reject",
-    label: "Отклонить",
-    description: "Статус для меры, риски которой выше доказанной пользы.",
-  },
-  {
-    id: "fund",
-    label: "Финансировать сразу",
-    description: "Безусловное финансирование не предусмотрено текущим контрактом досье.",
+    label: "Reject",
+    description: "For a measure whose risks outweigh its demonstrated benefit.",
   },
 ];
 
@@ -45,26 +40,26 @@ export default function DecisionActionBar({
   claimLevel: ClaimInput;
 }) {
   const visibleActions = ACTIONS.filter(
-    (action) => action.id === currentDecision || allowedDecisions.includes(action.id) || action.id === "fund",
+    (action) => action.id === currentDecision || allowedDecisions.includes(action.id),
   );
 
   return (
-    <section className="border-t border-stone-800 bg-stone-950 px-4 py-4" aria-label="Статусы решения">
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <section className="border-t border-[var(--line)] bg-[var(--surface)] px-4 py-5 sm:px-6" aria-label="Decision statuses">
+      <div className="mx-auto flex max-w-[1320px] flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">
-            Рекомендация из опубликованного досье
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--muted)]">
+            Recommendation from the published dossier
           </p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-stone-50">{formatDecision(currentDecision)}</span>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="[font-family:var(--font-editorial)] text-xl font-semibold tracking-[-0.02em] text-[var(--ink)]">{formatDecision(currentDecision)}</span>
             <ClaimBadge level={claimLevel} />
           </div>
-          <p className="mt-2 max-w-[70ch] text-xs leading-5 text-stone-500">
-            Это статусы для обсуждения. Запись решения и подпись пользователя в текущей версии не реализованы.
+          <p className="mt-2 max-w-[70ch] text-xs leading-5 text-[var(--muted)]">
+            These are discussion statuses. The current version does not record decisions or user signatures.
           </p>
         </div>
 
-        <ul className="grid min-w-0 gap-2 sm:grid-cols-2 lg:max-w-[760px] lg:grid-cols-3" aria-label="Варианты из досье">
+        <ul className="grid min-w-0 gap-2 sm:grid-cols-2 lg:max-w-[760px] lg:grid-cols-3" aria-label="Dossier options">
           {visibleActions.map((action) => {
             const recorded = action.id === currentDecision;
             const allowed = allowedDecisions.includes(action.id);
@@ -72,17 +67,17 @@ export default function DecisionActionBar({
               <li
                 key={action.id}
                 title={action.description}
-                className={`min-w-0 border px-3 py-2 text-sm ${
+                className={`min-w-0 rounded-lg border px-3.5 py-3 text-sm ${
                   recorded
-                    ? "border-amber-500/55 bg-amber-500/10 text-amber-100"
+                    ? "border-[var(--line-strong)] bg-[var(--sand-wash)] text-[var(--sand-ink)]"
                     : allowed
-                      ? "border-stone-700 bg-stone-900 text-stone-300"
-                      : "border-stone-800 bg-stone-950 text-stone-600"
+                      ? "border-[var(--line)] bg-[var(--sage-wash)] text-[var(--sage)]"
+                      : "border-[var(--line)] bg-[var(--risk-wash)] text-[var(--risk-ink)]"
                 }`}
               >
                 <span className="block break-words font-medium">{action.label}</span>
                 <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.1em]">
-                  {recorded ? "рекомендация" : allowed ? "допустимый статус" : "заблокировано"}
+                  {recorded ? "recommended" : allowed ? "allowed status" : "blocked"}
                 </span>
               </li>
             );

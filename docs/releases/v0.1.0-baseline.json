@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "portfolio-release-baseline/v1",
+  "capturedAt": "2026-08-14T17:23:40Z",
+  "releaseTarget": "v0.1.0",
+  "commit": "be916b0c2bace2d3bc63685bc70662959d1d01c6",
+  "tree": "ab8fc3f5adc186e717850a330d29d77b897f9e3f",
+  "worktree": {
+    "clean": false,
+    "preExistingModifiedPaths": [
+      "docs/obsidian/01-goals/G002 - Scenario Dossier MVP.md",
+      "docs/obsidian/01-goals/G012 - Reproducibility And Deployment.md",
+      "docs/obsidian/01-goals/G013 - Evidence-Gated Decision Workbench UI.md",
+      "docs/obsidian/03-registries/Artifact Registry.md"
+    ],
+    "trackedProof": "pending_git_authorization"
+  },
+  "controlledCase": {
+    "runId": "abay-20260811T213919Z-a112cc6222",
+    "scenarioId": "abay-signal-retiming",
+    "model": "abay-signal-delay-proxy-v1",
+    "claimLevel": "proxy",
+    "signalDelaySeconds": { "baseline": 36, "measure": 32 },
+    "aggregateDemand": { "baseline": 500, "measure": 500 }
+  },
+  "verification": {
+    "verifyCurrent": { "status": "passed", "artifactCount": 11, "compatibilityAliases": 43 },
+    "verifySources": { "status": "passed", "requiredSources": 35, "verifiedHashes": 13 },
+    "pythonTests": { "status": "passed", "count": 100 },
+    "frontend": { "lint": "passed", "typecheck": "passed", "build": "passed" },
+    "runtimeNpmAudit": { "status": "blocked", "high": 8, "critical": 0, "blocker": "@deck.gl/geo-layers loader chain" },
+    "traceability": { "status": "passed", "normativeRequirementIds": 92 }
+  },
+  "toolchain": { "node": "20.20.0", "npm": "10.8.2", "python": "3.14.2", "git": "2.50.1" },
+  "claimChange": "none"
+}

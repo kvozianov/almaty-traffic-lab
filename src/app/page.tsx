@@ -1,5 +1,5 @@
-import TrafficMap from "@/components/TrafficMap";
+import { permanentRedirect } from "next/navigation";
 
 export default function Home() {
-  return <TrafficMap />;
+  permanentRedirect("/scenarios/abay-signal-retiming/dossier");
 }
