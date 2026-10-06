@@ -63,3 +63,12 @@ venv.bak/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# TypeScript / test output
+*.tsbuildinfo
+test-results/
+playwright-report/
+
+# Claude Code local state (launch config is shared)
+.claude/*
+!.claude/launch.json
