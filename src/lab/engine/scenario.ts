@@ -1,5 +1,5 @@
 import { baseLinkInputs, type CityModel, type LinkInputs } from "./model";
-import type { Change, PeriodId, Scenario } from "./types";
+import type { Change, PeriodId, RawCityGraph, Scenario } from "./types";
 
 export const GREEN_PRIORITY = 0.6;
 export const GREEN_CROSSING = 0.4;
@@ -57,10 +57,10 @@ export function applyChanges(model: CityModel, changes: Change[]): LinkInputs {
 }
 
 /** Whether a change can be applied to a section (e.g. bus lane needs 2+ lanes). */
-export function isChangeAvailable(model: CityModel, type: Change["type"], section: number): boolean {
-  const s = model.graph.sections[section];
+export function isChangeAvailable(graph: RawCityGraph, type: Change["type"], section: number): boolean {
+  const s = graph.sections[section];
   if (!s) return false;
-  if (type === "busLane") return s.minLanes > 1;
+  if (type === "busLane") return s.lanes > 1;
   if (type === "greenWave") return s.signals > 0;
   return true;
 }

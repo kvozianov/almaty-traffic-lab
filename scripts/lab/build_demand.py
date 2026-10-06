@@ -9,7 +9,7 @@ survey. The method is transparent and documented in /methods:
   towards the central business district.
 * Distribution: production-constrained gravity model on free-flow travel time.
 
-Output public/lab/demand.json holds a normalised matrix (sum = 1). The engine
+Output public/model/demand.json holds a normalised matrix (sum = 1). The engine
 multiplies it by ``totalTrips`` from data/lab/calibration.json.
 """
 
@@ -27,8 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_city_graph import DEFAULT_SNAPSHOT, haversine_m, load_snapshot  # noqa: E402
 
 SCHEMA = "almaty-traffic-lab/demand/v1"
-GRAPH = Path("public/lab/city-graph.json")
-DEFAULT_OUT = Path("public/lab/demand.json")
+GRAPH = Path("public/model/city-graph.json")
+DEFAULT_OUT = Path("public/model/demand.json")
 
 CELL_M = 2000.0
 LAT0 = 43.24

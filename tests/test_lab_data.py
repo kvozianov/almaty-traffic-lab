@@ -30,11 +30,11 @@ class LabDataTest(unittest.TestCase):
             graph_out.write_text(json.dumps(graph, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
             demand = build_demand.build(graph_out, snapshot)
             demand_out.write_text(json.dumps(demand, separators=(",", ":")), encoding="utf-8")
-            self.assertEqual(sha(graph_out), sha(ROOT / "public/lab/city-graph.json"))
-            self.assertEqual(sha(demand_out), sha(ROOT / "public/lab/demand.json"))
+            self.assertEqual(sha(graph_out), sha(ROOT / "public/model/city-graph.json"))
+            self.assertEqual(sha(demand_out), sha(ROOT / "public/model/demand.json"))
 
     def test_demand_matrix_is_normalised(self):
-        demand = json.loads((ROOT / "public/lab/demand.json").read_text())
+        demand = json.loads((ROOT / "public/model/demand.json").read_text())
         self.assertAlmostEqual(sum(t for _, _, t in demand["matrix"]), 1.0, places=3)
         self.assertEqual(demand["claimLevel"], "proxy")
 

@@ -49,22 +49,42 @@ export function assignPaths(
   const { closed } = params;
   const tree = new ShortestPathTree(model);
   const x = new Float64Array(m);
+  // Congested time and its derivative per edge, kept in sync with x so route
+  // costs are cheap sums. Only edges whose flow changes are recomputed.
+  const cost = new Float64Array(m);
+  const deriv = new Float64Array(m);
   const markBest = new Int32Array(m);
   const markRoute = new Int32Array(m);
   let stamp = 0;
 
+  for (let e = 0; e < m; e++) {
+    cost[e] = edgeTime(params, e, 0);
+    deriv[e] = 0;
+  }
+  const addFlow = (edges: Int32Array, delta: number) => {
+    for (let i = 0; i < edges.length; i++) {
+      const e = edges[i];
+      const v = x[e] + delta;
+      x[e] = v;
+      cost[e] = edgeTime(params, e, v);
+      deriv[e] = edgeTimeDerivative(params, e, v);
+    }
+  };
   const routeCost = (r: Route) => {
     let c = r.access;
-    for (const e of r.edges) c += edgeTime(params, e, x[e]);
+    const edges = r.edges;
+    for (let i = 0; i < edges.length; i++) c += cost[edges[i]];
     return c;
   };
-  const usesClosed = (r: Route) => {
-    for (const e of r.edges) if (closed[e]) return true;
+  // Routes inherited from the warm start that cross a closed road. New routes
+  // come from shortest-path trees, which never use closed edges.
+  const blocked = new Set<Route>();
+  const crossesClosed = (edges: Int32Array) => {
+    for (let i = 0; i < edges.length; i++) if (closed[edges[i]]) return true;
     return false;
   };
 
-  // Initial routes: copy the warm start for pairs that still exist; trips on
-  // routes through closed edges stay on them until the first shift (cost = ∞).
+  // Initial routes: copy the warm start for pairs that still exist.
   const routes: RouteSet = new Map();
   const trips = new Map<number, number>();
   for (let o = 0; o < demand.zones.length; o++) {
@@ -78,7 +98,10 @@ export function assignPaths(
       const scale = demand.odTrips[k] / total;
       const copy = warm.map((r) => ({ edges: r.edges, access: r.access, flow: r.flow * scale }));
       routes.set(key, copy);
-      for (const r of copy) for (const e of r.edges) x[e] += r.flow;
+      for (const r of copy) {
+        addFlow(r.edges, r.flow);
+        if (crossesClosed(r.edges)) blocked.add(r);
+      }
     }
   }
 
@@ -97,7 +120,7 @@ export function assignPaths(
       const start = demand.odStart[o];
       const end = demand.odStart[o + 1];
       if (start === end) continue;
-      tree.buildFromFlows(demand.zones[o], params, x);
+      tree.build(demand.zones[o], cost, closed);
 
       for (let k = start; k < end; k++) {
         const key = o * KEY_STRIDE + demand.odDest[k];
@@ -106,7 +129,7 @@ export function assignPaths(
         let set = routes.get(key);
         if (destNode < 0) {
           // Unreachable after closures: drop the trips from the network.
-          if (set) for (const r of set) for (const e of r.edges) x[e] -= r.flow;
+          if (set) for (const r of set) addFlow(r.edges, -r.flow);
           routes.delete(key);
           unserved += odTrips;
           continue;
@@ -129,7 +152,7 @@ export function assignPaths(
         if (set.length === 1) {
           if (best.flow === 0) {
             best.flow = odTrips;
-            for (const e of best.edges) x[e] += odTrips;
+            addFlow(best.edges, odTrips);
             freshLoads++;
           }
           total += odTrips * bestCost;
@@ -138,39 +161,42 @@ export function assignPaths(
 
         // Gap contribution at the costs seen by this origin.
         for (const r of set) {
-          if (r.flow > 0) {
-            const c = usesClosed(r) ? Infinity : routeCost(r);
-            if (Number.isFinite(c)) {
-              excess += r.flow * (c - bestCost);
-              total += r.flow * c;
-            } else {
-              total += r.flow * bestCost;
-              excess += r.flow * bestCost; // stranded trips count fully towards the gap
-            }
+          if (r.flow <= 0) continue;
+          if (blocked.has(r)) {
+            total += r.flow * bestCost;
+            excess += r.flow * bestCost; // stranded trips count fully towards the gap
+          } else {
+            const c = routeCost(r);
+            excess += r.flow * (c - bestCost);
+            total += r.flow * c;
           }
         }
 
         stamp++;
-        for (const e of best.edges) markBest[e] = stamp;
+        const bestEdges = best.edges;
+        for (let i = 0; i < bestEdges.length; i++) markBest[bestEdges[i]] = stamp;
         for (const r of set) {
           if (r === best || r.flow === 0) continue;
           let shift: number;
-          if (usesClosed(r)) shift = r.flow;
+          if (blocked.has(r)) shift = r.flow;
           else {
-            for (const e of r.edges) markRoute[e] = stamp;
+            const edges = r.edges;
+            for (let i = 0; i < edges.length; i++) markRoute[edges[i]] = stamp;
             let curvature = 0;
-            for (const e of r.edges) if (markBest[e] !== stamp) curvature += edgeTimeDerivative(params, e, x[e]);
-            for (const e of best.edges) if (markRoute[e] !== stamp) curvature += edgeTimeDerivative(params, e, x[e]);
+            for (let i = 0; i < edges.length; i++) if (markBest[edges[i]] !== stamp) curvature += deriv[edges[i]];
+            for (let i = 0; i < bestEdges.length; i++) {
+              if (markRoute[bestEdges[i]] !== stamp) curvature += deriv[bestEdges[i]];
+            }
             const diff = routeCost(r) - routeCost(best);
             if (diff <= 0) continue;
             shift = curvature > 0 ? Math.min(r.flow, diff / curvature) : r.flow;
             stamp++;
-            for (const e of best.edges) markBest[e] = stamp;
+            for (let i = 0; i < bestEdges.length; i++) markBest[bestEdges[i]] = stamp;
           }
           r.flow -= shift;
           best.flow += shift;
-          for (const e of r.edges) x[e] -= shift;
-          for (const e of best.edges) x[e] += shift;
+          addFlow(r.edges, -shift);
+          addFlow(bestEdges, shift);
         }
         let dead = 0;
         for (const r of set) if (r.flow <= 1e-9 && r !== best) dead++;

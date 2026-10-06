@@ -8,10 +8,10 @@
 flowchart LR
     subgraph Py["Офлайн · Python · scripts/lab/"]
         O["OSM Overpass snapshot\n(cache/910b…json, 2026-04-27)"] --> G["build_city_graph.py"]
-        G --> CG["public/lab/city-graph.json"]
+        G --> CG["public/model/city-graph.json"]
         CG --> D["build_demand.py"]
-        D --> DM["public/lab/demand.json"]
-        CG & DM --> M["public/lab/manifest.json\n(SHA-256, версии, атрибуция)"]
+        D --> DM["public/model/demand.json"]
+        CG & DM --> M["public/model/manifest.json\n(SHA-256, версии, атрибуция)"]
     end
     subgraph Web["Браузер · TypeScript · src/lab/"]
         M --> L["loader: fetch + проверка хешей"]
@@ -166,7 +166,7 @@ resultHash   = SHA-256(canonical(показатели, округлённые д
 - Карта: MapLibre + deck.gl `PathLayer` с `PathStyleExtension({ offset: true })`, чтобы направления рисовались рядом. Подложка OpenFreeMap `positron` (без ключей и лимитов), приглушённая.
 - Состояние: `useReducer` + синхронизация в URL; Worker через `comlink`-подобную обёртку (свой маленький RPC без зависимостей).
 - Старые API на `execFile('python3')` (`/api/trips`, `/api/analytics`, `/api/physics` и другие, завязанные на сервер) удаляются из публичной сборки. Страница песочницы удаляется.
-- Деплой: Vercel, статическая генерация где возможно, данные в `public/lab/` с длинным кэшем по хешу.
+- Деплой: Vercel, статическая генерация где возможно, данные в `public/model/` с длинным кэшем по хешу.
 
 ## 5. Дизайн-принципы (по языку Speqtr)
 

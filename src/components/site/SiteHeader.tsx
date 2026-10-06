@@ -2,42 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import BrandMark from "./BrandMark";
 
-const navigation = [
-  { href: "/scenarios/abay-signal-retiming/dossier", label: "Case dossier" },
-  { href: "/scenarios/abay-signal-retiming/dossier#methods", label: "Methods" },
-  { href: "/sandbox", label: "Demo sandbox" },
+export const REPO_URL = "https://github.com/kvozianov/almaty-traffic-lab";
+
+const links = [
+  { href: "/lab", label: "Lab", short: "Lab" },
+  { href: "/methods", label: "How it works", short: "Method" },
 ];
 
-export default function SiteHeader() {
+export default function SiteHeader({ wide = false }: { wide?: boolean }) {
   const pathname = usePathname();
-
   return (
-    <header className="site-header">
-      <nav className="site-nav" aria-label="Primary navigation">
-        <Link className="site-brand" href="/scenarios/abay-signal-retiming/dossier">
-          <span className="site-brand-mark" aria-hidden="true">A</span>
-          <span className="site-brand-copy">
-            <strong>Almaty Mobility</strong>
-            <span>Evidence dossier</span>
-          </span>
+    <header className={`site-header${wide ? " site-header-wide" : ""}`}>
+      <div className="site-header-inner">
+        <Link className="brand" href="/">
+          <BrandMark />
+          <span>Almaty Traffic Lab</span>
         </Link>
-        <div className="site-nav-links">
-          {navigation.map((item) => {
-            const active = item.href.startsWith("/sandbox") ? pathname === "/sandbox" : item.href.includes("#") ? false : pathname.startsWith("/scenarios");
-            return (
-              <Link
-                aria-current={active ? "page" : undefined}
-                className="site-nav-link"
-                href={item.href}
-                key={item.href}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+        <nav className="site-nav" aria-label="Main">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} aria-current={pathname === l.href ? "page" : undefined}>
+              <span className="nav-long">{l.label}</span>
+              <span className="nav-short">{l.short}</span>
+            </Link>
+          ))}
+          <a href={REPO_URL} target="_blank" rel="noreferrer">
+            <span className="nav-long">GitHub ↗</span>
+            <span className="nav-short">Code ↗</span>
+          </a>
+        </nav>
+      </div>
     </header>
   );
 }
