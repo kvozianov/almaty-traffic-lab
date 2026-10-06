@@ -118,19 +118,19 @@
     },
     {
       "role": "methodsReadme",
-      "path": "README_METHODS.md",
+      "path": "archive/abay-dossier/README_METHODS.md",
       "kind": "documentation",
       "required": true
     },
     {
       "role": "dockerfile",
-      "path": "Dockerfile",
+      "path": "archive/abay-dossier/Dockerfile",
       "kind": "code",
       "required": true
     },
     {
       "role": "composeFile",
-      "path": "docker-compose.yml",
+      "path": "archive/abay-dossier/docker-compose.yml",
       "kind": "code",
       "required": true
     },

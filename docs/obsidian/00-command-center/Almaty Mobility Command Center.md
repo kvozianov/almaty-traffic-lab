@@ -20,6 +20,9 @@ aliases:
 
 ## Active Objective
 
+> [!note] 2026-10-06
+> Current focus is [[G014 - Almaty Traffic Lab]]: a public, in-browser lab where reviewers pick any street and change it. The Abay dossier pipeline remains in the repo as the previous iteration.
+
 Build the project from a working traffic demo into a procurement-ready municipal decision platform for Almaty akimat.
 
 The first sellable epic is [[G002 - Scenario Dossier MVP]]: one corridor, baseline vs measure, executive KPIs, trust metadata, risks, CAPEX/OPEX placeholders, and exportable decision artifacts.
@@ -66,6 +69,7 @@ If a task does not improve one link in this chain, treat it as lower priority.
 | [[G011 - Research Metrics And Publication Visuals]] | Technical credibility and annexes | P3 |
 | [[G012 - Reproducibility And Deployment]] | Clean-machine repeatability | P1 |
 | [[G013 - Evidence-Gated Decision Workbench UI]] | Akimat-facing dossier screen and claim-gated decision workflow | P0 |
+| [[G014 - Almaty Traffic Lab]] | Public in-browser lab for the university portfolio (current focus) | P0 |
 
 ## Embedded Bases
 

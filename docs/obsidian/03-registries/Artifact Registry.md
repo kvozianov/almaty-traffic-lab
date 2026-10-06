@@ -135,6 +135,11 @@ Use this as the map from goals to concrete deliverables. Add rows when artifacts
 | [[G012 - Reproducibility And Deployment]] | Stitch redesign promoted evidence release | `reports/portfolio/runs/abay-20260815T053423Z-cf0d2671a3/`, `reports/portfolio/current.json` | created-verified | demo/proxy | 35/35 required sources and 13 hashes; 11 route artifacts; 43 verified compatibility aliases; canonical public-route/browser gate passed on port 3042. |
 | [[G002 - Scenario Dossier MVP]] | Fresh end-to-end simulation and workflow QA | `.omx/evidence/portfolio-fresh-end-to-end-qa-20260815.md`, `reports/qa/m3-browser-quality.json` | created-verified-with-findings | demo/proxy/real-data | 106 Python tests, two current-worktree reproducibility bootstraps, 121-delay monotonic sweep, visible browser downloads/playback/scrub/reset/split/mobile journey, 15/15 routes, four widths, three browsers and Axe 0/0 passed. QA also records blocking engine, mutable workflow API, evidence-validation, release and scientific-authority gaps; no claim level changed. |
 
+| [[G014 - Almaty Traffic Lab]] | City model data pipeline and artifacts | `scripts/lab/`, `public/model/city-graph.json`, `public/model/demand.json`, `public/model/calibration.json`, `public/model/baseline.json`, `public/model/manifest.json` | created-verified | real-data/proxy | Byte-identical rebuild test; manifest SHA-256 test; roads/signals real-data, demand and calibration proxy |
+| [[G014 - Almaty Traffic Lab]] | In-browser traffic assignment engine | `src/lab/engine/`, `tests/lab/engine.test.ts` | created-verified | proxy | 16 Vitest tests incl. agreement with conjugate Frank–Wolfe and determinism |
+| [[G014 - Almaty Traffic Lab]] | Lab web app (home, lab, report, methods) | `src/app/`, `src/components/lab/`, `src/components/home/`, `src/lab/client/` | created-verified | proxy | Visitor-flow e2e 12/12 on desktop and phone; axe no serious/critical issues |
+| [[G014 - Almaty Traffic Lab]] | README screenshots and CI | `docs/assets/*.jpg`, `scripts/screenshots.mjs`, `.github/workflows/ci.yml` | created | demo | Screenshots from production build; CI runs lint, types, engine, build, e2e, Python |
+
 ## Evidence Rule
 
 No buyer-facing statement should be stronger than the evidence linked here.
