@@ -2,10 +2,9 @@
   "name": "almaty-traffic-simulation",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "npm@10.8.2",
   "engines": {
-    "node": ">=20.20.0 <21",
-    "npm": ">=10.8.2 <11"
+    "node": ">=22.12.0 <23",
+    "npm": ">=10.8.2"
   },
   "scripts": {
     "dev": "next dev",
@@ -16,7 +15,11 @@
     "verify:release": "sh scripts/verify-public-release.sh",
     "verify:public-routes": "sh scripts/verify-public-routes.sh",
     "security:scan-runtime": "sh scripts/scan-runtime-image.sh",
-    "test:docs": "node tests/docs_contract.mjs"
+    "test:docs": "node tests/docs_contract.mjs",
+    "lab:data": "python3 scripts/lab/build_city_graph.py && python3 scripts/lab/build_demand.py",
+    "lab:calibrate": "tsx scripts/lab/calibrate.ts",
+    "lab:artifacts": "tsx scripts/lab/build_artifacts.ts",
+    "test:engine": "vitest run"
   },
   "dependencies": {
     "@deck.gl/core": "^9.3.2",
@@ -40,6 +43,8 @@
     "eslint-config-next": "^16.3.0",
     "playwright": "1.62.0",
     "tailwindcss": "^4.3.0",
-    "typescript": "^6.0.3"
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.7"
   }
 }

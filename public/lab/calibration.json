@@ -1,0 +1,4 @@
+{
+  "totalTrips": 275000,
+  "note": "Plausibility scale: morning-peak car trips on the main network chosen so that the average network speed is about 27 km/h. Not fitted to observed counts."
+}
