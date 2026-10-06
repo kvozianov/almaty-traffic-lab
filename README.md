@@ -1,201 +1,98 @@
-# Almaty Mobility Decision Workbench
+# Almaty Traffic Lab
 
-University portfolio project by Kirill: a reproducible decision dossier for evaluating a signal-retiming scenario on Abay Avenue in Almaty.
+**Pick any street in Almaty, change it, and see how city traffic redistributes.**
+A traffic-assignment model of the city's real road network that runs entirely in your browser.
 
-The project is intentionally narrower than a city-wide “smart traffic” platform. It answers one reviewable question: **what evidence would be needed before a municipality could proceed with a proposed corridor intervention?**
+**Live demo:** _link added after the first deployment_ (the **How it works** page there explains the method in plain English)
 
-![Abay scenario dossier workbench](docs/assets/abay-dossier-portfolio.png)
+![Closing two blocks of Abay Avenue: blue streets lose traffic, red streets take it](docs/assets/lab-result.jpg)
 
-> Current evidence boundary: the experiment and its KPI values are `proxy`; the workflow and procurement package are `demo`. Imported road geometry may be `real-data` by provenance, but that does not make the model calibrated. See [Validation status](README_VALIDATION.md).
+## Try it in three clicks
 
-## Problem And Project Outcome
+1. Open the demo and choose **“Abay Avenue closes for repairs”**.
+2. Look at the map: the dashed line is the closed road, red streets take the diverted cars, blue ones get quieter.
+3. Click **Full report** for the numbers, the assumptions and a run fingerprint you can reproduce.
 
-Traffic dashboards often show maps and indicators without preserving how a decision was produced. This project keeps a reviewable evidence chain:
+Then make your own: click any coloured road, pick *Close for repairs*, *Give a lane to buses*, *Widen by one lane*, *More green at signals* or *Lower the speed limit*, or place a new housing estate, office cluster or mall anywhere on the map. Every scenario lives in the URL, so it can be shared.
+
+## What it does
+
+| | |
+|---|---|
+| **Real streets** | 3,505 junctions, 6,871 one-way road links and 665 traffic signals of Almaty’s main road network, built from an OpenStreetMap snapshot (April 2026) with lanes, speed limits and English street names. |
+| **Estimated demand** | 275,000 morning-peak car trips between 135 zones, from a gravity model on homes (residential street length) and jobs (street length, boosted towards the centre). |
+| **Equilibrium routing** | Every driver takes the fastest route given everyone else’s choices (Wardrop user equilibrium, BPR travel-time curves, Webster signal delay), solved by path-based gradient projection. |
+| **Instant scenarios** | A change starts from today’s routes, so only affected trips move: results in about a second on a laptop, in a Web Worker, with no server. |
+| **Honest output** | Plain-English headline, city-wide metrics, streets that gained or lost traffic, and a “How much to trust this” note that separates real data from estimates. |
+| **Reproducible** | Data files are rebuilt byte-for-byte from the snapshot and listed with SHA-256 hashes; the engine is deterministic across browsers, so the same link gives the same result hash. |
+
+<p align="center">
+  <img src="docs/assets/home.jpg" alt="Home page" width="64%">
+  <img src="docs/assets/lab-phone.jpg" alt="The lab on a phone" width="22%">
+</p>
+
+## Architecture
 
 ```mermaid
 flowchart LR
-    A["Scenario config"] --> B["Controlled paired run"]
-    B --> C["Run metadata and KPI JSON"]
-    C --> D["Scenario dossier"]
-    D --> E["Audit and procurement evidence"]
-    E --> F["Evidence-gated web workbench"]
+    subgraph Offline["Offline · Python"]
+        O["OpenStreetMap snapshot"] --> G["Road graph builder"]
+        G --> D["Zones + gravity demand"]
+        G & D --> M["public/model/*.json + SHA-256 manifest"]
+    end
+    subgraph Browser["Browser · TypeScript"]
+        M --> W["Engine in a Web Worker<br/>path-based user equilibrium"]
+        S["Scenario in the URL"] --> W
+        W --> UI["Map: before / after / change"]
+        W --> R["Report + run passport"]
+    end
 ```
 
-The portfolio case compares one baseline and one measure for Abay Avenue, generates the complete evidence pack in a single transaction, and exposes it through a Next.js dossier route. The interface shows KPI deltas, assumptions, limitations, source status, and permitted decision states; it does not pretend that a proxy result is ready for funding or field deployment.
+| Path | What lives there |
+|---|---|
+| `scripts/lab/` | Graph builder, demand model, plausibility calibration, baseline and manifest generation |
+| `public/model/` | The city model the browser loads (graph, demand, calibration, baselines, manifest) |
+| `src/lab/engine/` | Traffic engine: graph, Dijkstra, path-based solver, conjugate Frank–Wolfe reference, interventions, metrics, hashing |
+| `src/lab/client/` | Web Worker, data loading, shared engine client |
+| `src/components/lab/`, `src/app/` | Next.js pages: home, lab, report, methods |
+| `tests/` | Engine tests (Vitest), data rebuild tests (Python), visitor-flow e2e + accessibility (Playwright, axe) |
+| `src/traffic_sim/` | Earlier iteration: Python agent-based simulator and the Abay signal-retiming dossier pipeline ([archive](archive/abay-dossier/README.md)) |
 
-## Author Contribution And Reviewable Scope
+## Run it locally
 
-Kirill owns the project framing, the Abay corridor case, its evidence boundaries, and final review of the source and generated artifacts. The repository demonstrates an end-to-end piece of applied software engineering rather than a standalone chart:
-
-- a versioned Python contract for a controlled baseline-versus-measure experiment;
-- deterministic KPI and dossier generation with explicit assumptions and claim labels;
-- schema and hash checks for reproducible evidence;
-- an immutable release pack with atomic promotion of the current run;
-- a TypeScript/Next.js evidence workbench for the Abay scenario;
-- tests covering formulas, comparison controls, invalid inputs, recommendation gates, API safety, and responsive presentation;
-- project governance through an Obsidian claim ledger and artifact registry.
-
-Development uses AI-assisted review and testing. The contracts, source files, generated artifacts, and verification commands remain inspectable so a reviewer can evaluate the work independently.
-
-Technology: Python 3.11+, JSON Schema Draft 2020-12, Next.js 16, React 19, TypeScript, MapLibre/deck.gl, unittest, ESLint, and Docker Compose.
-
-## Controlled Experiment
-
-The showcased case is a bounded sensitivity proxy, not a calibrated traffic simulation. It changes only the signal-delay sensitivity input:
-
-| Control | Baseline | Measure | Meaning |
-|---|---:|---:|---|
-| Signal-delay input | 36 s | 32 s | Proxy sensitivity inputs; not observed controller timings |
-| Modeled demand | 500 vehicles | 500 vehicles | Same closed `aggregate-count-v1` KPI scale in both variants; not the source snapshot count |
-| Seed and base analytics | shared | shared | Held constant |
-| Context network fingerprint | shared | shared | Provenance only; `usedByModel: false` |
-
-For signal-delay value `d`, the adapter uses:
-
-```text
-S(d) = affected_signals_per_trip × d × realization_factor
-T(d) = R + S(d)
-q(d) = T(d) / T(36)
-```
-
-The active assumptions are four affected signals per trip, a realization factor of `0.55`, and average vehicle occupancy `1.0`. The measure is always regenerated from the same unrounded baseline primitives. It is not produced by applying a percentage improvement to the baseline, and it does not claim OD-trip equivalence. The source analytics snapshot reports 1,950 active vehicles; that count is preserved as provenance but deliberately discarded as demand. Absolute person-hour and emissions proxy scale instead uses the independently declared aggregate count of 500. Proxy-v1 does not model how the source time/speed/congestion primitives would respond to that change of scale.
-
-Full equations, bounds, rounding, demand identity, and recommendation rules are documented in [Methods](README_METHODS.md).
-
-## Generated Result
-
-These values were read from the paired-experiment and dossier JSON inside the promoted immutable portfolio run referenced by `reports/portfolio/current.json`:
-
-| Metric | Baseline | Measure | Serialized delta | Claim |
-|---|---:|---:|---:|---|
-| Average trip time | 1663.46 s | 1654.66 s | -8.80 s | `proxy` |
-| Congestion index | 55.59 | 55.30 | -0.29 | `proxy` |
-| Person-hours per modeled peak window (occupancy 1.0) | 231.036 | 229.814 | -1.222 | `proxy` |
-| Average corridor speed | 37.712 km/h | 37.913 km/h | +0.200 km/h | `proxy` |
-| Queue/load proxy | 0.556 | 0.553 | -0.003 | `proxy` |
-| Bus reliability proxy | 73.001% | 73.148% | +0.147 pp | `proxy` |
-| CO2 proxy | 554.487 kg | 551.553 kg | -2.933 kg | `proxy` |
-| NOx proxy | 1.386 kg | 1.379 kg | -0.007 kg | `proxy` |
-
-The dossier classifies all six primary mobility directions as favorable (`M5_favorable_only`) but returns **`request_more_evidence`**, not fund. Economics are `E1_incomplete`: CAPEX `350,000,000 KZT` and annual OPEX `25,000,000 KZT` are placeholders; annual time-savings value is a `1,527,777.778 KZT/year` proxy, ROI is a placeholder-sensitive `-0.067`, and payback is unavailable.
-
-The adapter calculates with unrounded primitives and serializes each field at its declared precision. Therefore, subtracting two displayed cells may differ from the serialized delta by `0.001`. The values above copy the artifact fields rather than recomputing them in this README.
-
-## Five-Minute Local Setup
-
-Prerequisites:
-
-- macOS or Linux (POSIX filesystem semantics are required by the release transaction);
-- Python 3.11 or newer;
-- Node.js 20.9 or newer and npm;
-- Docker and Docker Compose only for the optional container path.
+Requires Node.js 22 and, only for rebuilding the data, Python 3.11+.
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
 npm ci
-npm run portfolio:bootstrap
 npm run dev
 ```
 
-Open [http://localhost:3000/scenarios/abay-signal-retiming/dossier](http://localhost:3000/scenarios/abay-signal-retiming/dossier).
+Open http://localhost:3000.
 
-`npm run portfolio:bootstrap` is the single public bootstrap command. It resolves Python from `TRAFFIC_SIM_PYTHON`, then `.venv/bin/python`, then `python3`; generates the full evidence DAG in staging; validates schemas, references, and hashes; and only then promotes `reports/portfolio/current.json`.
-
-To select an interpreter explicitly:
+Rebuild the model from the OpenStreetMap snapshot:
 
 ```bash
-TRAFFIC_SIM_PYTHON=.venv/bin/python npm run portfolio:bootstrap
+npm run lab:data && npm run lab:artifacts
 ```
 
-For the exact Python dependency set used by isolated verification, replace the editable-install line in the quick start with:
+## Tests
 
 ```bash
-python -m pip install -r requirements.lock
-python -m pip install --no-deps -e .
+npm run test:engine                                   # 16 engine tests: equilibrium, interventions, determinism, speed
+python3 -m unittest tests/test_lab_data.py            # data rebuilds byte-for-byte
+npm run build && npm run start -- -p 3100             # then, in another terminal:
+BASE_URL=http://localhost:3100 node tests/e2e/visitor-flow.mjs
 ```
 
-`requirements.lock` was generated on Python 3.14.5. The package itself supports Python 3.11+; a lock generated on one Python release is repeatable evidence for that environment, not a promise that every pinned wheel is available on every supported interpreter/platform combination.
+The engine tests check, among other things, that the path-based solver agrees with an independently written conjugate Frank–Wolfe solver, that closing a road moves its traffic onto parallel streets, that extra green for one street costs the crossing streets, and that a no-change scenario leaves the city where it was.
 
-### Docker
+## Limits
 
-Generate the evidence pack first, then run the production web build:
+- Demand is estimated, not surveyed, and the model has not yet been checked against measured travel times.
+- Only cars on main roads; buses, residential streets and parking are not modelled.
+- A static peak-hour model: it does not show queues building and clearing minute by minute.
+- Use it to compare scenarios. Do not read the numbers as forecasts.
 
-```bash
-npm run portfolio:bootstrap
-docker compose up --build app
-```
+## Credits
 
-Open [http://localhost:3000/scenarios/abay-signal-retiming/dossier](http://localhost:3000/scenarios/abay-signal-retiming/dossier). Windows is not a supported direct-bootstrap platform in this release; use a Linux environment or Docker.
-
-## Verification
-
-Run the same checks used for the portfolio review:
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -v
-TRAFFIC_SIM_PYTHON=.venv/bin/python npm run portfolio:bootstrap
-npm run lint
-npx tsc --noEmit --pretty false --incremental false
-npm run build
-docker compose config
-```
-
-The bootstrap itself validates the paired-experiment and route-manifest schemas, logical paths, and SHA-256 hashes before it changes the current-run pointer. Re-running it should preserve the experiment's semantic fingerprint and a canonically identical KPI block while timestamps and release IDs may change.
-
-Latest local release verification: 35/35 required source records were present and non-ignored, 13 content hashes were verified, 11 route artifacts and 43 compatibility aliases resolved to one promoted run, and aliases were synced. The tracked-file proof is still reported as `pending_git_authorization`; this is why public clean-clone readiness remains a named limitation.
-
-Environment used for the latest local documentation review:
-
-| Tool | Version |
-|---|---|
-| macOS | 26.3 |
-| Python (project virtual environment) | 3.14.2 |
-| Node.js | 20.20.0 |
-| npm | 10.8.2 |
-| Docker Engine | 29.5.3 |
-| Docker Compose | 5.1.4 |
-
-Passing checks and tool availability are not calibration evidence. See [Validation status](README_VALIDATION.md) for that distinction.
-
-## Project Map
-
-| Path | Responsibility |
-|---|---|
-| `simulation.config.json` | Canonical Abay reproduction configuration |
-| `requirements.lock` | Exact Python dependency set used by isolated verification |
-| `data/fixtures/abay/` | Compact, declared proxy inputs and provenance |
-| `src/traffic_sim/paired_experiment.py` | Versioned controlled-pair contract and signal-delay adapter |
-| `src/traffic_sim/executive_kpis.py` | KPI formulas and decision-factor classification |
-| `src/traffic_sim/dossier.py` | Scenario dossier construction |
-| `src/traffic_sim/portfolio_release.py` | Staging, validation, immutable run, and atomic promotion |
-| `scripts/bootstrap_portfolio.py` | Canonical portfolio bootstrap entry point |
-| `schemas/` | JSON contracts for paired results and promoted manifests |
-| `src/app/scenarios/abay-signal-retiming/dossier/` | Portfolio workbench route |
-| `reports/portfolio/current.json` | Pointer to the promoted immutable evidence run |
-| `docs/obsidian/` | Goals, claim ledger, artifact registry, and agent handoffs |
-
-## Limitations
-
-- The signal-delay adapter is a transparent aggregate-count proxy, not a calibrated network or controller model.
-- The 36 s and 32 s values are sensitivity inputs, not measured signal plans.
-- Aggregate demand count does not represent OD routes, turning movements, lane changes, or queue propagation.
-- Source time/speed/congestion primitives come from a snapshot reporting 1,950 active vehicles, while absolute KPI scale uses a separate 500-vehicle aggregate control; proxy-v1 does not simulate demand-response scaling between them.
-- Person-hours and time-value use an explicit average vehicle occupancy proxy of `1.0`, not an observed Almaty occupancy estimate.
-- The context road-network fingerprint is traceability metadata and is not used causally by proxy-v1.
-- Speed, queue, bus reliability, emissions, time savings, ROI, and payback remain formula-based proxies.
-- Cost inputs remain placeholders unless a generated artifact explicitly marks them otherwise.
-- Imported/cached geometry can have real-source provenance while the model remains uncalibrated.
-- Decision controls are evidence statuses; there is no authenticated approval, signature, or municipal system of record.
-- The app is a local portfolio/review build, not a production deployment, live feed, or procurement acceptance package.
-- The direct Next.js advisory chain was cleared by updating to 16.3.0, but the 2026-08-11 production dependency audit still reports eight high-severity transitive findings in the `@deck.gl/geo-layers` 3D/texture-loader chain. Resolve or replace that dependency before public deployment.
-- Public clean-clone reproducibility remains a release gate until the curated source slice is authorized and committed.
-
-## Further Reading
-
-- [Methods and reproducibility](README_METHODS.md)
-- [Validation status and future protocol](README_VALIDATION.md)
-- [Procurement-readiness gaps](docs/procurement_readiness.md)
-- [Data-source boundaries](docs/data_sources.md)
-- [Claim Ledger](docs/obsidian/03-registries/Claim%20Ledger.md)
+Built by Kirill. Road data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL). Basemap by [OpenFreeMap](https://openfreemap.org) / OpenMapTiles. Code under the [MIT licence](LICENSE).

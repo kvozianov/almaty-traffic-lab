@@ -1,0 +1,45 @@
+{
+  "schema": "almaty-traffic-lab/manifest/v1",
+  "engineVersion": "1.0.0",
+  "dataHash": "b3403c791af3ba35877c26c65db8e902ce2a1d105005cb930167709291e8b2b7",
+  "osmTimestamp": "2026-04-27T13:12:05Z",
+  "attribution": "© OpenStreetMap contributors",
+  "license": "ODbL-1.0",
+  "claimLevels": {
+    "roads": "real-data",
+    "signals": "real-data",
+    "capacities": "proxy",
+    "demand": "proxy",
+    "calibration": "proxy"
+  },
+  "inputs": {
+    "city-graph.json": {
+      "sha256": "ab2c7116fcdf0692e3828ef688349f80aef555392a9936fd81e67cbcdfe7e785",
+      "bytes": 867539
+    },
+    "demand.json": {
+      "sha256": "ebaff803ed113f8d60c12313e207ac16ec4647e590a70f5ff7db123b166b2108",
+      "bytes": 361733
+    },
+    "calibration.json": {
+      "sha256": "16975547bcf2df09bc2b77efadf389f4fc2fdb98d3a1bd09a6a2e395019524f5",
+      "bytes": 193
+    }
+  },
+  "outputs": {
+    "baseline.json": {
+      "sha256": "f085497ff1903abdf2797b245410eac2f144920f115f0171b96ccff7e91c2f2e",
+      "bytes": 104545
+    }
+  },
+  "stats": {
+    "rawSegments": 6955,
+    "segments": 4892,
+    "nodes": 3505,
+    "edges": 6871,
+    "signals": 665,
+    "signalGroups": 492,
+    "streets": 548,
+    "sections": 932
+  }
+}

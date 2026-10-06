@@ -13,6 +13,7 @@
     "status",
     "sourceManifest",
     "artifacts",
+    "downloads",
     "aliases"
   ],
   "properties": {
@@ -56,6 +57,71 @@
       "items": {
         "$ref": "#/$defs/artifact"
       }
+    },
+    "downloads": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/download"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "id": {
+                "const": "dossier-html"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "id": {
+                "const": "dossier-json"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "id": {
+                "const": "kpis-csv"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "id": {
+                "const": "run-passport-json"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "id": {
+                "const": "procurement-index-json"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
     },
     "aliases": {
       "type": "object",
@@ -143,6 +209,179 @@
           "$ref": "#/$defs/claimLevel"
         }
       }
+    },
+    "download": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/dossierHtmlDownload"
+        },
+        {
+          "$ref": "#/$defs/dossierJsonDownload"
+        },
+        {
+          "$ref": "#/$defs/kpisCsvDownload"
+        },
+        {
+          "$ref": "#/$defs/runPassportJsonDownload"
+        },
+        {
+          "$ref": "#/$defs/procurementIndexJsonDownload"
+        }
+      ]
+    },
+    "downloadBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "runId",
+        "logicalPath",
+        "sha256",
+        "bytes",
+        "mediaType",
+        "filename"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "runId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+        },
+        "logicalPath": {
+          "$ref": "#/$defs/logicalPath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mediaType": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        }
+      }
+    },
+    "dossierHtmlDownload": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/downloadBase"
+        },
+        {
+          "properties": {
+            "id": {
+              "const": "dossier-html"
+            },
+            "logicalPath": {
+              "const": "reports/dossiers/abay-signal-retiming/dossier.html"
+            },
+            "mediaType": {
+              "const": "text/html"
+            },
+            "filename": {
+              "const": "abay-signal-retiming-dossier.html"
+            }
+          }
+        }
+      ]
+    },
+    "dossierJsonDownload": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/downloadBase"
+        },
+        {
+          "properties": {
+            "id": {
+              "const": "dossier-json"
+            },
+            "logicalPath": {
+              "const": "reports/dossiers/abay-signal-retiming/dossier.json"
+            },
+            "mediaType": {
+              "const": "application/json"
+            },
+            "filename": {
+              "const": "abay-signal-retiming-evidence.json"
+            }
+          }
+        }
+      ]
+    },
+    "kpisCsvDownload": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/downloadBase"
+        },
+        {
+          "properties": {
+            "id": {
+              "const": "kpis-csv"
+            },
+            "logicalPath": {
+              "const": "reports/dossiers/abay-signal-retiming/kpis.csv"
+            },
+            "mediaType": {
+              "const": "text/csv"
+            },
+            "filename": {
+              "const": "abay-signal-retiming-kpis.csv"
+            }
+          }
+        }
+      ]
+    },
+    "runPassportJsonDownload": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/downloadBase"
+        },
+        {
+          "properties": {
+            "id": {
+              "const": "run-passport-json"
+            },
+            "logicalPath": {
+              "const": "data/runs/abay-signal-retiming-run-passport.json"
+            },
+            "mediaType": {
+              "const": "application/json"
+            },
+            "filename": {
+              "const": "abay-signal-retiming-run-passport.json"
+            }
+          }
+        }
+      ]
+    },
+    "procurementIndexJsonDownload": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/downloadBase"
+        },
+        {
+          "properties": {
+            "id": {
+              "const": "procurement-index-json"
+            },
+            "logicalPath": {
+              "const": "reports/akimat/abay-signal-retiming/procurement_pack_index.json"
+            },
+            "mediaType": {
+              "const": "application/json"
+            },
+            "filename": {
+              "const": "abay-signal-retiming-procurement-index.json"
+            }
+          }
+        }
+      ]
     },
     "alias": {
       "type": "object",

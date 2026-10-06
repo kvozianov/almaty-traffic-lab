@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Almaty Mobility - Abay Avenue Signal-Retiming Case</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "proxy-sand": "#EFE8DA",
+                        "secondary-fixed": "#cee9d6",
+                        "on-background": "#1c1b1b",
+                        "surface-container-low": "#f6f3f2",
+                        "outline-variant": "#c4c7c3",
+                        "inverse-primary": "#c3c8c3",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#434844",
+                        "secondary": "#4c6455",
+                        "surface-variant": "#e5e2e1",
+                        "secondary-fixed-dim": "#b3cdbb",
+                        "secondary-container": "#cee9d6",
+                        "proxy-ink": "#745F38",
+                        "tertiary": "#0f0808",
+                        "surface": "#fcf9f7",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#1c1b1b",
+                        "on-tertiary-fixed-variant": "#4e4443",
+                        "border-strong": "#BFC4BE",
+                        "surface-primary": "#FCFBF8",
+                        "outline": "#747874",
+                        "tertiary-fixed": "#eedfdd",
+                        "on-secondary-fixed-variant": "#354c3e",
+                        "surface-dim": "#dcd9d8",
+                        "risk-wash": "#F2E8E5",
+                        "primary": "#060b08",
+                        "surface-container": "#f0edec",
+                        "surface-raised": "#FFFFFF",
+                        "on-primary-fixed": "#181d1a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#fcf9f7",
+                        "primary-container": "#1d221f",
+                        "on-error": "#ffffff",
+                        "canvas-paper": "#F5F3EE",
+                        "inverse-on-surface": "#f3f0ef",
+                        "on-secondary-fixed": "#092014",
+                        "primary-fixed": "#dfe4df",
+                        "sage-wash": "#E7EDE8",
+                        "border-hairline": "#DCDDD7",
+                        "on-tertiary-container": "#928584",
+                        "on-primary-container": "#848985",
+                        "surface-tint": "#5a605c",
+                        "risk-ink": "#815B52",
+                        "on-secondary-container": "#526a5b",
+                        "map-frame": "#171C19",
+                        "background": "#fcf9f7",
+                        "tertiary-container": "#271f1e",
+                        "on-surface-variant": "#444845",
+                        "on-primary": "#ffffff",
+                        "ink-quiet": "#8A8F8A",
+                        "ink-secondary": "#656B66",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#211a19",
+                        "surface-container-highest": "#e5e2e1",
+                        "surface-container-high": "#ebe7e6",
+                        "inverse-surface": "#313030",
+                        "tertiary-fixed-dim": "#d2c3c1",
+                        "primary-fixed-dim": "#c3c8c3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-xs": "8px",
+                        "stack-xxl": "48px",
+                        "gutter": "24px",
+                        "stack-md": "16px",
+                        "stack-sm": "12px",
+                        "section-mobile": "64px",
+                        "stack-xl": "32px",
+                        "stack-lg": "24px",
+                        "section-desktop": "88px",
+                        "margin-page": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "table-header": ["Inter"],
+                        "display-hero": ["\"Source Serif 4\""],
+                        "headline-lg": ["\"Source Serif 4\""],
+                        "body-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-md": ["\"Source Serif 4\""]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "table-header": ["11px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-hero": ["clamp(2.5rem, 6vw, 5.5rem)", { "lineHeight": "1.05", "letterSpacing": "-0.035em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.15", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+        .material-symbols-outlined.filled {
+          font-variation-settings:
+          'FILL' 1,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+    </style>
+</head>
+<body class="bg-canvas-paper text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="w-full h-16 bg-surface-primary border-b border-border-hairline sticky top-0 z-50">
+<div class="flex justify-between items-center px-margin-page max-w-[1320px] mx-auto h-full">
+<div class="font-headline-md text-headline-md tracking-tight text-primary">ALMATY MOBILITY</div>
+<nav class="hidden md:flex items-center gap-gutter font-body-md text-body-md">
+<a class="text-primary border-b-2 border-secondary pb-1" href="#">Case Study</a>
+<a class="text-ink-secondary hover:text-primary transition-opacity duration-200" href="#">Evidence</a>
+<a class="text-ink-secondary hover:text-primary transition-opacity duration-200" href="#">Methodology</a>
+<a class="text-ink-secondary hover:text-primary transition-opacity duration-200" href="#">Archive</a>
+</nav>
+<button class="bg-primary text-on-primary px-4 py-2 rounded scale-95 duration-150 hover:opacity-90 font-label-mono text-label-mono">Download PDF</button>
+</div>
+</header>
+<main class="flex-grow w-full max-w-[1320px] mx-auto px-margin-page py-section-desktop flex flex-col gap-section-desktop">
+<!-- Case Header Section -->
+<section class="max-w-[72ch] mx-auto text-center flex flex-col items-center gap-stack-lg">
+<div class="font-label-mono text-label-mono text-ink-quiet tracking-wider uppercase">University portfolio case · Abay Avenue · Controlled proxy experiment</div>
+<h1 class="font-display-hero text-display-hero text-primary">Abay Avenue signal-retiming case</h1>
+<div class="flex items-center gap-stack-sm bg-proxy-sand text-proxy-ink px-4 py-2 rounded-full border border-proxy-ink/20 mt-stack-md">
+<span class="font-headline-md text-headline-md">36 s → 32 s</span>
+<span class="bg-proxy-ink text-proxy-sand font-label-mono text-table-header px-2 py-0.5 rounded-sm ml-2">PROXY</span>
+</div>
+<p class="font-body-lg text-body-lg text-ink-secondary max-w-prose mt-stack-md">
+                Request more evidence before funding.
+            </p>
+<div class="flex gap-stack-md mt-stack-lg">
+<button class="bg-secondary text-on-secondary px-6 py-3 rounded scale-95 duration-150 hover:opacity-90 font-label-mono text-label-mono">Review evidence</button>
+<button class="bg-surface-primary text-primary border border-border-hairline px-6 py-3 rounded scale-95 duration-150 hover:bg-surface-container font-label-mono text-label-mono">Download dossier</button>
+</div>
+</section>
+<!-- KPI Ledger Section -->
+<section class="bg-surface-primary border border-border-hairline rounded-DEFAULT p-stack-xl">
+<h2 class="font-headline-lg text-headline-lg mb-stack-lg text-primary border-b border-border-hairline pb-stack-sm">Result Ledger</h2>
+<div class="flex flex-col">
+<!-- Row 1 -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center py-stack-md border-b border-border-hairline gap-stack-sm">
+<div class="font-label-mono text-label-mono text-ink-secondary uppercase w-48">Average trip time</div>
+<div class="font-headline-md text-headline-md flex-grow text-right md:text-left">1663.46 → 1654.66 s</div>
+<div class="bg-proxy-sand text-proxy-ink font-label-mono text-table-header px-2 py-0.5 rounded-sm">PROXY</div>
+</div>
+<!-- Row 2 -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center py-stack-md border-b border-border-hairline gap-stack-sm">
+<div class="font-label-mono text-label-mono text-ink-secondary uppercase w-48">Congestion index</div>
+<div class="font-headline-md text-headline-md flex-grow text-right md:text-left">55.59 → 55.30</div>
+<div class="bg-proxy-sand text-proxy-ink font-label-mono text-table-header px-2 py-0.5 rounded-sm">PROXY</div>
+</div>
+<!-- Row 3 -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center py-stack-md border-b border-border-hairline gap-stack-sm">
+<div class="font-label-mono text-label-mono text-ink-secondary uppercase w-48">Person-hours</div>
+<div class="font-headline-md text-headline-md flex-grow text-right md:text-left">231.036 → 229.814</div>
+<div class="bg-proxy-sand text-proxy-ink font-label-mono text-table-header px-2 py-0.5 rounded-sm">PROXY</div>
+</div>
+<!-- Row 4 -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center py-stack-md gap-stack-sm">
+<div class="font-label-mono text-label-mono text-ink-secondary uppercase w-48">Modeled CO₂</div>
+<div class="font-headline-md text-headline-md flex-grow text-right md:text-left">554.487 → 551.553 kg</div>
+<div class="bg-proxy-sand text-proxy-ink font-label-mono text-table-header px-2 py-0.5 rounded-sm">PROXY</div>
+</div>
+</div>
+</section>
+<!-- Map Exhibit -->
+<section class="flex flex-col items-center">
+<div class="w-full md:w-1/2 bg-map-frame p-1 rounded-DEFAULT shadow-sm relative">
+<div class="absolute top-4 left-4 bg-surface-primary text-primary font-label-mono text-table-header px-2 py-1 rounded-sm border border-border-hairline z-10">REAL-DATA SNAPSHOT</div>
+<img class="w-full h-[400px] object-cover rounded-sm grayscale contrast-125 opacity-90" data-alt="A dark, sophisticated satellite map view of Abay Avenue in Almaty, rendered in a muted monochromatic palette of deep blacks, charcoal grays, and faint sage lines indicating road networks. The aesthetic is highly technical, resembling a high-end civic research tool or a stealth planning dashboard. Lighting is subdued, emphasizing precision and structure over realistic color." data-location="Almaty" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpKnuFCISt5SJZGh7RWVo5kLzA_xVET6J51u12q3tyGRow0WYv6de_AMauaRKUJ8YnVlsKtVRu_J_-Ij1dXT-PNddlki3QWAWC60ND1tqgRSmCCJt3I2QzM-DWL1ajgj8AfzJeD6VpEF9o99iGrO9q0tJZrZl3geNxx5GI57ceDxEzkPvrOO7q4aJnHDqptC53gzdgwmXyAvBAkFTt21FzkceR0pK5dho5CQHZdzecuwpTVhNZRVVFuhvD8FKdGNtLEBLevd5qmJSB"/>
+</div>
+<div class="mt-stack-sm font-label-mono text-label-mono text-ink-secondary text-center">Supporting evidence: Road geometry snapshot</div>
+</section>
+<!-- Evidence Chapter -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div class="bg-surface-primary border border-border-hairline rounded-DEFAULT p-stack-xl">
+<h3 class="font-headline-md text-headline-md mb-stack-md border-b border-border-hairline pb-stack-sm">Evidence Checks</h3>
+<ul class="flex flex-col gap-stack-sm font-body-md text-body-md">
+<li class="flex items-center gap-2 text-ink-secondary"><span class="material-symbols-outlined text-secondary">check_circle</span> Geometric fidelity</li>
+<li class="flex items-center gap-2 text-ink-secondary"><span class="material-symbols-outlined text-secondary">check_circle</span> Signal logic parsing</li>
+<li class="flex items-center gap-2 text-ink-secondary"><span class="material-symbols-outlined text-secondary">check_circle</span> Vehicle behavior calibration</li>
+<li class="flex items-center gap-2 text-risk-ink opacity-70"><span class="material-symbols-outlined">pending</span> Live traffic volumes (Missing)</li>
+<li class="flex items-center gap-2 text-risk-ink opacity-70"><span class="material-symbols-outlined">pending</span> Pedestrian flow data (Missing)</li>
+<li class="flex items-center gap-2 text-risk-ink opacity-70"><span class="material-symbols-outlined">pending</span> Weather impact factor (Missing)</li>
+<li class="flex items-center gap-2 text-risk-ink opacity-70"><span class="material-symbols-outlined">pending</span> Incident logs (Missing)</li>
+</ul>
+</div>
+<div class="bg-surface-primary border border-border-hairline rounded-DEFAULT p-stack-xl">
+<h3 class="font-headline-md text-headline-md mb-stack-md border-b border-border-hairline pb-stack-sm">What Almaty must provide</h3>
+<ol class="list-decimal list-inside flex flex-col gap-stack-sm font-body-md text-body-md text-ink-secondary">
+<li>Continuous raw sensor counts for Abay Ave intersections (30-day min).</li>
+<li>Verified pedestrian crossing phase durations during peak hours.</li>
+<li>Historical crash reports mapped to precise signal locations.</li>
+<li>Public transit priority trigger logs for BRT lanes.</li>
+</ol>
+</div>
+</section>
+<!-- Reproduce Chapter -->
+<section class="bg-surface-primary border border-border-hairline rounded-DEFAULT p-stack-xl">
+<h2 class="font-headline-lg text-headline-lg mb-stack-lg border-b border-border-hairline pb-stack-sm">Reproduce</h2>
+<div class="bg-surface-container-low border border-border-hairline p-stack-md rounded-sm mb-stack-lg font-label-mono text-label-mono text-ink-secondary grid grid-cols-1 md:grid-cols-2 gap-stack-sm">
+<div>Run ID: <span class="text-primary">SIM-ABAY-2024-X9</span></div>
+<div>Seed: <span class="text-primary">492011</span></div>
+<div class="md:col-span-2">Fingerprint: <span class="text-primary break-all">sha256:8f4c2...a1b9e</span></div>
+<div class="md:col-span-2">Git Status: <span class="text-secondary">Clean (v1.4.2-stable)</span></div>
+</div>
+<h4 class="font-label-mono text-table-header uppercase text-ink-quiet mb-stack-sm">Artifacts</h4>
+<div class="flex flex-wrap gap-stack-sm">
+<a class="inline-flex items-center gap-2 border border-border-hairline px-3 py-1.5 rounded-sm hover:bg-surface-container text-label-mono font-label-mono text-ink-secondary" href="#"><span class="material-symbols-outlined text-base">download</span> HTML Dossier</a>
+<a class="inline-flex items-center gap-2 border border-border-hairline px-3 py-1.5 rounded-sm hover:bg-surface-container text-label-mono font-label-mono text-ink-secondary" href="#"><span class="material-symbols-outlined text-base">data_object</span> JSON Evidence</a>
+<a class="inline-flex items-center gap-2 border border-border-hairline px-3 py-1.5 rounded-sm hover:bg-surface-container text-label-mono font-label-mono text-ink-secondary" href="#"><span class="material-symbols-outlined text-base">table</span> KPI CSV</a>
+<a class="inline-flex items-center gap-2 border border-border-hairline px-3 py-1.5 rounded-sm hover:bg-surface-container text-label-mono font-label-mono text-ink-secondary" href="#"><span class="material-symbols-outlined text-base">fingerprint</span> Run Passport</a>
+</div>
+</section>
+<!-- Methods & Limitations -->
+<section class="border-t border-border-hairline pt-section-desktop">
+<h2 class="font-headline-lg text-headline-lg mb-stack-lg">Methods &amp; Limitations</h2>
+<div class="prose prose-stone max-w-[72ch] font-body-md text-body-md text-ink-secondary">
+<p class="mb-stack-md">This dossier presents findings based on a <strong>proxy</strong> simulation environment. The data utilized represents a <em>demo</em> configuration relying heavily on static geometric inputs and generic kinematic assumptions, rather than a live telemetry feed.</p>
+<p>The <strong>non-live real-data snapshot</strong> employed for road geometry provides a structural baseline but lacks the dynamic temporal fidelity required for definitive municipal investment decisions. The observed reduction in cycle times from 36 seconds to 32 seconds is mathematically sound within the closed system but remains unvalidated against real-world friction factors.</p>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-stack-xxl bg-canvas-paper border-t border-border-hairline mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-page max-w-[1320px] mx-auto gap-stack-md">
+<div class="font-headline-md text-headline-md text-primary">ALMATY MOBILITY</div>
+<div class="font-label-mono text-label-mono text-ink-quiet">© 2024 Municipal Decision Record. University of Almaty Civic Research.</div>
+<nav class="flex gap-gutter font-label-mono text-label-mono">
+<a class="text-ink-quiet hover:text-ink-secondary underline opacity-80 hover:opacity-100" href="#">Terms of Evidence</a>
+<a class="text-ink-quiet hover:text-ink-secondary underline opacity-80 hover:opacity-100" href="#">Data Privacy</a>
+<a class="text-ink-quiet hover:text-ink-secondary underline opacity-80 hover:opacity-100" href="#">Methodology Appendix</a>
+</nav>
+</div>
+</footer>
+</body></html>

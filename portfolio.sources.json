@@ -77,14 +77,14 @@
       "path": "schemas/portfolio-route-manifest.schema.json",
       "kind": "schema",
       "required": true,
-      "sha256": "0cea9b716e9beb1920f8dbefdf3b75fd3b973909d2cbc1d5aa6d1e73d61c00ca"
+      "sha256": "cbd9b8a7492168d6b4a3160dee0b217bc27d347f5b19928624ec6338e759001a"
     },
     {
       "role": "portfolioScreenshot",
       "path": "docs/assets/abay-dossier-portfolio.png",
       "kind": "asset",
       "required": true,
-      "sha256": "cc4f007566fad158977ff72dc83db107c01dab6f6804f3c13d3a0b3a92c39b1d"
+      "sha256": "5838b1e4ab72ad12bbe09535462ad2fe29ef1bd2101067ea254e7e24dccc3fcb"
     },
     {
       "role": "corridorPack",
@@ -118,19 +118,19 @@
     },
     {
       "role": "methodsReadme",
-      "path": "README_METHODS.md",
+      "path": "archive/abay-dossier/README_METHODS.md",
       "kind": "documentation",
       "required": true
     },
     {
       "role": "dockerfile",
-      "path": "Dockerfile",
+      "path": "archive/abay-dossier/Dockerfile",
       "kind": "code",
       "required": true
     },
     {
       "role": "composeFile",
-      "path": "docker-compose.yml",
+      "path": "archive/abay-dossier/docker-compose.yml",
       "kind": "code",
       "required": true
     },
