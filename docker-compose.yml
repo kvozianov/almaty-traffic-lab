@@ -2,12 +2,18 @@ services:
   app:
     build:
       context: .
-    command: npm run start
+      args:
+        SOURCE_DATE_EPOCH: "0"
     environment:
       NODE_ENV: production
       PORT: "3000"
     ports:
       - "3000:3000"
-    volumes:
-      - ./data:/app/data:ro
-      - ./reports:/app/reports
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

@@ -37,7 +37,7 @@ The current repository does not establish:
 - causal impact of the proposed measure;
 - readiness for automatic signal control or a binding procurement decision.
 
-The 2026-08-11 `npm audit --omit=dev` check reports no remaining direct Next.js finding after the upgrade to Next.js 16.3.0, but it still reports eight high-severity production findings through the `@deck.gl/geo-layers` 3D/texture-loader dependency chain. This local portfolio release therefore makes no zero-vulnerability or production-security claim.
+The runtime production dependency audit currently reports zero high/critical findings after removing the vulnerable `@deck.gl/geo-layers` chain. A complete release security claim still awaits the full dev-tool, Python, container, SBOM, license and secret-scan gates; it is not inferred from this runtime-only result.
 
 The 36 s baseline and 32 s measure are declared proxy sensitivity values. They are not measurements of current and proposed controller timing.
 

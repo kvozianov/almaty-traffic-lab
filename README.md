@@ -37,7 +37,7 @@ Kirill owns the project framing, the Abay corridor case, its evidence boundaries
 
 Development uses AI-assisted review and testing. The contracts, source files, generated artifacts, and verification commands remain inspectable so a reviewer can evaluate the work independently.
 
-Technology: Python 3.11+, JSON Schema Draft 2020-12, Next.js 16, React 19, TypeScript, MapLibre/deck.gl, unittest, ESLint, and Docker Compose.
+Technology: Python 3.14.2, JSON Schema Draft 2020-12, Next.js 16, React 19, TypeScript, MapLibre/deck.gl, Playwright/axe, unittest, ESLint, and Docker Compose. See the [architecture](docs/ARCHITECTURE.md), [demo script](docs/DEMO_SCRIPT.md), and [portfolio case](docs/PORTFOLIO_CASE.md).
 
 ## Controlled Experiment
 
@@ -86,8 +86,8 @@ The adapter calculates with unrounded primitives and serializes each field at it
 Prerequisites:
 
 - macOS or Linux (POSIX filesystem semantics are required by the release transaction);
-- Python 3.11 or newer;
-- Node.js 20.9 or newer and npm;
+- Python 3.14.2;
+- Node.js 20.20.0 and npm 10.8.2;
 - Docker and Docker Compose only for the optional container path.
 
 ```bash
@@ -120,10 +120,9 @@ python -m pip install --no-deps -e .
 
 ### Docker
 
-Generate the evidence pack first, then run the production web build:
+The production image generates its own immutable evidence pack from the clean build context:
 
 ```bash
-npm run portfolio:bootstrap
 docker compose up --build app
 ```
 
@@ -139,12 +138,14 @@ TRAFFIC_SIM_PYTHON=.venv/bin/python npm run portfolio:bootstrap
 npm run lint
 npx tsc --noEmit --pretty false --incremental false
 npm run build
+PYTHONPATH=src .venv/bin/python scripts/verify_portfolio_determinism.py --repository-root .
+npm run verify:public-routes
 docker compose config
 ```
 
 The bootstrap itself validates the paired-experiment and route-manifest schemas, logical paths, and SHA-256 hashes before it changes the current-run pointer. Re-running it should preserve the experiment's semantic fingerprint and a canonically identical KPI block while timestamps and release IDs may change.
 
-Latest local release verification: 35/35 required source records were present and non-ignored, 13 content hashes were verified, 11 route artifacts and 43 compatibility aliases resolved to one promoted run, and aliases were synced. The tracked-file proof is still reported as `pending_git_authorization`; this is why public clean-clone readiness remains a named limitation.
+The canonical release gate is `npm run verify:release -- --stage candidate`. It is intentionally read-only and requires a clean committed checkout; the workspace shown here remains a development worktree and is not release proof. A clean candidate additionally runs the isolated two-run comparator, production browser/API smoke and runtime dependency audit.
 
 Environment used for the latest local documentation review:
 

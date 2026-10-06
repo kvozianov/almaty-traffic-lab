@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
-import AbayCorridorMap from "@/components/dossier/AbayCorridorMap";
+import AbayCorridorMap from "@/components/dossier/LazyAbayCorridorMap";
 import AssumptionList from "@/components/dossier/AssumptionList";
 import ClaimBadge from "@/components/dossier/ClaimBadge";
 import DecisionActionBar from "@/components/dossier/DecisionActionBar";
+import DownloadActions, { type DownloadArtifact } from "@/components/dossier/DownloadActions";
 import EvidenceGate from "@/components/dossier/EvidenceGate";
 import KpiDeltaTable from "@/components/dossier/KpiDeltaTable";
 import ProcurementReadinessPanel from "@/components/dossier/ProcurementReadinessPanel";
@@ -27,11 +28,29 @@ import type {
   SourceRecord,
   WorkflowJson,
 } from "@/components/dossier/types";
+import styles from "./DossierPage.module.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Досье сценария Абая",
-  description: "Воспроизводимое proxy-досье перенастройки светофоров на проспекте Абая.",
+  title: "Abay Avenue signal-retiming case",
+  description: "A reproducible proxy case dossier for signal retiming on Abay Avenue.",
+  alternates: {
+    canonical: "/scenarios/abay-signal-retiming/dossier",
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+  openGraph: {
+    title: "Abay Avenue signal-retiming case",
+    description: "A reproducible proxy case dossier for signal retiming on Abay Avenue.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Abay Avenue signal-retiming case",
+    description: "A reproducible proxy case dossier for signal retiming on Abay Avenue.",
+  },
 };
 
 type KpiRow = {
@@ -57,47 +76,26 @@ const HERO_KPI_IDS = [
 ];
 
 const HERO_KPI_LABELS: Record<string, string> = {
-  person_hours_saved: "Экономия времени",
-  corridor_speed_delta: "Скорость коридора",
-  bus_reliability_proxy: "Надёжность автобуса",
-  co2_proxy: "Выбросы CO2",
+  person_hours_saved: "Person-hours saved",
+  corridor_speed_delta: "Corridor speed",
+  bus_reliability_proxy: "Bus reliability",
+  co2_proxy: "CO₂ emissions",
 };
-
-function formatCalculationDate(value?: string) {
-  if (!value) return "не указано";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "не указано";
-
-  return new Intl.DateTimeFormat("ru-KZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
 
 function hasValidDate(value?: string) {
   if (!value) return false;
   return !Number.isNaN(new Date(value).getTime());
 }
 
-function translateMeasureLabel(value: string) {
-  if (value.toLowerCase().includes("signal retiming")) {
-    return "Проверка перенастройки светофоров";
-  }
-
-  return value;
-}
-
 function translateRecommendation(value: string) {
   const normalized = value.toLowerCase();
 
   if (normalized.includes("proxy benefit appears positive")) {
-    return "Предварительная польза видна, но доказательств пока недостаточно для немедленного финансирования.";
+    return "The proxy result is favourable, but the evidence is insufficient for immediate funding.";
   }
 
   if (normalized.includes("primary proxy kpi directions are favorable")) {
-    return "Направления ключевых proxy-показателей благоприятны, но уровень доказательств и оценка затрат пока не позволяют принять решение о финансировании.";
+    return "Primary proxy indicators are favourable, but the evidence level and cost estimate do not support a funding decision yet.";
   }
 
   return value;
@@ -105,31 +103,31 @@ function translateRecommendation(value: string) {
 
 function translateCostNote(value: string) {
   if (value.toLowerCase().includes("placeholder until supplied by akimat or engineering estimate")) {
-    return "Черновая сумма до подтверждения акиматом или инженерной оценкой.";
+    return "Placeholder pending a city or engineering cost estimate.";
   }
 
   return value;
 }
 
 function translateCorridorName(value: string) {
-  if (value === "Abay Avenue") return "проспект Абая";
+  if (value === "Abay Avenue") return "Abay Avenue";
   return value;
 }
 
 function translateUnit(unit: string) {
   const normalized = unit.toLowerCase();
 
-  if (normalized.includes("person-hour")) return "чел.-ч";
-  if (normalized === "km/h") return "км/ч";
-  if (normalized === "percentage points") return "п.п.";
-  if (normalized === "kg") return "кг";
+  if (normalized.includes("person-hour")) return "person-hours";
+  if (normalized === "km/h") return "km/h";
+  if (normalized === "percentage points") return "pp";
+  if (normalized === "kg") return "kg";
 
   return unit;
 }
 
 function translateWorkflowStatus(value: string) {
-  if (value === "audited") return "проверено";
-  if (value === "draft") return "черновик";
+  if (value === "audited") return "audited";
+  if (value === "draft") return "draft";
   return value;
 }
 
@@ -144,15 +142,30 @@ function formatHeroValue(value: number, unit: string) {
   const unitLabel = translateUnit(unit);
 
   if (unit.toLowerCase().includes("kzt")) {
-    return `${new Intl.NumberFormat("ru-KZ", {
+    return `${new Intl.NumberFormat("en-GB", {
       notation: "compact",
       maximumFractionDigits: 1,
     }).format(value)} ₸`;
   }
 
-  return `${new Intl.NumberFormat("ru-KZ", {
+  return `${new Intl.NumberFormat("en-GB", {
     maximumFractionDigits: Math.abs(value) >= 100 ? 0 : 2,
   }).format(value)} ${unitLabel}`;
+}
+
+function readSignalDelay(
+  scenarioParams: Record<string, unknown> | undefined,
+  key: "baseline" | "measure",
+) {
+  const candidate = scenarioParams?.[key];
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return null;
+
+  const delay = (candidate as Record<string, unknown>).signal_delay_s;
+  return typeof delay === "number" && Number.isFinite(delay) ? delay : null;
+}
+
+function formatSignalDelay(value: number | null) {
+  return value === null ? "Not recorded" : `${formatNumber(value)} s`;
 }
 
 function buildHeroKpiRows(kpis: KpiRecord[]): KpiRow[] {
@@ -178,120 +191,104 @@ function buildHeroKpiRows(kpis: KpiRecord[]): KpiRow[] {
     });
 }
 
-function LightClaimBadge({ level }: { level: KpiRecord["claimLevel"] }) {
-  const normalized = normalizeClaimLevel(level);
-  const styles = {
-    demo: "border-stone-400/70 bg-stone-100 text-stone-700",
-    proxy: "border-[#d9a04c]/55 bg-[#f7ead4] text-[#8a5a1c]",
-    calibrated: "border-cyan-600/40 bg-cyan-50 text-cyan-800",
-    "real-data": "border-emerald-600/40 bg-emerald-50 text-emerald-800",
-    "procurement-ready": "border-teal-600/40 bg-teal-50 text-teal-800",
-  }[normalized];
+function DossierIntro({
+  corridorName,
+  lengthKm,
+  intersectionCount,
+  baselineDelay,
+  measureDelay,
+  rationale,
+  claimLevel,
+  currentDecision,
+}: {
+  corridorName: string;
+  lengthKm?: number;
+  intersectionCount?: number;
+  baselineDelay: number | null;
+  measureDelay: number | null;
+  rationale: string;
+  claimLevel: KpiRecord["claimLevel"];
+  currentDecision: string;
+}) {
+  const corridorDetails = [
+    corridorName,
+    typeof lengthKm === "number" && Number.isFinite(lengthKm) ? `${lengthKm.toFixed(1)} km` : null,
+    typeof intersectionCount === "number" && intersectionCount > 0
+      ? `${intersectionCount} intersections`
+      : null,
+  ].filter(Boolean);
 
   return (
-    <span className={`inline-flex h-6 items-center rounded-[6px] border px-2.5 text-[11px] font-medium uppercase tracking-[0.06em] ${styles}`}>
-      {normalized}
-    </span>
-  );
-}
+    <header className={styles.hero}>
+      <div className={styles.heroMeta}>
+        <span>Case 01</span>
+        <span>{corridorDetails.join(" · ")}</span>
+        <span>Controlled proxy comparison</span>
+      </div>
 
-function Header({ calculationDate }: { calculationDate: string }) {
-  return (
-    <header className="grid min-h-[52px] min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-[#ded9d0] bg-white px-4 py-2 text-[13px] text-[#6d6a62] md:grid-cols-[1fr_auto_1fr] md:px-5">
-      <div className="min-w-0 truncate font-medium text-[#34322d]">Алматы · транспортная аналитика</div>
-      <div className="hidden truncate px-4 text-center font-medium text-[#181814] md:block">Абай / Перенастройка светофоров</div>
-      <div className="flex shrink-0 items-center justify-end gap-4">
-        <span className="hidden text-[#6d6a62] sm:inline">Расчёт: {calculationDate}</span>
-        <div className="grid grid-cols-2 overflow-hidden rounded-[6px] border border-[#ded9d0] text-[11px] font-medium uppercase tracking-[0.08em]">
-          <span className="bg-[#181814] px-2.5 py-1 text-white">rus</span>
-          <span className="px-2.5 py-1 text-[#7c776d]">қаз</span>
+      <div className={styles.heroGrid}>
+        <div>
+          <h1 className={styles.displayTitle}>{corridorName} signal-retiming case</h1>
+          <div className={styles.controlledChange} aria-label={`Controlled change from ${formatSignalDelay(baselineDelay)} to ${formatSignalDelay(measureDelay)}`}>
+            <span className={styles.changeLabel}>Controlled signal-delay change</span>
+            <span className={styles.changeValue}>{formatSignalDelay(baselineDelay)}</span>
+            <span className={styles.changeArrow} aria-hidden="true">→</span>
+            <span className={styles.changeValue}>{formatSignalDelay(measureDelay)}</span>
+          </div>
         </div>
+
+        <aside className={styles.heroAside} aria-label="Evidence summary">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className={styles.eyebrow}>Current recommendation</p>
+            <ClaimBadge level={claimLevel} />
+          </div>
+          <p className={styles.recommendation}>{formatDecision(currentDecision)}</p>
+          <p className={styles.rationale}>{rationale}</p>
+          <div className={styles.actionRow} data-print-hidden>
+            <a className={styles.primaryLink} href="#evidence">Review evidence</a>
+            <a className={styles.secondaryLink} href="#downloads">Download dossier</a>
+          </div>
+        </aside>
       </div>
     </header>
   );
 }
 
-function DossierIntro({
-  corridorName,
-  lengthKm,
-  intersectionCount,
-  measureLabel,
-  rationale,
-  claimLevel,
-}: {
-  corridorName: string;
-  lengthKm?: number;
-  intersectionCount?: number;
-  measureLabel: string;
-  rationale: string;
-  claimLevel: KpiRecord["claimLevel"];
-}) {
-  const corridorDetails = [
-    corridorName,
-    typeof lengthKm === "number" && Number.isFinite(lengthKm) ? `${lengthKm.toFixed(1)} км` : null,
-    typeof intersectionCount === "number" && intersectionCount > 0
-      ? `${intersectionCount} перекрёстков`
-      : null,
-  ].filter(Boolean);
-
-  return (
-    <section className="grid min-h-[88px] grid-cols-1 gap-4 border-b border-[#ded9d0] pb-4 xl:grid-cols-[1fr_330px]">
-      <div className="min-w-0">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <h1 className="text-[22px] font-medium leading-[1.12] tracking-normal text-[#181814]">
-            {measureLabel}
-          </h1>
-          <LightClaimBadge level={claimLevel} />
-        </div>
-        <p className="text-[13px] leading-5 text-[#77736a]">
-          {corridorDetails.join(" · ")}
-        </p>
-      </div>
-
-      <div className="border-l-4 border-[#d98b2b] bg-[#fbf5ea] px-3 py-2 text-[13px] leading-5 text-[#433b2d]">
-        <span className="font-medium text-[#8a5a1c]">Рекомендация:</span> {rationale}
-      </div>
-    </section>
-  );
-}
-
 function KpiTable({ rows }: { rows: KpiRow[] }) {
   return (
-    <section className="min-h-0 flex-1 py-4">
-      <div className="mb-2 hidden grid-cols-[minmax(130px,1.15fr)_minmax(118px,0.95fr)_minmax(78px,0.45fr)_72px] gap-3 px-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8c877d] md:grid">
-        <span>Показатель</span>
-        <span>Было → стало</span>
-        <span>Изменение</span>
-        <span className="text-right">уровень</span>
+    <section className={styles.ledger} aria-label="Core KPI comparison">
+      <div className={styles.ledgerHeader} aria-hidden="true">
+        <span>Metric</span>
+        <span>Baseline → measure</span>
+        <span>Change</span>
+        <span className="text-right">Evidence</span>
       </div>
-      <div className="overflow-hidden rounded-[8px] border border-[#ded9d0]">
-        {rows.map((row, index) => (
+      <div>
+        {rows.map((row) => (
           <div
             key={row.label}
-            className={`grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-[#e8e3da] px-3 py-3 text-[13px] last:border-b-0 md:min-h-[66px] md:grid-cols-[minmax(130px,1.15fr)_minmax(118px,0.95fr)_minmax(78px,0.45fr)_72px] md:gap-3 md:py-0 ${
-              index % 2 === 0 ? "bg-white" : "bg-[#faf9f6]"
-            }`}
+            className={styles.ledgerRow}
           >
-            <div className="col-span-2 min-w-0 font-medium text-[#27241f] md:col-span-1">{row.label}</div>
-            <div className="min-w-0 font-medium tabular-nums text-[#3b3933]">
-              <span className="text-[#767167]">{row.before}</span>
-              <span className="px-2 text-[#9a9488]">→</span>
+            <div className={styles.metricLabel}>{row.label}</div>
+            <div className={styles.comparison}>
+              <span className={styles.comparisonMuted}>{row.before}</span>
+              <span className={styles.comparisonArrow}>→</span>
               <span>{row.after}</span>
             </div>
             <div
-              className={`flex items-center gap-1 font-medium tabular-nums ${
+              className={`${styles.delta} ${
                 row.tone === "positive"
-                  ? "text-[#2f7d57]"
+                  ? styles.positive
                   : row.tone === "negative"
-                    ? "text-[#b75245]"
-                    : "text-[#68645c]"
+                    ? styles.negative
+                    : styles.neutral
               }`}
             >
               <span>{row.delta}</span>
               {row.direction !== "flat" ? <span aria-hidden="true">{row.direction === "up" ? "↑" : "↓"}</span> : null}
             </div>
-            <div className="col-span-2 flex justify-start md:col-span-1 md:justify-end">
-              <LightClaimBadge level={row.claimLevel} />
+            <div className={styles.claimCell}>
+              <ClaimBadge level={row.claimLevel} size="xs" />
             </div>
           </div>
         ))}
@@ -309,25 +306,19 @@ function EvidenceGateSummary({
   const total = items.length;
 
   return (
-    <div className="min-w-0 border-x border-[#ded9d0] px-4 py-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="font-medium text-[#25231f]">Проверка доказательств</p>
-        <p className="tabular-nums text-[#77736a]">{completed} / {total} условий</p>
+    <div className={styles.summaryCell}>
+      <div className={styles.evidenceTopline}>
+        <p className={styles.summaryTitle}>Evidence check</p>
+        <p className={styles.evidenceCount}>{completed} / {total}</p>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-[#e7e2d9]">
-        <div className="h-full rounded-full bg-[#2f7d57]" style={{ width: `${(completed / total) * 100}%` }} />
-      </div>
-      <div className="mt-2 grid grid-cols-1 gap-y-1 text-[12px] leading-4 text-[#6f6a61]">
-        {items.map((item) => (
-          <div key={item.label} className="flex min-w-0 items-center gap-1.5">
-            <span
-              className={`grid size-3.5 shrink-0 place-items-center rounded-full text-[9px] ${
-                item.complete ? "bg-[#e4f0e8] text-[#2f7d57]" : "bg-[#f2e7e4] text-[#b75245]"
-              }`}
-            >
-              {item.complete ? "✓" : "×"}
-            </span>
+      <div className={styles.evidenceList}>
+        {items.map((item, index) => (
+          <div key={item.label} className={styles.evidenceItem}>
+            <span className={styles.evidenceIndex} aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
             <span>{item.label}</span>
+            <span className={`${styles.evidenceState} ${item.complete ? styles.stateReady : styles.stateGap}`}>
+              {item.complete ? "ready" : "gap"}
+            </span>
           </div>
         ))}
       </div>
@@ -345,19 +336,17 @@ function DecisionBar({
   const hasCleanFund = allowedDecisions.includes("fund");
 
   return (
-    <div className="flex min-w-0 flex-col justify-between gap-3 px-4 py-3">
-      <p className="font-medium text-[#25231f]">Решение</p>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2" aria-label="Сводка статуса решения">
-        <div className="rounded-[7px] border border-[#d7d1c8] bg-[#f8f6f2] px-3 py-2">
-          <p className="font-mono text-[9px] uppercase tracking-[0.1em] text-[#8a857b]">рекомендация</p>
-          <p className="mt-1 text-[13px] font-medium leading-4 text-[#25231f]">
-            {formatDecision(currentDecision)}
-          </p>
+    <div className={styles.summaryCell}>
+      <p className={styles.summaryTitle}>Decision gate</p>
+      <div className={styles.decisionGrid} aria-label="Decision status summary">
+        <div className={styles.decisionItem}>
+          <p className={styles.microLabel}>Recommendation</p>
+          <p className={styles.decisionValue}>{formatDecision(currentDecision)}</p>
         </div>
-        <div className="rounded-[7px] border border-[#d7d1c8] bg-[#f8f6f2] px-3 py-2">
-          <p className="font-mono text-[9px] uppercase tracking-[0.1em] text-[#8a857b]">финансирование</p>
-          <p className={`mt-1 text-[13px] font-medium leading-4 ${hasCleanFund ? "text-[#2f7d57]" : "text-[#b75245]"}`}>
-            {hasCleanFund ? "допустимо досье" : "заблокировано"}
+        <div className={styles.decisionItem}>
+          <p className={styles.microLabel}>Unconditional funding</p>
+          <p className={`${styles.decisionValue} ${hasCleanFund ? styles.positive : styles.negative}`}>
+            {hasCleanFund ? "permitted by dossier" : "blocked"}
           </p>
         </div>
       </div>
@@ -379,11 +368,11 @@ function BottomStrip({
   allowedDecisions: string[];
 }) {
   return (
-    <section className="grid min-h-[112px] grid-cols-1 overflow-hidden rounded-[8px] border border-[#ded9d0] bg-white text-[13px] md:grid-cols-[0.82fr_1.25fr_0.93fr]">
-      <div className="px-4 py-3">
-        <p className="mb-2 font-medium text-[#77736a]">Оценка затрат</p>
-        <p className="text-[22px] font-medium leading-none tracking-normal text-[#181814]">{capexLabel}</p>
-        <p className="mt-2 text-[12px] leading-4 text-[#8a857b]">{costNote}</p>
+    <section className={styles.summaryStrip}>
+      <div className={styles.summaryCell}>
+        <p className={styles.summaryTitle}>Cost estimate</p>
+        <p className={styles.summaryValue}>{capexLabel}</p>
+        <p className={styles.summaryNote}>{costNote}</p>
       </div>
       <EvidenceGateSummary items={evidenceItems} />
       <DecisionBar currentDecision={currentDecision} allowedDecisions={allowedDecisions} />
@@ -401,64 +390,58 @@ function DataReadinessPanel({
   sources: SourceRecord[];
 }) {
   return (
-    <section className="border border-stone-800 bg-stone-950/55 p-4">
-      <div className="flex items-start justify-between gap-3">
+    <section className={styles.panel}>
+      <div className={styles.panelHeader}>
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">
-            Готовность данных
-          </p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-stone-50">
-            Что нужно запросить у города
+          <p className={styles.microLabel}>Data readiness</p>
+          <h2 className={styles.panelTitle}>
+            What to request from the city
           </h2>
         </div>
         <ClaimBadge level={dataReadiness.claimLevel} />
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 border-t border-stone-800 pt-4">
-        <div className="border border-stone-800 px-3 py-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500">Источники</p>
-          <p className="mt-1 font-mono text-lg text-stone-100">{providers.summary?.providerCount ?? providers.providers.length}</p>
+      <div className={styles.statGrid}>
+        <div className={styles.statCell}>
+          <p className={styles.statLabel}>Sources</p>
+          <p className={styles.statValue}>{providers.summary?.providerCount ?? providers.providers.length}</p>
         </div>
-        <div className="border border-stone-800 px-3 py-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500">Есть</p>
-          <p className="mt-1 font-mono text-lg text-stone-100">{providers.summary?.availableCount ?? 0}</p>
+        <div className={styles.statCell}>
+          <p className={styles.statLabel}>Available</p>
+          <p className={styles.statValue}>{providers.summary?.availableCount ?? 0}</p>
         </div>
-        <div className="border border-stone-800 px-3 py-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500">Не хватает</p>
-          <p className="mt-1 font-mono text-lg text-stone-100">{dataReadiness.missingEvidence?.length ?? 0}</p>
+        <div className={styles.statCell}>
+          <p className={styles.statLabel}>Missing</p>
+          <p className={styles.statValue}>{dataReadiness.missingEvidence?.length ?? 0}</p>
         </div>
       </div>
 
-      <div className="mt-5">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">
-          Запрошенные наборы данных
-        </p>
-        <div className="mt-2 divide-y divide-stone-800 border border-stone-800">
+      <div className={styles.subsection}>
+        <p className={styles.microLabel}>Requested data sets</p>
+        <div className={styles.rows}>
           {dataReadiness.akimatRequests?.map((request) => (
-            <div key={request.id} className="px-3 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-medium text-stone-100">{request.dataset}</p>
+            <div key={request.id} className={styles.row}>
+              <div className={styles.rowTopline}>
+                <p className={styles.rowTitle}>{request.dataset}</p>
                 <ClaimBadge level={request.current_claim_level} size="xs" />
               </div>
-              <p className="mt-1 text-sm leading-6 text-stone-400">{request.why_needed}</p>
-              <p className="mt-2 font-mono text-[11px] leading-5 text-stone-500">{request.minimum_format}</p>
+              <p className={styles.rowDescription}>{request.why_needed}</p>
+              <p className={styles.monoPath}>{request.minimum_format}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-5">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">
-          Источники досье
-        </p>
-        <div className="mt-2 grid gap-2">
+      <div className={styles.subsection}>
+        <p className={styles.microLabel}>Dossier sources</p>
+        <div className={styles.rows}>
           {sources.map((source) => (
-            <div key={source.id} className="border border-stone-800 px-3 py-2">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-medium text-stone-100">{source.label}</p>
+            <div key={source.id} className={styles.row}>
+              <div className={styles.rowTopline}>
+                <p className={styles.rowTitle}>{source.label}</p>
                 <ClaimBadge level={source.claim_label ?? source.claimLevel} size="xs" />
               </div>
-              <p className="mt-1 break-all font-mono text-[11px] text-stone-500">{source.path ?? source.provider ?? source.source_type}</p>
+              <p className={styles.monoPath}>{source.path ?? source.provider ?? source.source_type}</p>
             </div>
           ))}
         </div>
@@ -469,50 +452,45 @@ function DataReadinessPanel({
 
 function WorkflowCustodyPanel({ workflow }: { workflow: WorkflowJson }) {
   return (
-    <section className="border border-stone-800 bg-stone-950/55 p-4">
-      <div className="flex items-start justify-between gap-3">
+    <section className={styles.panel}>
+      <div className={styles.panelHeader}>
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">
-            Цепочка проверки
-          </p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-stone-50">
-            {translateWorkflowStatus(workflow.status)}: {workflow.currentOwner}
-          </h2>
+          <p className={styles.microLabel}>Verification chain · demo workflow</p>
+          <h2 className={styles.panelTitle}>Recorded state: {translateWorkflowStatus(workflow.status)}</h2>
+          <p className={styles.panelNote}>Current record owner: {workflow.currentOwner}. This is workflow custody, not independent assurance.</p>
         </div>
         <ClaimBadge level={workflow.claimLevel} />
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 border-t border-stone-800 pt-4">
-        <div className="border border-stone-800 px-3 py-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500">История</p>
-          <p className="mt-1 font-mono text-lg text-stone-100">{workflow.history.length}</p>
+      <div className={styles.statGrid}>
+        <div className={styles.statCell}>
+          <p className={styles.statLabel}>History</p>
+          <p className={styles.statValue}>{workflow.history.length}</p>
         </div>
-        <div className="border border-stone-800 px-3 py-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500">Слепки</p>
-          <p className="mt-1 font-mono text-lg text-stone-100">{workflow.artifactLocks.length}</p>
+        <div className={styles.statCell}>
+          <p className={styles.statLabel}>Snapshots</p>
+          <p className={styles.statValue}>{workflow.artifactLocks.length}</p>
         </div>
-        <div className="border border-stone-800 px-3 py-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500">Готово</p>
-          <p className="mt-1 font-mono text-lg text-stone-100">
+        <div className={styles.statCell}>
+          <p className={styles.statLabel}>Evidence links</p>
+          <p className={styles.statValue}>
             {workflow.evidenceCompleteness?.satisfiedEvidenceCount ?? 0}
           </p>
         </div>
       </div>
 
-      <div className="mt-5">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">
-          Слепки артефактов
-        </p>
-        <div className="mt-2 divide-y divide-stone-800 border border-stone-800">
+      <div className={styles.subsection}>
+        <p className={styles.microLabel}>Artifact snapshots</p>
+        <div className={styles.rows}>
           {workflow.artifactLocks.map((lock) => (
-            <div key={lock.path} className="px-3 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <p className="break-all font-mono text-[11px] text-stone-300">{lock.path}</p>
-                <span className={`font-mono text-[10px] uppercase ${lock.available ? "text-emerald-200" : "text-amber-200"}`}>
-                  {lock.available ? "есть" : "нет"}
+            <div key={lock.path} className={styles.row}>
+              <div className={styles.rowTopline}>
+                <p className={styles.monoPath}>{lock.path}</p>
+                <span className={`${styles.availability} ${lock.available ? styles.available : styles.unavailable}`}>
+                  {lock.available ? "available" : "unavailable"}
                 </span>
               </div>
-              {lock.sha256 ? <p className="mt-1 break-all font-mono text-[10px] text-stone-600">sha256 {lock.sha256}</p> : null}
+              {lock.sha256 ? <p className={styles.monoPath}>sha256 {lock.sha256}</p> : null}
             </div>
           ))}
         </div>
@@ -532,59 +510,47 @@ function ExportPackPanel({
   applicationPack: ApplicationPackageIndexJson;
   pilotPlan: PilotMonitoringPlanJson;
 }) {
-  const dossierOutputs = Object.entries(dossier.outputs ?? {});
-  const packOutputs = procurementPack.outputs;
+  const dossierOutputCount = Object.keys(dossier.outputs ?? {}).length;
+  const packOutputCount = procurementPack.outputs.length;
 
   return (
-    <section className="border-t border-stone-700/80 pt-6">
-      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <section className={styles.exportSection}>
+      <div className={styles.exportHeader}>
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">
-            Выгрузки и доказательства для испытания
-          </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-stone-50">
-            Текущий пакет подходит для проверки испытания
-          </h2>
+          <p className={styles.microLabel}>Evidence pack context</p>
+          <h2 className={styles.panelTitle}>Current release materials</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className={styles.badgeGroup}>
           <ClaimBadge level={procurementPack.claimLevel} />
           <ClaimBadge level={dossier.claimLevel} />
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="border border-stone-800 bg-stone-950/55 p-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">Файлы досье</p>
-          <div className="mt-3 space-y-2">
-            {dossierOutputs.map(([label, value]) => (
-              <div key={label} className="border border-stone-800 px-3 py-2">
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500">{label}</p>
-                <p className="mt-1 break-all font-mono text-[11px] text-stone-300">{value}</p>
-              </div>
-            ))}
-          </div>
+      <div className={styles.exportGrid}>
+        <div className={styles.exportItem}>
+          <p className={styles.microLabel}>Dossier files</p>
+          <p className={styles.exportValue}>{dossierOutputCount}</p>
+          <p className={styles.exportCopy}>
+            Read-only dossier formats are available through the download actions above.
+          </p>
         </div>
 
-        <div className="border border-stone-800 bg-stone-950/55 p-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">Пакет для акимата</p>
-          <div className="mt-3 space-y-2">
-            {packOutputs.map((output) => (
-              <div key={`${output.role}-${output.path}`} className="border border-stone-800 px-3 py-2">
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-stone-500">{output.role}</p>
-                <p className="mt-1 break-all font-mono text-[11px] text-stone-300">{output.path}</p>
-              </div>
-            ))}
-          </div>
+        <div className={styles.exportItem}>
+          <p className={styles.microLabel}>City review pack</p>
+          <p className={styles.exportValue}>{packOutputCount}</p>
+          <p className={styles.exportCopy}>
+            These materials remain claim-labelled and do not make the dossier procurement-ready.
+          </p>
         </div>
 
-        <div className="border border-stone-800 bg-stone-950/55 p-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">Как понять успех испытания</p>
-          <h3 className="mt-1 text-base font-semibold text-stone-50">{applicationPack.nextAction}</h3>
-          <div className="mt-3 space-y-2">
+        <div className={styles.exportItem}>
+          <p className={styles.microLabel}>How pilot success is assessed</p>
+          <h3 className={styles.panelTitle}>{applicationPack.nextAction}</h3>
+          <div className={styles.criteriaList}>
             {pilotPlan.criteria.map((criterion) => (
-              <div key={criterion.id} className="border-l border-amber-500/40 pl-3 text-sm leading-6 text-stone-300">
+              <p key={criterion.id} className={styles.criterion}>
                 {criterion.kpi_id}: {criterion.acceptable_threshold}
-              </div>
+              </p>
             ))}
           </div>
         </div>
@@ -613,12 +579,13 @@ export default async function AbaySignalRetimingDossierPage() {
 
   const normalizedKpis = dossier.executiveKpis.kpis.map(normalizeKpi);
   const heroKpiRows = buildHeroKpiRows(normalizedKpis);
-  const corridorName = translateCorridorName(dossier.corridor?.name ?? "проспект Абая");
+  const corridorName = translateCorridorName(dossier.corridor?.name ?? "Abay Avenue");
   const lengthKm = dossier.corridor.lengthKm;
   const intersectionCount =
     dossier.corridor.intersectionCount ?? runPassport.calibrationValidation?.intersectionCount;
-  const calculationDate = formatCalculationDate(runPassport.createdAt);
-  const capexLabel = dossier.capexOpex ? formatNumber(dossier.capexOpex.capexKzt, "KZT") : "не указано";
+  const baselineDelay = readSignalDelay(runPassport.scenarioParams, "baseline");
+  const measureDelay = readSignalDelay(runPassport.scenarioParams, "measure");
+  const capexLabel = dossier.capexOpex ? formatNumber(dossier.capexOpex.capexKzt, "KZT") : "Not provided";
   const roadsProvider = providers.providers.find((provider) => provider.id === "roads-geojson");
   const scenarioConfigSource = dossier.sources.find((source) =>
     `${source.id} ${source.path ?? ""}`.toLowerCase().includes("scenario"),
@@ -633,86 +600,134 @@ export default async function AbaySignalRetimingDossierPage() {
     ["capex_placeholder", "opex_placeholder"].includes(kpi.id),
   );
   const evidenceItems: EvidenceItem[] = [
-    { label: "геометрия дорог", complete: roadsProvider?.available === true },
-    { label: "конфиг сценария", complete: Boolean(scenarioConfigSource) },
-    { label: "паспорт запуска", complete: Boolean(runPassport.runId) },
-    { label: "дата расчёта", complete: hasValidDate(runPassport.createdAt) },
-    { label: "наблюдаемые данные", complete: observedDataAvailable },
+    { label: "road geometry", complete: roadsProvider?.available === true },
+    { label: "scenario configuration", complete: Boolean(scenarioConfigSource) },
+    { label: "run passport", complete: Boolean(runPassport.runId) },
+    { label: "calculation date", complete: hasValidDate(runPassport.createdAt) },
+    { label: "observed data", complete: observedDataAvailable },
     {
-      label: "эмпирическая валидация",
+      label: "empirical validation",
       complete: isEmpiricalCalibrationComplete(runPassport.calibrationValidation),
     },
     {
-      label: "оценка стоимости",
+      label: "cost estimate",
       complete: costKpis.length === 2 && costKpis.every((kpi) => kpi.available && !kpi.placeholder),
     },
   ];
+  const downloadLabels = {
+    "dossier-html": "Download HTML dossier",
+    "dossier-json": "Download JSON evidence",
+    "kpis-csv": "Download KPI CSV",
+    "run-passport-json": "Download run passport",
+    "procurement-index-json": "Download procurement index",
+  } as const;
+  const downloadArtifacts: DownloadArtifact[] = release.manifest.downloads.map((artifact) => ({
+    id: artifact.id,
+    label: downloadLabels[artifact.id],
+    logicalPath: artifact.logicalPath,
+    sha256: artifact.sha256,
+    bytes: artifact.bytes,
+  }));
+  const structuredProjectMetadata = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: "Abay Avenue signal-retiming case",
+    description: "A reproducible proxy evidence dossier for signal retiming on Abay Avenue, Almaty.",
+    about: {
+      "@type": "Thing",
+      name: "Signal retiming on Abay Avenue, Almaty",
+    },
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    keywords: ["Almaty", "transport analysis", "signal retiming", "proxy evidence"],
+  }).replace(/</g, "\\u003c");
 
   return (
-    <main className="min-h-[100dvh] min-w-0 overflow-x-clip bg-[#f4f3ef] text-[#181814]" style={{ colorScheme: "light" }}>
-      <Header calculationDate={calculationDate} />
+    <main id="main-content" tabIndex={-1} className={styles.page}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredProjectMetadata }} />
 
-      <div className="grid min-w-0 grid-cols-1 lg:min-h-[calc(100dvh-52px)] lg:grid-cols-[38%_62%]">
-        <section className="order-2 h-[360px] min-w-0 border-b border-[#ded9d0] bg-[#11110f] sm:h-[420px] lg:order-1 lg:h-auto lg:border-b-0">
-          <AbayCorridorMap
-            runId={release.manifest.runId}
-            expectedSourceSha256={roadsSource.sha256}
-            evidence={{
-              available: roadsProvider?.available === true,
-              claimLevel: normalizeClaimLevel(roadsProvider?.claim_label ?? roadsProvider?.claimLevel),
-              freshness: roadsProvider?.freshness,
-            }}
-          />
-        </section>
-
-        <section className="order-1 flex min-h-0 min-w-0 flex-col bg-white px-4 py-5 sm:px-5 lg:order-2 lg:border-l lg:border-[#ded9d0] xl:px-6">
+      <section className={styles.heroSection}>
+        <div className={styles.inner}>
           <DossierIntro
             corridorName={corridorName}
             lengthKm={lengthKm}
             intersectionCount={intersectionCount}
-            measureLabel={translateMeasureLabel(dossier.proposedMeasure.label)}
+            baselineDelay={baselineDelay}
+            measureDelay={measureDelay}
             rationale={translateRecommendation(dossier.recommendation.rationale)}
             claimLevel={dossier.claimLevel}
-          />
-          <KpiTable rows={heroKpiRows} />
-          <BottomStrip
-            evidenceItems={evidenceItems}
-            capexLabel={capexLabel}
-            costNote={
-              dossier.capexOpex
-                ? translateCostNote(dossier.capexOpex.notes)
-                : "Источник оценки не указан в досье."
-            }
             currentDecision={dossier.recommendation.decision}
-            allowedDecisions={dossier.recommendation.allowedDecisions}
           />
-        </section>
-      </div>
+        </div>
+      </section>
 
-      <section className="min-w-0 bg-[#0f0f0d] px-4 py-8 text-stone-100 sm:px-5">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-8">
-          <header className="grid gap-4 border-b border-stone-800 pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <section id="result" className={`${styles.chapter} ${styles.chapterSurface}`}>
+        <div className={styles.inner}>
+          <header className={styles.chapterHeader}>
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone-500">
-                Аудит досье
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-stone-50">
-                Рабочий экран решения
-              </h2>
-              <p className="mt-2 max-w-[82ch] text-sm leading-6 text-stone-400">
-                Верхний экран опирается на полную цепочку доказательств по Абаю: файл показателей JSON,
-                паспорт запуска, ограничения источников, цепочку проверки, пробелы для закупки и пути выгрузки.
+              <p className={styles.eyebrow}>01 · Result</p>
+              <h2 className={styles.chapterHeading}>A small modeled improvement.</h2>
+            </div>
+            <p className={styles.chapterDescription}>
+              The controlled proxy comparison moves the selected indicators in a favourable direction,
+              but observed traffic, empirical validation, and confirmed cost evidence remain incomplete.
+            </p>
+          </header>
+
+          <div className={styles.resultGrid}>
+            <div className={styles.resultLedger}>
+              <KpiTable rows={heroKpiRows} />
+              <BottomStrip
+                evidenceItems={evidenceItems}
+                capexLabel={capexLabel}
+                costNote={
+                  dossier.capexOpex
+                    ? translateCostNote(dossier.capexOpex.notes)
+                    : "No estimate source is recorded in the dossier."
+                }
+                currentDecision={dossier.recommendation.decision}
+                allowedDecisions={dossier.recommendation.allowedDecisions}
+              />
+            </div>
+
+            <figure className={styles.mapFigure}>
+              <div className={styles.mapFrame}>
+                <AbayCorridorMap
+                  runId={release.manifest.runId}
+                  expectedSourceSha256={roadsSource.sha256}
+                  evidence={{
+                    available: roadsProvider?.available === true,
+                    claimLevel: normalizeClaimLevel(roadsProvider?.claim_label ?? roadsProvider?.claimLevel),
+                    freshness: roadsProvider?.freshness,
+                  }}
+                />
+              </div>
+              <figcaption className={styles.mapCaption}>
+                <span>Supporting exhibit · source-bound Abay corridor geometry</span>
+                <span>non-live real-data snapshot</span>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="methods" className={`${styles.chapter} ${styles.workbench}`}>
+        <div className={styles.inner}>
+          <header className={styles.workbenchIntro}>
+            <div>
+              <p className={styles.eyebrow}>02 · Evidence</p>
+              <h2 className={styles.workbenchHeading}>Decision workbench</h2>
+              <p className={styles.workbenchDescription}>
+                Review the full evidence chain behind the summary: KPI JSON, run passport, source
+                limitations, workflow custody, procurement gaps, and immutable export paths.
                 {dossier.recommendation.allowedDecisions.includes("fund")
-                  ? " Досье содержит статус финансирования, который всё равно требует отдельной записи решения."
-                  : " Безусловное финансирование не входит в допустимые статусы этого досье."}
+                  ? " Any funding decision still requires a separately recorded approval."
+                  : " Unconditional funding is not available at the current evidence level."}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span
-                className="max-w-full break-all rounded-full border border-stone-700 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-stone-400"
-                title={`Релиз ${release.manifest.runId}`}
-              >
-                неизменяемый релиз · aliases {release.manifest.aliases.status}
+            <div className={styles.badgeGroup}>
+              <span className={styles.releaseBadge} title={`Release ${release.manifest.runId}`}>
+                immutable release · aliases {release.manifest.aliases.status}
               </span>
               <ClaimBadge level={dossier.claimLevel} />
               <ClaimBadge level={workflow.claimLevel} />
@@ -720,48 +735,59 @@ export default async function AbaySignalRetimingDossierPage() {
             </div>
           </header>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
-            <EvidenceGate
-              currentClaimLevel={dossier.claimLevel}
-              allowedDecisions={dossier.recommendation.allowedDecisions}
-              risks={dossier.risks}
-              limitations={dossier.limitations}
+          <div id="evidence" className={styles.workbenchStack}>
+            <div className={styles.twoColumnWide}>
+              <EvidenceGate
+                currentClaimLevel={dossier.claimLevel}
+                allowedDecisions={dossier.recommendation.allowedDecisions}
+                risks={dossier.risks}
+                limitations={dossier.limitations}
+              />
+              <RunPassportCard runPassport={runPassport} reproduction={reproduction} manifest={manifest} />
+            </div>
+
+            <KpiDeltaTable kpis={normalizedKpis} />
+
+            <div className={styles.twoColumn}>
+              <AssumptionList
+                title="Assumptions, limitations, and risks"
+                description="These are why the dossier remains a proxy-level decision file."
+                items={[...dossier.assumptions, ...dossier.limitations, ...dossier.risks]}
+                claimLevel={dossier.claimLevel}
+              />
+              <DataReadinessPanel
+                dataReadiness={dataReadiness}
+                providers={providers}
+                sources={dossier.sources}
+              />
+            </div>
+
+            <div className={styles.twoColumnWide}>
+              <WorkflowCustodyPanel workflow={workflow} />
+              <ProcurementReadinessPanel
+                procurement={procurement}
+                workflow={workflow}
+                reproduction={reproduction}
+                manifest={manifest}
+              />
+            </div>
+
+            <div id="downloads">
+              <DownloadActions
+                artifacts={downloadArtifacts}
+                runId={release.manifest.runId}
+                releaseGeneratedAt={release.manifest.generatedAt}
+                sourceManifestSha256={release.manifest.sourceManifest.sha256}
+              />
+            </div>
+
+            <ExportPackPanel
+              dossier={dossier}
+              procurementPack={procurementPack}
+              applicationPack={applicationPack}
+              pilotPlan={pilotPlan}
             />
-            <RunPassportCard runPassport={runPassport} reproduction={reproduction} manifest={manifest} />
           </div>
-
-          <KpiDeltaTable kpis={normalizedKpis} />
-
-          <div className="grid gap-5 xl:grid-cols-2">
-            <AssumptionList
-              title="Допущения, ограничения и риски"
-              description="Это причины, по которым досье пока остаётся файлом решения уровня proxy."
-              items={[...dossier.assumptions, ...dossier.limitations, ...dossier.risks]}
-              claimLevel={dossier.claimLevel}
-            />
-            <DataReadinessPanel
-              dataReadiness={dataReadiness}
-              providers={providers}
-              sources={dossier.sources}
-            />
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
-            <WorkflowCustodyPanel workflow={workflow} />
-            <ProcurementReadinessPanel
-              procurement={procurement}
-              workflow={workflow}
-              reproduction={reproduction}
-              manifest={manifest}
-            />
-          </div>
-
-          <ExportPackPanel
-            dossier={dossier}
-            procurementPack={procurementPack}
-            applicationPack={applicationPack}
-            pilotPlan={pilotPlan}
-          />
         </div>
       </section>
 

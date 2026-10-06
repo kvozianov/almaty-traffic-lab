@@ -41,6 +41,13 @@ REQUIRED_ROUTE_ROLES = (
     "applicationPack",
     "pilotPlan",
 )
+REQUIRED_DOWNLOAD_IDS = (
+    "dossier-html",
+    "dossier-json",
+    "kpis-csv",
+    "run-passport-json",
+    "procurement-index-json",
+)
 DEFAULT_ALIAS_PATHS: dict[str, str] = {
     "dossier": "reports/dossiers/abay-signal-retiming/dossier.json",
     "runPassport": "data/runs/abay-signal-retiming-run-passport.json",
@@ -65,6 +72,33 @@ _DOSSIER_OUTPUT_REFS = {
     "markdown": "reports/dossiers/abay-signal-retiming/dossier.md",
     "html": "reports/dossiers/abay-signal-retiming/dossier.html",
     "kpisCsv": "reports/dossiers/abay-signal-retiming/kpis.csv",
+}
+DEFAULT_DOWNLOAD_SPECS: dict[str, dict[str, str]] = {
+    "dossier-html": {
+        "logicalPath": _DOSSIER_OUTPUT_REFS["html"],
+        "mediaType": "text/html",
+        "filename": "abay-signal-retiming-dossier.html",
+    },
+    "dossier-json": {
+        "logicalPath": _DOSSIER_OUTPUT_REFS["json"],
+        "mediaType": "application/json",
+        "filename": "abay-signal-retiming-evidence.json",
+    },
+    "kpis-csv": {
+        "logicalPath": _DOSSIER_OUTPUT_REFS["kpisCsv"],
+        "mediaType": "text/csv",
+        "filename": "abay-signal-retiming-kpis.csv",
+    },
+    "run-passport-json": {
+        "logicalPath": DEFAULT_ALIAS_PATHS["runPassport"],
+        "mediaType": "application/json",
+        "filename": "abay-signal-retiming-run-passport.json",
+    },
+    "procurement-index-json": {
+        "logicalPath": "reports/akimat/abay-signal-retiming/procurement_pack_index.json",
+        "mediaType": "application/json",
+        "filename": "abay-signal-retiming-procurement-index.json",
+    },
 }
 _WORKFLOW_OUTPUT_REFS = {
     "workflowJson": "reports/workflows/abay-signal-retiming-decision-workflow.json",
@@ -1397,6 +1431,7 @@ def validate_route_manifest(
     ]
     if len(alias_paths) != len(set(alias_paths)):
         raise ArtifactValidationError("Route manifest contains duplicate alias paths")
+    _validate_download_allowlist(manifest["downloads"], run_root=run, run_id=run_id)
     logical_paths: set[str] = set()
     for entry in entries:
         if entry["runId"] != run_id:
@@ -1425,6 +1460,51 @@ def validate_route_manifest(
             )
             _validate_nested_integrity_records(payload, run_root=run, artifact_role=str(entry["role"]))
             _validate_serialized_references(payload, run_root=run, artifact_role=str(entry["role"]))
+
+
+def _validate_download_allowlist(
+    downloads: Any,
+    *,
+    run_root: Path,
+    run_id: str,
+) -> None:
+    """Verify the sole public file-download surface against the immutable run.
+
+    The schema rejects unrecognized entries; this runtime gate additionally
+    verifies bytes and hashes, binding every served file to the same promoted
+    run without accepting caller-selected paths or mutable aliases.
+    """
+
+    if not isinstance(downloads, list):
+        raise ArtifactValidationError("Route manifest downloads must be an array")
+    ids = [str(item.get("id", "")) if isinstance(item, Mapping) else "" for item in downloads]
+    if len(ids) != len(set(ids)) or set(ids) != set(REQUIRED_DOWNLOAD_IDS):
+        raise ArtifactValidationError(
+            f"Route manifest download allowlist mismatch: "
+            f"missing={sorted(set(REQUIRED_DOWNLOAD_IDS) - set(ids))}, "
+            f"unknown={sorted(set(ids) - set(REQUIRED_DOWNLOAD_IDS))}"
+        )
+    for entry in downloads:
+        if not isinstance(entry, Mapping):  # Defensive: schema validation runs first.
+            raise ArtifactValidationError("Route manifest download entries must be objects")
+        download_id = str(entry["id"])
+        expected = DEFAULT_DOWNLOAD_SPECS[download_id]
+        if entry["runId"] != run_id:
+            raise ArtifactValidationError(f"Mixed release run binding for download {download_id}")
+        logical = normalize_logical_path(str(entry["logicalPath"]), label=f"download {download_id}")
+        if logical != expected["logicalPath"]:
+            raise ArtifactValidationError(f"Route manifest download path is not allowlisted: {download_id}")
+        if entry["mediaType"] != expected["mediaType"]:
+            raise ArtifactValidationError(f"Route manifest download media type is not allowlisted: {download_id}")
+        if entry["filename"] != expected["filename"]:
+            raise ArtifactValidationError(f"Route manifest download filename is not allowlisted: {download_id}")
+        path = _resolve_existing_under(run_root, logical, label=f"download {download_id}")
+        if not path.is_file():
+            raise ArtifactValidationError(f"Download artifact is not a regular file: {logical}")
+        if path.stat().st_size != entry["bytes"]:
+            raise ArtifactValidationError(f"Download artifact byte count mismatch: {logical}")
+        if sha256_file(path) != entry["sha256"]:
+            raise ArtifactValidationError(f"Download artifact hash mismatch: {logical}")
 
 
 def _validate_materialized_source_binding(
@@ -1582,6 +1662,28 @@ def _build_route_manifest(
             }
         )
     artifacts.sort(key=lambda item: REQUIRED_ROUTE_ROLES.index(item["role"]))
+    downloads = []
+    for download_id in REQUIRED_DOWNLOAD_IDS:
+        spec = DEFAULT_DOWNLOAD_SPECS[download_id]
+        logical = spec["logicalPath"]
+        path = _resolve_existing_under(
+            context.physical_output_root,
+            logical,
+            label=f"generated download artifact {download_id}",
+        )
+        if not path.is_file():
+            raise ArtifactValidationError(f"Generated download artifact is not a file: {logical}")
+        downloads.append(
+            {
+                "id": download_id,
+                "runId": context.run_id,
+                "logicalPath": logical,
+                "sha256": sha256_file(path),
+                "bytes": path.stat().st_size,
+                "mediaType": spec["mediaType"],
+                "filename": spec["filename"],
+            }
+        )
     return {
         "schemaVersion": ROUTE_MANIFEST_SCHEMA_VERSION,
         "runId": context.run_id,
@@ -1594,6 +1696,7 @@ def _build_route_manifest(
             "sha256": resolver.manifest_sha256,
         },
         "artifacts": artifacts,
+        "downloads": downloads,
         "aliases": {
             "status": "pending",
             "errors": [],

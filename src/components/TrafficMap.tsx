@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import DeckGL from "@deck.gl/react";
-import { ColumnLayer, GeoJsonLayer, IconLayer, LineLayer, PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { ColumnLayer, GeoJsonLayer, IconLayer, LineLayer, PathLayer, PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { DataFilterExtension, type DataFilterExtensionProps } from "@deck.gl/extensions";
-import { TripsLayer } from "@deck.gl/geo-layers";
 import { Map as MapLibre } from "@vis.gl/react-maplibre";
 import type { PickingInfo } from "@deck.gl/core";
 import styles from "./TrafficMap.module.css";
+import { buildTripTrailSegments } from "./tripTrail.mjs";
 
 const CARTO_DARK_MATTER_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
@@ -131,6 +131,11 @@ type Trip = {
   timestamps: number[];
   agentType?: AgentType;
   brakeEvents?: TripBrakeEvent[];
+};
+
+type TripTrailSegment = {
+  path: [Coordinate, Coordinate];
+  opacity: number;
 };
 
 type TripsPayload = {
@@ -369,7 +374,7 @@ const DERIVED_LEVEL7_PATTERNS: CalendarPattern[] = [
   {
     id: "weekday",
     mode: "weekday",
-    title: "Обычный день",
+    title: "Weekday",
     trafficMultiplier: 1,
     attractionShift: 0.18,
     description: "Baseline commuter demand for workday comparison.",
@@ -377,7 +382,7 @@ const DERIVED_LEVEL7_PATTERNS: CalendarPattern[] = [
   {
     id: "weekend",
     mode: "weekend",
-    title: "Выходной",
+    title: "Weekend",
     trafficMultiplier: 0.72,
     attractionShift: 0.46,
     description: "Demand shifts toward malls, parks, and leisure corridors.",
@@ -385,7 +390,7 @@ const DERIVED_LEVEL7_PATTERNS: CalendarPattern[] = [
   {
     id: "night",
     mode: "night",
-    title: "Ночь",
+    title: "Night",
     trafficMultiplier: 0.28,
     attractionShift: 0.08,
     description: "Low-flow mode with isolated late congestion pockets.",
@@ -1185,7 +1190,7 @@ export default function TrafficMap({
           setSelectedItem({
             kind: "agent",
             title: marker.label,
-            detail: `GTFS public transport | ${marker.source === "physics" ? "IDM trajectory" : "trip route"} | ${formatSpeed(
+            detail: `GTFS public transport | ${marker.source === "physics" ? "modelled movement" : "demo route"} | ${formatSpeed(
               marker.speedMps,
             )}`,
           });
@@ -1421,7 +1426,7 @@ export default function TrafficMap({
     }
     if (physicsState === "error") {
       return `${roads.features.length.toLocaleString("en-US")} road segments | ${
-        physicsError ?? "level 6 physics using mock fallback"
+        physicsError ?? "modelled movement is using a demo fallback"
       }`;
     }
     if (variantTripsState === "error") {
@@ -1435,9 +1440,9 @@ export default function TrafficMap({
       "en-US",
     )} trips | ${level6Snapshot.agents.length.toLocaleString(
       "en-US",
-    )} physics agents | ${analyticsState === "ready" ? "level 4 analytics online" : "waiting for level 4 analytics API"} | ${
-      physicsState === "ready" ? "level 8 physics online" : "level 6 mock overlay"
-    } | level 7 scenario API ${splitScreenEnabled ? `| ${variantTrips.length.toLocaleString("en-US")} variant trips` : ""}`;
+    )} modelled movements | ${analyticsState === "ready" ? "demo analytics ready" : "demo analytics pending"} | ${
+      physicsState === "ready" ? "movement detail ready" : "demo movement overlay"
+    } | demo scenario data ${splitScreenEnabled ? `| ${variantTrips.length.toLocaleString("en-US")} comparison trips` : ""}`;
   }, [
     analyticsError,
     analyticsState,
@@ -1556,8 +1561,12 @@ export default function TrafficMap({
   );
 
   return (
-    <section className={[styles.shell, className].filter(Boolean).join(" ")} aria-label="Almaty traffic map">
-      <div className={splitScreenEnabled ? styles.splitMapStage : styles.mapStage}>
+    <section className={[styles.shell, className].filter(Boolean).join(" ")} aria-label="Interactive traffic sandbox">
+      <div
+        className={splitScreenEnabled ? styles.splitMapStage : styles.mapStage}
+        role="group"
+        aria-label="Interactive map exhibit"
+      >
         <div className={styles.mapPane}>
           <DeckGL
             initialViewState={ALMATY_VIEW_STATE}
@@ -1599,11 +1608,16 @@ export default function TrafficMap({
         ) : null}
       </div>
 
+      <div className={styles.mapCaption} aria-label="Map attribution and evidence level">
+        <span>Map exhibit · demo and proxy layers</span>
+        <span>CARTO basemap · OpenStreetMap contributors</span>
+      </div>
+
       <div className={styles.leftRail}>
         <div className={styles.panel}>
-          <p className={styles.eyebrow}>Almaty Traffic Lab</p>
-          <h1 className={styles.title}>Level 7 scenario model</h1>
-          <p className={styles.meta}>Calendar demand, split-screen A/B, physical queue stacks</p>
+          <p className={styles.eyebrow}>Almaty mobility</p>
+          <h1 className={styles.title}>Interactive traffic sandbox</h1>
+          <p className={styles.meta}>Explore demo scenarios and proxy transport indicators.</p>
           {hoveredRoad ? (
             <p className={styles.meta}>
               {String(hoveredRoad.name || hoveredRoad.id || hoveredRoad.osmid || "Road")} | density{" "}
@@ -1612,10 +1626,10 @@ export default function TrafficMap({
           ) : null}
         </div>
 
-        <aside className={styles.level7Panel} aria-label="Level 7 scenario controls">
+        <aside className={styles.level7Panel} aria-label="Scenario comparison controls">
           <div className={styles.panelHeader}>
-            <span>Level 7</span>
-            <small>{splitScreenEnabled && variantTripsState === "loading" ? "loading A/B" : "Jules API"}</small>
+            <span>Scenario comparison</span>
+            <small>{splitScreenEnabled && variantTripsState === "loading" ? "loading comparison" : "demo input"}</small>
           </div>
 
           <div className={styles.segmentedControl} aria-label="Calendar pattern">
@@ -1639,17 +1653,17 @@ export default function TrafficMap({
           </div>
 
           <div className={styles.toggleGrid}>
-            <ToggleControl checked={showLevel7Columns} label="3D queues" onChange={setShowLevel7Columns} />
+            <ToggleControl checked={showLevel7Columns} label="Queue columns" onChange={setShowLevel7Columns} />
             <ToggleControl checked={splitScreenEnabled} label="Split view" onChange={setSplitScreenEnabled} />
           </div>
 
           <label className={styles.selectField}>
-            <span>A/B scenario</span>
+            <span>Comparison</span>
             <select
               value={activeComparison?.id ?? ""}
               onChange={(event) => setActiveComparisonId(event.currentTarget.value || null)}
             >
-              {level7Snapshot.comparisons.length === 0 ? <option value="">Awaiting API</option> : null}
+              {level7Snapshot.comparisons.length === 0 ? <option value="">Comparison unavailable</option> : null}
               {level7Snapshot.comparisons.map((comparison) => (
                 <option key={comparison.id} value={comparison.id}>
                   {comparison.title}
@@ -1659,10 +1673,10 @@ export default function TrafficMap({
           </label>
 
           <div className={styles.physicsGrid}>
-            <Metric label="Queue stacks" value={String(level7Snapshot.jamColumns.length)} />
-            <Metric label="Attractors" value={String(level7Snapshot.attractionPoints.length)} />
-            <Metric label="A/B delta" value={formatSignedPercent(activeComparison?.deltaCongestion ?? 0)} />
-            <Metric label="Shift" value={formatPercent(activeCalendarPattern.attractionShift)} />
+            <Metric label="Queue groups" value={String(level7Snapshot.jamColumns.length)} />
+            <Metric label="Demand points" value={String(level7Snapshot.attractionPoints.length)} />
+            <Metric label="Difference" value={formatSignedPercent(activeComparison?.deltaCongestion ?? 0)} />
+            <Metric label="Demand shift" value={formatPercent(activeCalendarPattern.attractionShift)} />
           </div>
 
           {variantTripsState === "error" ? <p className={styles.emptyText}>{variantTripsError}</p> : null}
@@ -1670,10 +1684,10 @@ export default function TrafficMap({
       </div>
 
       <div className={styles.rightRail}>
-        <aside className={styles.validationPanel} aria-label="Level 9 validation dashboard">
+        <aside className={styles.validationPanel} aria-label="Reference comparison">
           <div className={styles.panelHeader}>
-            <span>Валидация</span>
-            <small>{snapshot.validation.some((metric) => metric.source === "api") ? "Jules API" : "safe defaults"}</small>
+            <span>Reference comparison · proxy</span>
+            <small>{snapshot.validation.some((metric) => metric.source === "api") ? "snapshot input" : "demo fallback"}</small>
           </div>
 
           <div className={styles.validationList}>
@@ -1683,12 +1697,17 @@ export default function TrafficMap({
           </div>
         </aside>
 
-        <aside className={styles.dashboard} aria-label="Level 4 analytics dashboard">
-        <div className={styles.metricHero}>
-          <span className={styles.metricLabel}>Congestion index</span>
-          <strong className={styles.metricValue}>{Math.round(snapshot.metrics.congestionIndex)}</strong>
-          <span className={styles.metricUnit}>/ 100</span>
-        </div>
+        <aside className={styles.dashboard} aria-label="Traffic summary">
+          <div className={styles.claimLabels} aria-label="Traffic summary claim levels">
+            <span>demo</span>
+            <span>proxy</span>
+          </div>
+
+          <div className={styles.metricHero}>
+            <span className={styles.metricLabel}>Congestion index</span>
+            <strong className={styles.metricValue}>{Math.round(snapshot.metrics.congestionIndex)}</strong>
+            <span className={styles.metricUnit}>/ 100</span>
+          </div>
 
         <div className={styles.metricGrid}>
           <Metric label="Avg trip" value={formatMinutes(snapshot.metrics.averageTravelTimeMinutes)} />
@@ -1715,7 +1734,7 @@ export default function TrafficMap({
         <section className={styles.forecastBlock} aria-label="Next hour forecast">
           <div className={styles.panelHeader}>
             <span>Next hour</span>
-            <small>ML forecast</small>
+            <small>proxy forecast</small>
           </div>
           {snapshot.forecast.length > 0 ? (
             <div className={styles.forecastList}>
@@ -1727,7 +1746,7 @@ export default function TrafficMap({
               ))}
             </div>
           ) : (
-            <p className={styles.emptyText}>Forecast slot ready for Jules API.</p>
+            <p className={styles.emptyText}>Forecast is unavailable for this demo snapshot.</p>
           )}
         </section>
 
@@ -1751,17 +1770,17 @@ export default function TrafficMap({
         </section>
       </aside>
 
-      <aside className={styles.microPanel} aria-label="Level 6 physics controls">
+      <aside className={styles.microPanel} aria-label="Movement detail controls">
         <div className={styles.panelHeader}>
-          <span>Micro-model</span>
+          <span>Movement detail</span>
           <small>
-            {physicsState === "ready" ? "API" : physicsState === "loading" ? "loading" : `${level6Snapshot.source} data`}
+            {physicsState === "ready" ? "demo input" : physicsState === "loading" ? "loading" : `${level6Snapshot.source} input`}
           </small>
         </div>
 
         <div className={styles.toggleGrid}>
-          <ToggleControl checked={showAgentClasses} label="Agent classes" onChange={setShowAgentClasses} />
-          <ToggleControl checked={showPhysicsOverlay} label="Yield zones" onChange={setShowPhysicsOverlay} />
+          <ToggleControl checked={showAgentClasses} label="Vehicle types" onChange={setShowAgentClasses} />
+          <ToggleControl checked={showPhysicsOverlay} label="Priority areas" onChange={setShowPhysicsOverlay} />
           <ToggleControl checked={showPedestrianPhases} label="Crossings" onChange={setShowPedestrianPhases} />
         </div>
 
@@ -1786,10 +1805,10 @@ export default function TrafficMap({
         </div>
 
         <div className={styles.physicsGrid}>
-          <Metric label="IDM agents" value={String(level6Snapshot.agents.length)} />
-          <Metric label="Yield nodes" value={String(level6Snapshot.intersections.length)} />
-          <Metric label="Shock waves" value={String(countBrakingSegments(physicsTrailSegments))} />
-          <Metric label="Brake load" value={formatPercent(averageCrossingBrake(level6Snapshot.pedestrianCrossings))} />
+          <Metric label="Model vehicles" value={String(level6Snapshot.agents.length)} />
+          <Metric label="Priority points" value={String(level6Snapshot.intersections.length)} />
+          <Metric label="Braking waves" value={String(countBrakingSegments(physicsTrailSegments))} />
+          <Metric label="Crossing load" value={formatPercent(averageCrossingBrake(level6Snapshot.pedestrianCrossings))} />
           <Metric label="Delay" value={`${Math.round(averageYieldDelay(level6Snapshot.intersections))}s`} />
         </div>
 
@@ -1797,14 +1816,15 @@ export default function TrafficMap({
       </aside>
       </div>
 
-      <div className={styles.controls} aria-label="Simulation controls">
-        <div className={styles.controlHeader}>
-          <div>
-            <p className={styles.eyebrow}>Level 5 controls</p>
-            <strong>Simulation deck</strong>
+      <ResponsiveControlPanel>
+        <div className={styles.controls} aria-label="Simulation controls">
+          <div className={styles.controlHeader}>
+            <div>
+              <p className={styles.eyebrow}>Demo controls</p>
+              <strong>Playback</strong>
+            </div>
+            <span className={styles.controlTime}>{formatTimeOfDay(timeOfDaySeconds)}</span>
           </div>
-          <span className={styles.controlTime}>{formatTimeOfDay(timeOfDaySeconds)}</span>
-        </div>
 
         <div className={styles.playbackGroup} aria-label="Playback controls">
           <button
@@ -1847,7 +1867,7 @@ export default function TrafficMap({
 
           <label className={styles.controlField}>
             <span>
-              Time machine
+              Time of day
               <b>{formatTimeOfDay(timeOfDaySeconds)}</b>
             </span>
             <input
@@ -1864,7 +1884,7 @@ export default function TrafficMap({
 
           <label className={styles.controlField}>
             <span>
-              Количество машин
+              Vehicle count
               <b>{trafficDensity.toLocaleString("en-US")}</b>
             </span>
             <input
@@ -1886,7 +1906,7 @@ export default function TrafficMap({
             onClick={handleTrafficDensityRefresh}
             disabled={tripsState === "loading" || trafficDensity === requestedTrafficDensity}
           >
-            {tripsState === "loading" ? "Updating" : "Обновить"}
+            {tripsState === "loading" ? "Updating" : "Refresh"}
           </button>
           <span>
             {trips.length.toLocaleString("en-US")} active routes
@@ -1894,15 +1914,16 @@ export default function TrafficMap({
           </span>
         </div>
 
-        <div className={styles.exportGroup} aria-label="Export controls">
-          <button type="button" onClick={analyticsState === "ready" ? handleExportBackendCsv : handleExportCsv}>
-            CSV
-          </button>
-          <button type="button" onClick={handleExportPdf}>
-            PDF
-          </button>
+          <div className={styles.exportGroup} aria-label="Export controls">
+            <button type="button" onClick={analyticsState === "ready" ? handleExportBackendCsv : handleExportCsv}>
+              CSV
+            </button>
+            <button type="button" onClick={handleExportPdf}>
+              PDF
+            </button>
+          </div>
         </div>
-      </div>
+      </ResponsiveControlPanel>
 
       {selectedItem ? (
         <div className={styles.selectionPanel}>
@@ -1924,6 +1945,8 @@ export default function TrafficMap({
         ]
           .filter(Boolean)
           .join(" ")}
+        role="status"
+        aria-live="polite"
       >
         {statusText}
       </div>
@@ -1937,6 +1960,34 @@ function Metric({ label, value }: { label: string; value: string }) {
       <span>{label}</span>
       <b>{value}</b>
     </div>
+  );
+}
+
+function ResponsiveControlPanel({ children }: { children: ReactNode }) {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 721px)");
+    const syncExpandedState = () => {
+      if (detailsRef.current) {
+        detailsRef.current.open = desktopQuery.matches;
+      }
+    };
+
+    syncExpandedState();
+    desktopQuery.addEventListener("change", syncExpandedState);
+
+    return () => desktopQuery.removeEventListener("change", syncExpandedState);
+  }, []);
+
+  return (
+    <details ref={detailsRef} className={styles.mobileControls} data-mobile-controls>
+      <summary className={styles.mobileControlsSummary}>
+        <span>Scenario controls</span>
+        <small>Playback, time, volume and exports</small>
+      </summary>
+      {children}
+    </details>
   );
 }
 
@@ -1980,7 +2031,7 @@ function ToggleControl({
 
 function MiniBarChart({ points }: { points: TimeSeriesPoint[] }) {
   if (points.length === 0) {
-    return <p className={styles.emptyText}>Traffic time series will render here after the analytics API lands.</p>;
+    return <p className={styles.emptyText}>Traffic history is unavailable for this demo snapshot.</p>;
   }
 
   return (
@@ -2002,27 +2053,30 @@ function createVehicleTripLayer(
   opacity: number,
   agentType: AgentType,
 ) {
-  return new TripsLayer<Trip>({
+  const trailLength =
+    agentType === "car"
+      ? TRIP_TRAIL_LENGTH_SECONDS
+      : TRIP_TRAIL_LENGTH_SECONDS * (agentType === "bus" ? 1.5 : 1.25);
+  const trailSegments = buildTripTrailSegments(data, currentTime, trailLength);
+  const color = agentTripColor(agentType);
+
+  return new PathLayer<TripTrailSegment>({
     id,
-    data,
-    getPath: (trip) => trip.path,
-    getTimestamps: (trip) => trip.timestamps,
-    getColor: agentTripColor(agentType),
+    data: trailSegments,
+    getPath: (segment) => segment.path,
+    getColor: (segment) => [color[0], color[1], color[2], Math.round(segment.opacity * 255)],
     getWidth: agentType === "car" ? 5 : agentType === "truck" ? 8 : 10,
     opacity,
     widthMinPixels: agentType === "car" ? 2.5 : agentType === "truck" ? 4 : 5,
     widthMaxPixels: agentType === "car" ? 10 : agentType === "truck" ? 16 : 19,
     capRounded: true,
     jointRounded: true,
-    fadeTrail: true,
-    trailLength: agentType === "car" ? TRIP_TRAIL_LENGTH_SECONDS : TRIP_TRAIL_LENGTH_SECONDS * (agentType === "bus" ? 1.5 : 1.25),
-    currentTime,
     parameters: {
       depthWriteEnabled: false,
     },
     updateTriggers: {
-      getPath: [data],
-      getTimestamps: [data],
+      getPath: [data, currentTime, trailLength],
+      getColor: [agentType, currentTime],
     },
   });
 }
@@ -2994,9 +3048,9 @@ function deriveComparisons(analytics: Level4Analytics): ComparisonScenario[] {
   return [
     {
       id: "normal-vs-abay-closure",
-      title: "Обычный день vs Абая закрыта",
-      baselineLabel: "Обычный день",
-      variantLabel: "Абая закрыта",
+      title: "Weekday vs Abay Avenue closure",
+      baselineLabel: "Weekday",
+      variantLabel: "Abay Avenue closure",
       deltaCongestion: Math.abs(variantDelta),
       deltaTravelTimeMinutes: analytics.metrics.averageTravelTimeMinutes
         ? Math.round(analytics.metrics.averageTravelTimeMinutes * 0.18 * 10) / 10

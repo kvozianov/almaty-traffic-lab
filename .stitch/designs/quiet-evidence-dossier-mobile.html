@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Almaty Mobility - Mobile</title>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#526a5b",
+                        "on-tertiary-fixed": "#211a19",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#fcf9f7",
+                        "ink-quiet": "#8A8F8A",
+                        "primary-container": "#1d221f",
+                        "secondary": "#4c6455",
+                        "outline": "#747874",
+                        "sage-wash": "#E7EDE8",
+                        "surface-raised": "#FFFFFF",
+                        "surface-container-highest": "#e5e2e1",
+                        "primary-fixed-dim": "#c3c8c3",
+                        "surface-variant": "#e5e2e1",
+                        "risk-ink": "#815B52",
+                        "on-secondary-fixed": "#092014",
+                        "surface-tint": "#5a605c",
+                        "primary": "#060b08",
+                        "surface-container-high": "#ebe7e6",
+                        "on-surface-variant": "#444845",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#4e4443",
+                        "ink-secondary": "#656B66",
+                        "secondary-fixed": "#cee9d6",
+                        "border-strong": "#BFC4BE",
+                        "inverse-on-surface": "#f3f0ef",
+                        "on-primary-fixed-variant": "#434844",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#1c1b1b",
+                        "on-primary-fixed": "#181d1a",
+                        "tertiary-fixed": "#eedfdd",
+                        "on-primary-container": "#848985",
+                        "tertiary-fixed-dim": "#d2c3c1",
+                        "secondary-container": "#cee9d6",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "canvas-paper": "#F5F3EE",
+                        "tertiary": "#0f0808",
+                        "proxy-sand": "#EFE8DA",
+                        "on-secondary-fixed-variant": "#354c3e",
+                        "on-error": "#ffffff",
+                        "risk-wash": "#F2E8E5",
+                        "surface-primary": "#FCFBF8",
+                        "secondary-fixed-dim": "#b3cdbb",
+                        "proxy-ink": "#745F38",
+                        "on-tertiary-container": "#928584",
+                        "primary-fixed": "#dfe4df",
+                        "inverse-surface": "#313030",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f6f3f2",
+                        "surface-bright": "#fcf9f7",
+                        "on-surface": "#1c1b1b",
+                        "map-frame": "#171C19",
+                        "border-hairline": "#DCDDD7",
+                        "surface-container": "#f0edec",
+                        "tertiary-container": "#271f1e",
+                        "surface-dim": "#dcd9d8",
+                        "outline-variant": "#c4c7c3",
+                        "background": "#fcf9f7",
+                        "inverse-primary": "#c3c8c3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-xxl": "48px",
+                        "stack-sm": "12px",
+                        "stack-xs": "8px",
+                        "stack-md": "16px",
+                        "gutter": "24px",
+                        "section-mobile": "64px",
+                        "stack-lg": "24px",
+                        "margin-page": "24px",
+                        "section-desktop": "88px",
+                        "stack-xl": "32px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-lg": ["\"Source Serif 4\""],
+                        "display-hero": ["\"Source Serif 4\""],
+                        "headline-md": ["\"Source Serif 4\""],
+                        "table-header": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.15", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "display-hero": ["clamp(2.5rem, 6vw, 5.5rem)", { "lineHeight": "1.05", "letterSpacing": "-0.035em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "table-header": ["11px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Source+Serif+4:opsz,wght@8..60,400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { max-width: 390px; margin: 0 auto; background-color: #F5F3EE; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-canvas-paper text-primary font-body-md antialiased w-full h-full overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="w-full h-14 bg-surface-primary border-b border-border-hairline flex justify-between items-center px-margin-page sticky top-0 z-50">
+<span class="font-headline-md text-headline-md tracking-tight text-primary">ALMATY MOBILITY</span>
+<button aria-label="Menu" class="w-11 h-11 flex items-center justify-center -mr-3">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+</header>
+<main class="w-full flex flex-col pt-stack-xl pb-section-mobile">
+<!-- Hero Section -->
+<section class="px-margin-page flex flex-col gap-stack-lg mb-section-mobile">
+<div class="flex flex-col gap-stack-sm">
+<span class="font-label-mono text-label-mono text-ink-quiet uppercase">University Portfolio Case</span>
+<h1 class="font-headline-lg text-headline-lg text-primary">Abay Avenue signal-retiming case</h1>
+</div>
+<div class="flex flex-col gap-stack-xs items-start p-stack-md border border-border-hairline rounded bg-surface-primary">
+<span class="font-label-mono text-label-mono text-ink-secondary">CONTROLLED CHANGE</span>
+<div class="flex items-center gap-3 mt-1">
+<span class="font-headline-md text-headline-md text-primary">36 s → 32 s</span>
+<span class="bg-proxy-sand text-proxy-ink font-label-mono text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Proxy</span>
+</div>
+<p class="font-body-md text-body-md text-ink-secondary mt-1">Request more evidence before funding.</p>
+</div>
+<div class="flex flex-col gap-stack-sm mt-stack-sm w-full">
+<button class="w-full h-12 bg-secondary text-on-secondary rounded font-label-mono text-label-mono tracking-wider uppercase transition-opacity hover:opacity-90 active:scale-[0.985] flex items-center justify-center gap-2">
+                    Review evidence
+                </button>
+<button class="w-full h-12 bg-surface-primary border border-border-hairline text-primary rounded font-label-mono text-label-mono tracking-wider uppercase transition-opacity hover:bg-surface-container-low active:scale-[0.985] flex items-center justify-center gap-2">
+                    Download dossier
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+</button>
+</div>
+</section>
+<!-- KPIs Ledger -->
+<section class="px-margin-page mb-section-mobile">
+<h2 class="font-label-mono text-label-mono text-ink-quiet uppercase mb-stack-md border-b border-border-hairline pb-2">Result Ledger</h2>
+<div class="flex flex-col">
+<!-- KPI Row 1 -->
+<div class="flex flex-col py-stack-md border-b border-border-hairline gap-1">
+<span class="font-table-header text-table-header text-ink-secondary uppercase">Average Trip Time</span>
+<div class="flex items-center justify-between">
+<span class="font-label-mono text-body-lg text-primary tracking-tight">1663.46 → 1654.66 s</span>
+<span class="bg-proxy-sand text-proxy-ink font-label-mono text-[10px] px-1.5 py-0.5 rounded uppercase">Proxy</span>
+</div>
+</div>
+<!-- KPI Row 2 -->
+<div class="flex flex-col py-stack-md border-b border-border-hairline gap-1">
+<span class="font-table-header text-table-header text-ink-secondary uppercase">Total Stops</span>
+<div class="flex items-center justify-between">
+<span class="font-label-mono text-body-lg text-primary tracking-tight">2.4 → 2.1</span>
+<span class="bg-proxy-sand text-proxy-ink font-label-mono text-[10px] px-1.5 py-0.5 rounded uppercase">Proxy</span>
+</div>
+</div>
+<!-- KPI Row 3 -->
+<div class="flex flex-col py-stack-md border-b border-border-hairline gap-1">
+<span class="font-table-header text-table-header text-ink-secondary uppercase">Throughput (veh/hr)</span>
+<div class="flex items-center justify-between">
+<span class="font-label-mono text-body-lg text-primary tracking-tight">840 → 895</span>
+<span class="bg-proxy-sand text-proxy-ink font-label-mono text-[10px] px-1.5 py-0.5 rounded uppercase">Proxy</span>
+</div>
+</div>
+<!-- KPI Row 4 -->
+<div class="flex flex-col py-stack-md border-b border-border-hairline gap-1">
+<span class="font-table-header text-table-header text-ink-secondary uppercase">Emission Proxy (CO2)</span>
+<div class="flex items-center justify-between">
+<span class="font-label-mono text-body-lg text-primary tracking-tight">High → Med</span>
+<span class="bg-proxy-sand text-proxy-ink font-label-mono text-[10px] px-1.5 py-0.5 rounded uppercase">Proxy</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Map Exhibit -->
+<section class="w-full mb-section-mobile px-0 bg-map-frame pt-stack-md pb-stack-lg flex flex-col border-y border-border-strong">
+<div class="px-margin-page mb-stack-sm flex justify-between items-end">
+<span class="font-label-mono text-label-mono text-border-hairline uppercase tracking-widest">Real-Data Snapshot</span>
+</div>
+<div class="w-full h-[360px] bg-primary-fixed relative overflow-hidden">
+<div class="absolute inset-0 bg-map-frame/20 mix-blend-multiply z-10"></div>
+<img class="w-full h-full object-cover grayscale opacity-90" data-alt="A highly detailed, stark, and minimalist dark-mode map visualization of Almaty, Kazakhstan focusing on Abay Avenue. The map uses deep charcoal, muted black, and subtle sage green lines to indicate roads and traffic flow. The aesthetic is extremely analytical, raw, and data-driven, resembling a military or civic engineering terminal. No text labels, just geometric road networks intersecting sharply." data-location="Almaty, Kazakhstan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB295WMDy7_2n3RcMy__iVl7I_UQr-u-dQGolxVppZtgyCmFn-WGkntlpKcJ2jgjw-l7esDbn7Pl2o3sTHGcOh10emDuB0z5n33YATkM7m-vlPVbw7PbmApuQqXEpIxUelCvOhHFzVYo2bZLKZVUcQyshbRKZdwlYA1EsWd7Ar6sOx4YgdoUbphj08mKVOauWpHBJqHWWuvsAJIYDGuWw4UR5WG8Qx3dgOXdSCYhtN28gpK4o4dWkCSQ55G7gjDBHNUzA3rFJAOnkYX"/>
+<div class="absolute bottom-2 right-2 z-20 text-[9px] font-label-mono text-white/50">© OpenStreetMap contributors</div>
+</div>
+<div class="px-margin-page mt-stack-sm">
+<p class="font-table-header text-table-header text-surface-container-highest">Supporting evidence: Road geometry snapshot</p>
+</div>
+</section>
+<!-- Technical Sections -->
+<section class="px-margin-page flex flex-col gap-section-mobile">
+<!-- Evidence Checks -->
+<div class="flex flex-col gap-stack-md">
+<h3 class="font-label-mono text-label-mono text-ink-quiet uppercase border-b border-border-hairline pb-2">Evidence Checks</h3>
+<ul class="flex flex-col gap-stack-sm">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary text-[18px] mt-0.5">check_circle</span>
+<div class="flex flex-col">
+<span class="font-body-md text-primary">Simulation Fidelity</span>
+<span class="font-table-header text-ink-secondary">SUMO Micro-simulation used</span>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-risk-ink text-[18px] mt-0.5">warning</span>
+<div class="flex flex-col">
+<span class="font-body-md text-primary">Live Traffic Validation</span>
+<span class="font-table-header text-risk-ink uppercase">Missing</span>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary text-[18px] mt-0.5">check_circle</span>
+<div class="flex flex-col">
+<span class="font-body-md text-primary">Geometric Accuracy</span>
+<span class="font-table-header text-ink-secondary">OSM Network imported</span>
+</div>
+</li>
+</ul>
+</div>
+<!-- Downloads & Reproduce -->
+<div class="flex flex-col gap-stack-lg p-stack-lg bg-surface-primary border border-border-hairline rounded">
+<div class="flex flex-col gap-stack-sm">
+<h3 class="font-label-mono text-label-mono text-ink-quiet uppercase">Reproduce</h3>
+<div class="grid grid-cols-2 gap-stack-sm font-label-mono text-[11px]">
+<div class="flex flex-col"><span class="text-ink-quiet">Run ID</span><span class="text-primary truncate">ALM-ABY-884</span></div>
+<div class="flex flex-col"><span class="text-ink-quiet">Seed</span><span class="text-primary truncate">42</span></div>
+<div class="flex flex-col col-span-2"><span class="text-ink-quiet">Fingerprint</span><span class="text-primary truncate">sha256:8f4a2b...</span></div>
+</div>
+</div>
+<div class="border-t border-border-hairline pt-stack-md flex flex-wrap gap-2">
+<button class="px-3 py-1.5 border border-border-hairline rounded bg-canvas-paper font-label-mono text-[10px] text-ink-secondary hover:text-primary transition-colors uppercase tracking-wider">HTML Dossier</button>
+<button class="px-3 py-1.5 border border-border-hairline rounded bg-canvas-paper font-label-mono text-[10px] text-ink-secondary hover:text-primary transition-colors uppercase tracking-wider">JSON Evid.</button>
+<button class="px-3 py-1.5 border border-border-hairline rounded bg-canvas-paper font-label-mono text-[10px] text-ink-secondary hover:text-primary transition-colors uppercase tracking-wider">KPI CSV</button>
+</div>
+</div>
+<!-- Limitations -->
+<div class="flex flex-col gap-stack-sm mb-stack-xl">
+<h3 class="font-label-mono text-label-mono text-ink-quiet uppercase border-b border-border-hairline pb-2">Methods &amp; Limitations</h3>
+<p class="font-body-md text-body-md text-ink-secondary mt-2">
+                    This simulation relies on heuristic traffic demand models rather than real-time induction loop data. The emission proxies are calculated using standard HBEFA models without local fleet composition adjustment.
+                </p>
+<p class="font-body-md text-body-md text-ink-secondary">
+                    Results indicate potential flow improvement, but funding should be contingent on a limited real-world pilot to validate these synthetic findings.
+                </p>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-stack-xxl border-t border-border-hairline bg-canvas-paper dark:bg-canvas-paper flex flex-col md:flex-row justify-between items-start px-margin-page max-w-[1320px] mx-auto gap-stack-md">
+<span class="font-headline-md text-headline-md text-primary mb-stack-sm md:mb-0">ALMATY MOBILITY</span>
+<div class="flex flex-col gap-stack-sm">
+<a class="font-label-mono text-label-mono text-ink-quiet hover:text-ink-secondary underline opacity-80 hover:opacity-100" href="#">Terms of Evidence</a>
+<a class="font-label-mono text-label-mono text-ink-quiet hover:text-ink-secondary underline opacity-80 hover:opacity-100" href="#">Data Privacy</a>
+<a class="font-label-mono text-label-mono text-ink-quiet hover:text-ink-secondary underline opacity-80 hover:opacity-100" href="#">Methodology Appendix</a>
+</div>
+<p class="font-label-mono text-label-mono text-ink-quiet mt-stack-md md:mt-0 max-w-[200px]">
+            © 2024 Municipal Decision Record. University of Almaty Civic Research.
+        </p>
+</footer>
+</body></html>

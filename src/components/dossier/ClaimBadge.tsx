@@ -9,11 +9,11 @@ const CLAIM_LEVELS: ClaimLevel[] = [
 ];
 
 const CLAIM_STYLES: Record<ClaimLevel, string> = {
-  demo: "border-stone-500/45 bg-stone-400/10 text-stone-200",
-  proxy: "border-amber-500/50 bg-amber-500/10 text-amber-100",
-  calibrated: "border-cyan-500/50 bg-cyan-500/10 text-cyan-100",
-  "real-data": "border-emerald-500/50 bg-emerald-500/10 text-emerald-100",
-  "procurement-ready": "border-teal-400/55 bg-teal-400/10 text-teal-100",
+  demo: "border-[var(--line-strong)] bg-[var(--canvas)] text-[var(--muted)]",
+  proxy: "border-[var(--line-strong)] bg-[var(--sand-wash)] text-[var(--sand-ink)]",
+  calibrated: "border-[var(--line-strong)] bg-[var(--sage-wash)] text-[var(--sage)]",
+  "real-data": "border-[var(--line-strong)] bg-[var(--sage-wash)] text-[var(--sage)]",
+  "procurement-ready": "border-[var(--sage)] bg-[var(--sage)] text-[var(--surface-raised)]",
 };
 
 export function normalizeClaimLevel(claimLevel: ClaimInput): ClaimLevel {
@@ -36,7 +36,7 @@ export default function ClaimBadge({
 
   return (
     <span
-      className={`inline-flex w-fit items-center rounded-full border font-mono uppercase tracking-[0.08em] ${sizeClass} ${CLAIM_STYLES[normalized]}`}
+      className={`inline-flex w-fit items-center rounded-full border font-mono font-medium uppercase leading-none tracking-[0.08em] ${sizeClass} ${CLAIM_STYLES[normalized]}`}
     >
       {normalized}
     </span>
