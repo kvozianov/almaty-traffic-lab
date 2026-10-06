@@ -8,13 +8,13 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <main id="main-content" tabIndex={-1} className="state-page" role="alert">
-      <div className="state-card">
-        <p className="state-eyebrow">Evidence boundary</p>
-        <h1 className="state-title">Evidence is unavailable.</h1>
-        <p className="state-copy">The dossier could not be loaded safely. No partial KPI result is shown.</p>
-        <button className="state-action" onClick={reset} type="button">Try again</button>
-      </div>
+    <main id="main-content" className="page" role="alert" style={{ padding: "96px var(--gutter) 128px" }}>
+      <p className="label">Something went wrong</p>
+      <h1 className="title" style={{ marginTop: 12 }}>The page could not be shown.</h1>
+      <p className="body" style={{ marginTop: 8 }}>No partial result is displayed. Try again, or reload the page.</p>
+      <button className="btn btn-primary" onClick={reset} type="button" style={{ marginTop: 24 }}>
+        Try again
+      </button>
     </main>
   );
 }

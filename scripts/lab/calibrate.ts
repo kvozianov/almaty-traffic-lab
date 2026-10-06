@@ -1,7 +1,7 @@
 /**
  * Plausibility calibration of the demand scale (NOT a calibration against
  * observed counts). Finds the morning-peak trip total at which the main road
- * network reaches a target average speed, then writes public/lab/calibration.json.
+ * network reaches a target average speed, then writes public/model/calibration.json.
  *
  *   npx tsx scripts/lab/calibrate.ts [--target-speed 27]
  */
@@ -12,8 +12,8 @@ import type { Calibration, RawCityGraph, RawDemand } from "../../src/lab/engine"
 const args = process.argv.slice(2);
 const targetSpeed = Number(args[args.indexOf("--target-speed") + 1] || 27);
 
-const graph = JSON.parse(readFileSync("public/lab/city-graph.json", "utf8")) as RawCityGraph;
-const demand = JSON.parse(readFileSync("public/lab/demand.json", "utf8")) as RawDemand;
+const graph = JSON.parse(readFileSync("public/model/city-graph.json", "utf8")) as RawCityGraph;
+const demand = JSON.parse(readFileSync("public/model/demand.json", "utf8")) as RawDemand;
 
 function evaluate(totalTrips: number) {
   const model = buildModel(graph, demand, { totalTrips, note: "" });
@@ -43,5 +43,5 @@ const calibration: Calibration = {
     `Plausibility scale: morning-peak car trips on the main network chosen so that the average ` +
     `network speed is about ${targetSpeed} km/h. Not fitted to observed counts.`,
 };
-writeFileSync("public/lab/calibration.json", JSON.stringify(calibration, null, 2) + "\n");
+writeFileSync("public/model/calibration.json", JSON.stringify(calibration, null, 2) + "\n");
 console.log("final", totalTrips, evaluate(totalTrips));

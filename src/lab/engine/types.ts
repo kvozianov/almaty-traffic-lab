@@ -31,6 +31,8 @@ export interface RawSection {
   lengthM: number;
   edges: number[];
   minLanes: number;
+  /** Typical lanes per direction (length-weighted mode). */
+  lanes: number;
   signals: number;
   bbox: [number, number, number, number];
 }

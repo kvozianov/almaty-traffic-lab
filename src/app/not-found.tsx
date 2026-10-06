@@ -1,16 +1,20 @@
 import Link from "next/link";
+import SiteFooter from "@/components/site/SiteFooter";
+import SiteHeader from "@/components/site/SiteHeader";
 
 export default function NotFound() {
   return (
-    <main id="main-content" tabIndex={-1} className="state-page">
-      <div className="state-card">
-        <p className="state-eyebrow">404 · Outside the release</p>
-        <h1 className="state-title">Page not found.</h1>
-        <p className="state-copy">This route is not part of the published portfolio case study.</p>
-        <Link className="state-action" href="/scenarios/abay-signal-retiming/dossier">
-          Open the Abay case dossier
+    <>
+      <SiteHeader />
+      <main id="main-content" className="page" style={{ padding: "96px var(--gutter) 128px" }}>
+        <p className="label">404</p>
+        <h1 className="title" style={{ marginTop: 12 }}>This street isn’t on our map.</h1>
+        <p className="body" style={{ marginTop: 8 }}>The page you opened does not exist.</p>
+        <Link className="btn btn-primary" href="/lab" style={{ marginTop: 24 }}>
+          Open the lab
         </Link>
-      </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </>
   );
 }

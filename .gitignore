@@ -72,3 +72,6 @@ playwright-report/
 # Claude Code local state (launch config is shared)
 .claude/*
 !.claude/launch.json
+
+# Copied from node_modules by scripts/copy-maplibre-worker.mjs
+public/vendor/

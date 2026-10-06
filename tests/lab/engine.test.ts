@@ -22,7 +22,7 @@ import { linkParams } from "../../src/lab/engine/model";
 import { DEFAULT_GAP } from "../../src/lab/engine/paths";
 import { applyChanges } from "../../src/lab/engine/scenario";
 
-const DIR = "public/lab";
+const DIR = "public/model";
 const read = (f: string) => readFileSync(`${DIR}/${f}`);
 const graph = JSON.parse(read("city-graph.json").toString()) as RawCityGraph;
 const demand = JSON.parse(read("demand.json").toString()) as RawDemand;
@@ -139,8 +139,8 @@ describe("interventions", () => {
     const before = linkParams(model, applyChanges(model, []));
     const after = linkParams(model, applyChanges(model, [{ type: "busLane", section }]));
     for (const e of graph.sections[section].edges) expect(after.cap[e]).toBeLessThan(before.cap[e]);
-    const single = graph.sections.findIndex((s) => s.minLanes === 1);
-    expect(isChangeAvailable(model, "busLane", single)).toBe(false);
+    const single = graph.sections.findIndex((s) => s.lanes === 1);
+    expect(isChangeAvailable(graph, "busLane", single)).toBe(false);
   });
 
   it("more green for one street costs the crossing approaches", () => {

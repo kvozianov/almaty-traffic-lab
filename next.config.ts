@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
-  async redirects() {
+  async headers() {
     return [
       {
-        source: "/",
-        destination: "/scenarios/abay-signal-retiming/dossier",
-        permanent: true,
+        // Model data is versioned by its SHA-256 manifest; let browsers revalidate cheaply.
+        source: "/model/:file*.json",
+        headers: [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }],
       },
     ];
   },

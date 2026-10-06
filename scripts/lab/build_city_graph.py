@@ -1,7 +1,7 @@
 """Build the compact Almaty road graph used by the in-browser traffic engine.
 
 Input:  an Overpass JSON snapshot of Almaty drivable roads (committed in cache/).
-Output: public/lab/city-graph.json (column-oriented, deterministic).
+Output: public/model/city-graph.json (column-oriented, deterministic).
 
 Pipeline: filter road classes -> split ways at intersections and signals ->
 merge chains with identical attributes -> direct edges -> keep the largest
@@ -24,7 +24,7 @@ from osm_names import english_name, short_name  # noqa: E402
 
 SCHEMA = "almaty-traffic-lab/city-graph/v1"
 DEFAULT_SNAPSHOT = Path("cache/910b537ad7f4f3eeb8738b353402448cfb888b2a.json")
-DEFAULT_OUT = Path("public/lab/city-graph.json")
+DEFAULT_OUT = Path("public/model/city-graph.json")
 
 CLASSES = [
     "motorway", "trunk", "primary", "secondary", "tertiary",
@@ -493,11 +493,25 @@ def build(snapshot: Path) -> dict:
     def most_common(counter):
         return max(sorted(counter), key=lambda k: counter[k]) if counter else None
 
-    streets = []
+    # Display name per grouping key; keys that share an English name (e.g. the
+    # Kazakh- and Russian-tagged halves of one street) become one street.
+    display = {}
     for name in street_names:
         en = en_names.get(name)
         best_en = max(sorted(en), key=lambda k: (k[0], en[k])) if en else None
-        streets.append({"name": best_en[1] if best_en else name, "nameLocal": most_common(local_names.get(name))})
+        display[name] = best_en[1] if best_en else name
+    final_names = sorted(set(display.values()))
+    final_index = {n: i for i, n in enumerate(final_names)}
+    final_rank = [9] * len(final_names)
+    final_local: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for name in street_names:
+        f = final_index[display[name]]
+        final_rank[f] = min(final_rank[f], street_rank[street_index[name]])
+        for local, count in local_names.get(name, {}).items():
+            final_local[display[name]][local] += count
+    streets = [{"name": n, "nameLocal": most_common(final_local.get(n))} for n in final_names]
+    street_index = {name: final_index[display[name]] for name in street_names}
+    street_rank = final_rank
 
     seg_street, seg_nodes_idx, seg_len, seg_geom = [], [], [], []
     node_streets: dict[int, set[int]] = defaultdict(set)
@@ -571,12 +585,18 @@ def build(snapshot: Path) -> dict:
         xs = [lon[edges["from"][e]] for e in sec_edges] + [lon[edges["to"][e]] for e in sec_edges]
         ys = [lat[edges["from"][e]] for e in sec_edges] + [lat[edges["to"][e]] for e in sec_edges]
         min_lanes = min(edges["lanes"][e] for e in sec_edges)
+        # Typical lanes per direction: length-weighted mode (ignores short ramps).
+        lane_len: dict[int, float] = defaultdict(float)
+        for e in sec_edges:
+            lane_len[edges["lanes"][e]] += edges["length"][e]
+        typical_lanes = max(sorted(lane_len), key=lambda k: lane_len[k])
         section_out.append({
             "street": sec["street"],
             "label": label,
             "lengthM": sec["lengthM"],
             "edges": sec_edges,
             "minLanes": min_lanes,
+            "lanes": typical_lanes,
             "signals": sum(1 for e in sec_edges if node_signal[edges["to"][e]]),
             "bbox": [round(min(xs), 5), round(min(ys), 5), round(max(xs), 5), round(max(ys), 5)],
         })

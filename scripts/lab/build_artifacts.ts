@@ -1,6 +1,6 @@
 /**
  * Precomputes baseline flows for every period (so the map is coloured on first
- * paint) and writes public/lab/manifest.json with SHA-256 hashes of all inputs.
+ * paint) and writes public/model/manifest.json with SHA-256 hashes of all inputs.
  * The browser recomputes the same baseline in a worker; the engine tests check
  * that both agree.
  *
@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { buildModel, canonicalJson, emptyScenario, ENGINE_VERSION, PERIODS, runAssignment } from "../../src/lab/engine";
 import type { Calibration, RawCityGraph, RawDemand } from "../../src/lab/engine";
 
-const DIR = "public/lab";
+const DIR = "public/model";
 const sha = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
 
 const files = ["city-graph.json", "demand.json", "calibration.json"] as const;
