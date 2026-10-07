@@ -1,11 +1,22 @@
 import type { Calibration, RawCityGraph, RawDemand } from "./types";
 
-/** Minutes of uniform (Webster) delay at a signal: 0.5 * cycle * (1 - g)^2. */
+/** Signal timing assumed at every signalised approach. */
 export const SIGNAL_CYCLE_S = 90;
 export const DEFAULT_GREEN = 0.5;
+/** HCM analysis period (hours) for the overflow-queue delay term. */
+export const ANALYSIS_PERIOD_H = 0.25;
 export const BPR_ALPHA = 0.15;
 export const ACCESS_SPEED_KMH = 20;
+/**
+ * A closed main road is not a dead end in a real city: drivers with no other
+ * main-road option spread over the side streets around it. Closed links
+ * therefore become a slow detour: 10 km/h when empty, with room for about
+ * 2,500 cars an hour (several parallel side streets), filling up like any road.
+ */
+export const DETOUR_SPEED_KMH = 10;
+export const DETOUR_CAPACITY = 2500;
 
+/** Uniform (Webster) delay in minutes at zero flow: 0.5 * cycle * (1 - g)^2. */
 export function signalDelayMin(green: number): number {
   const red = 1 - green;
   return (0.5 * SIGNAL_CYCLE_S * red * red) / 60;
@@ -85,13 +96,19 @@ export function buildModel(graph: RawCityGraph, demand: RawDemand, calibration: 
 
 /** Per-scenario link parameters. */
 export interface LinkParams {
-  /** Free-flow time, minutes. */
+  /** Free-flow time along the link, minutes. */
   t0: Float64Array;
-  /** Capacity, vehicles per hour. */
+  /** Mid-block capacity, vehicles per hour (lanes × per-lane capacity). */
   cap: Float64Array;
-  /** Fixed signal delay, minutes. */
+  /** Capacity of the signalised approach at the link end (cap × green share), or 0 without a signal. */
+  sigCap: Float64Array;
+  /** Green share of the signal at the link end. */
+  green: Float64Array;
+  /** Signal delay at zero flow, minutes (for reference and free-flow times). */
   delay: Float64Array;
   closed: Uint8Array;
+  /** 1 for a closed main road now standing for a side-street detour. */
+  detour: Uint8Array;
 }
 
 export interface LinkInputs {
@@ -114,14 +131,27 @@ export function linkParams(model: CityModel, inputs: LinkInputs): LinkParams {
   const m = model.edgeCount;
   const t0 = new Float64Array(m);
   const cap = new Float64Array(m);
+  const sigCap = new Float64Array(m);
+  const green = new Float64Array(m);
   const delay = new Float64Array(m);
+  const detour = new Uint8Array(m);
   for (let i = 0; i < m; i++) {
+    if (inputs.closed[i]) {
+      detour[i] = 1;
+      t0[i] = (model.length[i] / 1000 / DETOUR_SPEED_KMH) * 60;
+      cap[i] = DETOUR_CAPACITY;
+      continue;
+    }
     t0[i] = model.length[i] / 1000 / inputs.freeSpeed[i] * 60;
-    const green = model.signal[i] ? inputs.green[i] : 1;
-    cap[i] = Math.max(1, inputs.lanes[i] * model.capPerLane[i] * green);
-    delay[i] = model.signal[i] ? signalDelayMin(inputs.green[i]) : 0;
+    cap[i] = Math.max(1, inputs.lanes[i] * model.capPerLane[i]);
+    if (model.signal[i]) {
+      green[i] = inputs.green[i];
+      sigCap[i] = Math.max(1, cap[i] * inputs.green[i]);
+      delay[i] = signalDelayMin(inputs.green[i]);
+    }
   }
-  return { t0, cap, delay, closed: inputs.closed.slice() };
+  // Nothing is removed from routing: closures act through the detour parameters.
+  return { t0, cap, sigCap, green, delay, closed: new Uint8Array(m), detour };
 }
 
 /** Metres per degree at Almaty's latitude (43.24°), fixed so results are identical in every browser. */
@@ -147,4 +177,9 @@ export function nearestNodes(model: CityModel, lon: number, lat: number, count: 
   }
   scored.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   return scored.slice(0, count).map(([, v]) => v);
+}
+
+/** Capacity that binds on an edge: the signalised approach if there is one. */
+export function effectiveCapacity(p: LinkParams, i: number): number {
+  return p.sigCap[i] > 0 ? p.sigCap[i] : p.cap[i];
 }

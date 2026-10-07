@@ -58,7 +58,8 @@ for (const device of [
     // Streets that changed are labelled on the map and can be pinned from the list.
     const pills = page.locator(".maplibregl-marker button");
     assert.ok((await pills.count()) >= 3, "affected streets are labelled on the map");
-    const row = page.locator("ul button", { hasText: "Satbayev" }).first();
+    // First row of "Where traffic moved" (rows are toggle buttons showing a percentage).
+    const row = page.locator("button[aria-pressed]").filter({ hasText: "%" }).first();
     await row.click();
     assert.equal(await row.getAttribute("aria-pressed"), "true");
     const toggle = page.getByRole("button", { name: /moving traffic|Traffic moving/ });

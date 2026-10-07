@@ -317,6 +317,15 @@ export default function LabMap({
     );
   }, [ready, highlightStreet]);
 
+  // No moving dots on closed roads: their remaining flow stands for side-street detours.
+  const particleFlow = useMemo(() => {
+    const flow = coloring.kind === "load" ? coloring.flow : coloring.after;
+    if (closedSections.length === 0) return flow;
+    const out = Float64Array.from(flow);
+    for (const s of closedSections) for (const e of data.graph.sections[s]?.edges ?? []) out[e] = 0;
+    return out;
+  }, [coloring, closedSections, data]);
+
   // Particle colour follows the map: dark "cars" on the load map; red/blue where traffic grew/shrank.
   const tones = useMemo(() => {
     const out = new Uint8Array(edgeCount).fill(TONES.indexOf("ink"));
@@ -381,7 +390,7 @@ export default function LabMap({
       <FlowParticles
         map={mapInstance}
         data={data}
-        flow={coloring.kind === "load" ? coloring.flow : coloring.after}
+        flow={particleFlow}
         time={coloring.time}
         tones={tones}
         focusStreet={highlightStreet}

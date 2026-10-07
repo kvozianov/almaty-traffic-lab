@@ -20,8 +20,8 @@ Then make your own: click any coloured road, pick *Close for repairs*, *Give a l
 | | |
 |---|---|
 | **Real streets** | 3,505 junctions, 6,871 one-way road links and 665 traffic signals of Almaty’s main road network, built from an OpenStreetMap snapshot (April 2026) with lanes, speed limits and English street names. |
-| **Estimated demand** | 275,000 morning-peak car trips between 135 zones, from a gravity model on homes (residential street length) and jobs (street length, boosted towards the centre). |
-| **Equilibrium routing** | Every driver takes the fastest route given everyone else’s choices (Wardrop user equilibrium, BPR travel-time curves, Webster signal delay), solved by path-based gradient projection. |
+| **Calibrated to real Almaty traffic** | Demand follows the city's 2023 transport master plan (60% of jobs in the centre, 55% of residents outside it); rush-hour volumes and trip lengths are fitted to published measurements — Sergek ITS corridor speeds, a year-long Abay Avenue commute log and the Yandex Traffic weekday profile. 212,000 car trips in the morning peak, 266,000 in the evening peak. |
+| **Equilibrium routing** | Every driver takes the fastest route given everyone else’s choices (Wardrop user equilibrium; BPR link curves plus Highway Capacity Manual signal delay with queue growth), solved by path-based gradient projection. |
 | **Instant scenarios** | A change starts from today’s routes, so only affected trips move: results in about a second on a laptop, in a Web Worker, with no server. |
 | **Visible traffic** | Moving dots show where cars go and how fast (density = traffic, speed = modelled speed); the streets that gained or lost traffic are labelled on the map and highlighted when you point at them. |
 | **Honest output** | Plain-English headline, city-wide metrics, streets that gained or lost traffic, and a “How much to trust this” note that separates real data from estimates. |
@@ -87,9 +87,21 @@ BASE_URL=http://localhost:3100 node tests/e2e/visitor-flow.mjs
 
 The engine tests check, among other things, that the path-based solver agrees with an independently written conjugate Frank–Wolfe solver, that closing a road moves its traffic onto parallel streets, that extra green for one street costs the crossing streets, and that a no-change scenario leaves the city where it was.
 
+## How well it matches reality
+
+| Measurement | Measured | Model |
+|---|---:|---:|
+| Abay Avenue, central 6 km, 7:30–8:30 | 12 km/h | 15 km/h |
+| Al-Farabi Avenue, eastbound, 17:00–18:00 | 46 km/h | 42 km/h |
+| Sain Street, southbound, 17:00–18:00 | 27 km/h | 47 km/h |
+| Abay Avenue, central 6 km, 17:00–18:00 | 6.4 km/h | 9 km/h |
+
+Median speed error 35%. Sain Street is the outlier: its jams come from interchange merges that a static model does not represent.
+**Hold-out check** (not used for fitting): of Sergek ITS's 15 most congested junctions (Feb 2025), 11 of the 14 found in the network rank in the model's most delayed quarter of junctions in the evening peak, 6 in the top tenth. Sources and method: the lab's *How it works* page and [`public/model/observations.json`](public/model/observations.json).
+
 ## Limits
 
-- Demand is estimated, not surveyed, and the model has not yet been checked against measured travel times.
+- Demand is estimated and fitted to a handful of published measurements; Almaty has no open origin-destination survey or street-by-street hourly counts.
 - Only cars on main roads; buses, residential streets and parking are not modelled.
 - A static peak-hour model: it does not show queues building and clearing minute by minute.
 - Use it to compare scenarios. Do not read the numbers as forecasts.

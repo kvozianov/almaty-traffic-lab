@@ -1,14 +1,15 @@
 import type { Change, DevelopmentKind, PeriodId, RawCityGraph, SectionChangeType } from "./engine/types";
 
 export const PERIOD_LABELS: Record<PeriodId, { short: string; long: string; time: string }> = {
-  am: { short: "Morning", long: "Morning peak", time: "8–9 am" },
-  midday: { short: "Midday", long: "Midday", time: "1–2 pm" },
-  pm: { short: "Evening", long: "Evening peak", time: "6–7 pm" },
-  night: { short: "Night", long: "Night", time: "11 pm" },
+  // Hours follow the Yandex Traffic weekday profile used for calibration.
+  am: { short: "Morning", long: "Morning peak", time: "around 9 am" },
+  midday: { short: "Midday", long: "Midday", time: "noon–5 pm" },
+  pm: { short: "Evening", long: "Evening peak", time: "6:30–7:30 pm" },
+  night: { short: "Night", long: "Night", time: "late evening" },
 };
 
 export const CHANGE_LABELS: Record<SectionChangeType, { title: string; verb: string; detail: string }> = {
-  close: { title: "Close for repairs", verb: "Closed", detail: "No cars in either direction." },
+  close: { title: "Close for repairs", verb: "Closed", detail: "No through traffic; the rest crawl via side streets." },
   busLane: { title: "Give a lane to buses", verb: "Bus lane on", detail: "One lane fewer for cars each way." },
   addLane: { title: "Widen by one lane", verb: "Extra lane on", detail: "One more lane each way." },
   greenWave: {

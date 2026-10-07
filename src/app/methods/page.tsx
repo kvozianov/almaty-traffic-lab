@@ -5,6 +5,14 @@ import SiteFooter from "@/components/site/SiteFooter";
 import SiteHeader, { REPO_URL } from "@/components/site/SiteHeader";
 import { DEVELOPMENT_RATES } from "@/lab/engine/demand";
 import { DEVELOPMENT_LABELS } from "@/lab/format";
+import RealityCheck, { type CalibrationReport } from "@/components/methods/RealityCheck";
+import type { Observations } from "@/lab/engine/observed";
+import calibration from "../../../public/model/calibration.json";
+import demandFile from "../../../public/model/demand.json";
+import observationsFile from "../../../public/model/observations.json";
+
+const observations = observationsFile as unknown as Observations;
+const demand = demandFile as unknown as { zones: unknown[] };
 
 export const metadata: Metadata = {
   title: "How it works",
@@ -12,7 +20,10 @@ export const metadata: Metadata = {
 };
 
 const CHANGES = [
-  ["Close for repairs", "Every road link of the section is removed from the network in both directions."],
+  [
+    "Close for repairs",
+    "The section stops working as a main road in both directions. Drivers with no other main-road option squeeze through side streets, modelled as a detour at 10 km/h with room for about 2,500 cars an hour, which fills up like any road.",
+  ],
   ["Give a lane to buses", "One lane fewer for cars in each direction (only where there are at least two)."],
   ["Widen by one lane", "One more lane in each direction, so capacity grows by one lane’s worth."],
   [
@@ -65,7 +76,8 @@ export default function MethodsPage() {
             <p className="body">
               Each link gets lanes and a speed limit from OpenStreetMap (or a default for its road class) and a
               capacity of 1,200–1,900 cars per lane per hour depending on the class. At a signal, cars get green
-              half of the time, which halves capacity and adds an average wait of about 11 seconds.
+              half of a 90-second cycle, so the approach carries half the lanes’ capacity; an empty junction costs
+              about 11 seconds, and the wait grows as a queue builds.
             </p>
           </div>
         </section>
@@ -75,16 +87,18 @@ export default function MethodsPage() {
           <div>
             <h2 className="title">Who drives where</h2>
             <p className="body">
-              Almaty has no public survey of where trips start and end, so demand is estimated. The city is divided
-              into 135 zones on a 2 km grid. Homes are approximated by the length of residential streets in a zone;
-              jobs and services by the length of all streets, boosted towards the central business district. A
+              Almaty has no public survey of where every trip starts and ends, so demand is estimated, but pinned to
+              the city’s own figures. The city is divided into {demand.zones.length} zones on a 2 km grid. Homes follow
+              the length of residential streets and jobs the length of all streets, rescaled so that, as the 2023
+              transport master plan states, {Math.round(observations.structure.jobsInCentreShare * 100)}% of jobs are in
+              the centre (Raiymbek to Al-Farabi, Sain to Dostyk) and{" "}
+              {Math.round(observations.structure.residentsOutsideCentreShare * 100)}% of residents live outside it. A
               gravity model then sends more trips to attractive zones that are close:
             </p>
-            <pre className={styles.formula}>{`trips(i → j) = homes(i) × jobs(j) × e^(−0.1 × minutes(i → j)) / Σk jobs(k) × e^(−0.1 × minutes(i → k))`}</pre>
+            <pre className={styles.formula}>{`trips(i → j) = homes(i) × jobs(j) × e^(−β × minutes(i → j)) / Σk jobs(k) × e^(−β × minutes(i → k))`}</pre>
             <p className="body">
-              The total is scaled so the morning peak averages about 27 km/h on the main network, a plausible value
-              for Almaty. That gives 275,000 car trips in the peak hour. The evening peak mirrors the morning;
-              midday and night use 60% and 15% of the morning volume.
+              How many cars there are at each time of day, and how far people drive (β), are not guessed: they are
+              fitted to published measurements of Almaty traffic, shown in section 03.
             </p>
           </div>
         </section>
@@ -92,11 +106,29 @@ export default function MethodsPage() {
         <section className={styles.section}>
           <p className="label">03</p>
           <div>
+            <h2 className="title">Checked against real Almaty traffic</h2>
+            <p className="body">
+              No open dataset gives hourly traffic for every Almaty street: Yandex, 2GIS, TomTom and the city’s Sergek
+              cameras keep theirs. What is public are individual measurements. The model is fitted to the ones below
+              and then checked against a list it never saw.
+            </p>
+            <RealityCheck obs={observations} report={calibration as unknown as CalibrationReport} />
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <p className="label">04</p>
+          <div>
             <h2 className="title">Every driver takes the fastest route</h2>
             <p className="body">
-              Travel time on a link grows with traffic, following the standard Bureau of Public Roads curve:
+              Travel time on a link grows with traffic. Between junctions it follows the standard Bureau of Public
+              Roads curve; at a traffic signal it adds the Highway Capacity Manual control delay, whose queue term
+              grows quickly once demand nears the green-time capacity. That is why signalised streets such as Abay
+              jam long before an expressway such as Al-Farabi does.
             </p>
-            <pre className={styles.formula}>{`time = free-flow time × (1 + 0.15 × (cars / capacity)⁴) + signal wait`}</pre>
+            <pre className={styles.formula}>{`link time   = free-flow time × (1 + 0.15 × (cars / capacity)⁴)
+signal wait = ½ · cycle · (1 − g)² / (1 − min(1, x) · g)  +  15 · T · [(x − 1) + √((x − 1)² + 4x / (c · T))]
+              x = cars / (capacity × g),  g = 0.5,  cycle = 90 s,  T = 0.25 h   (minutes)`}</pre>
             <p className="body">
               Drivers re-route until no one can arrive sooner by switching routes: Wardrop’s user equilibrium.
               The lab solves it with path-based gradient projection: each origin–destination pair keeps the routes
@@ -112,7 +144,7 @@ export default function MethodsPage() {
         </section>
 
         <section className={styles.section}>
-          <p className="label">04</p>
+          <p className="label">05</p>
           <div>
             <h2 className="title">What each change does</h2>
             <dl className={styles.table}>
@@ -134,7 +166,7 @@ export default function MethodsPage() {
         </section>
 
         <section className={styles.section}>
-          <p className="label">05</p>
+          <p className="label">06</p>
           <div>
             <h2 className="title">What the results mean</h2>
             <dl className={styles.table}>
@@ -169,11 +201,11 @@ export default function MethodsPage() {
         </section>
 
         <section className={styles.section}>
-          <p className="label">06</p>
+          <p className="label">07</p>
           <div>
             <h2 className="title">Limits</h2>
             <ul className={styles.limits}>
-              <li>Demand is estimated, not surveyed, and the model has not yet been checked against measured travel times.</li>
+              <li>Demand is estimated, not surveyed; it is fitted to a handful of published measurements, not to traffic counts on every street.</li>
               <li>Only cars on main roads are modelled. Buses, residential streets and parking are not.</li>
               <li>A static model: it describes an average peak hour, not queues building up and clearing minute by minute.</li>
               <li>People do not change when or whether they travel; they only change routes.</li>
@@ -183,7 +215,7 @@ export default function MethodsPage() {
         </section>
 
         <section className={styles.section}>
-          <p className="label">07</p>
+          <p className="label">08</p>
           <div>
             <h2 className="title">Reproducible by design</h2>
             <p className="body">

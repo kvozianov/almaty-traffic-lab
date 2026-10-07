@@ -9,7 +9,7 @@ product_status: implemented-local
 priority: P0
 owner: Kirill
 first_epic: false
-claim_level: proxy
+claim_level: calibrated-partial
 depends_on:
   - "[[G002 - Scenario Dossier MVP]]"
   - "[[G012 - Reproducibility And Deployment]]"
@@ -48,6 +48,13 @@ Roads and signals: `real-data` (OSM snapshot). Capacities: `proxy` (engineering 
 - Demand concentrates on Al-Farabi / Rysqulov (V/C > 2); spatial demand proxy over-weights low-density private-house districts.
 - No validation against measured travel times (planned P2: sample route times by period).
 - Browser solve time depends on device; ~2 s per example on a laptop, slower on old phones.
+
+## Calibration To Real Data (2026-10-07)
+
+- Sources (public, cited in `public/model/observations.json`): Almaty transport master plan 2023 (60% jobs in centre, 55% residents outside), Yandex Traffic weekday profile (9:00 = 5, 12–17 = 4, 18:30–19:30 = 7 points), Sergek ITS March 2025 (Al-Farabi E 46 km/h, Sain S 27 km/h at 17–18), Kolesa.kz Abay commute log (12 / 6.4 km/h), Sergek top-15 congested junctions (hold-out).
+- Model changes: demand rescaled to master-plan shares; HCM 2000 signal control delay (uniform + incremental) replaces fixed 11 s; closures become 10 km/h / 2,500 veh/h side-street detours; engine v2.0.0.
+- Fitted: β=0.18, AM 212,000 trips, midday ×0.892, PM ×1.256. Median speed error 35%; Sain S mismatch (interchange merges). Hold-out: 11/14 Sergek junctions in top quartile, 6 in top decile.
+- Claim level: `calibrated (partial)` — see Claim Ledger.
 
 ## Next Action For The Next Agent
 

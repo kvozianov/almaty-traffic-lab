@@ -5,7 +5,11 @@ import { TRUST_ITEMS } from "@/components/lab/TrustNote";
 import SiteFooter from "@/components/site/SiteFooter";
 import SiteHeader from "@/components/site/SiteHeader";
 import { EXAMPLES } from "@/lab/examples";
-import { PERIOD_LABELS } from "@/lab/format";
+import { formatInt, PERIOD_LABELS } from "@/lab/format";
+import calibration from "../../public/model/calibration.json";
+
+const tripsAm = formatInt(Math.round(calibration.totalTrips / 1000) * 1000);
+const tripsPm = formatInt(Math.round((calibration.totalTrips * calibration.periodFactors.pm) / 1000) * 1000);
 
 const HOW = [
   {
@@ -13,16 +17,16 @@ const HOW = [
     text: "3,500 junctions, 6,900 one-way road links and 665 traffic signals from OpenStreetMap, with lanes and speed limits.",
   },
   {
-    title: "Every driver takes the fastest route",
-    text: "275,000 morning trips are routed again and again until nobody can save time by switching. This is user equilibrium, the standard planning model.",
+    title: "Real rush hours",
+    text: `Traffic volumes by time of day are fitted to published Almaty data: Sergek ITS speed measurements, Yandex Traffic’s hourly profile and the city’s 2023 transport master plan. The evening peak carries ${tripsPm} car trips.`,
   },
   {
-    title: "Runs in your browser",
-    text: "No server, no waiting. A scenario re-routes the city in about a second and gets a fingerprint, so the same link always gives the same answer.",
+    title: "Every driver takes the fastest route",
+    text: "Trips are routed again and again until nobody can save time by switching: user equilibrium, the standard planning model, solved in your browser in about a second.",
   },
 ];
 
-const LEVEL = { real: "Real data", standard: "Standard values", estimate: "Estimated" };
+const LEVEL = { real: "Real data", fitted: "Fitted to real data", standard: "Standard values", estimate: "Estimated" };
 
 export default function Home() {
   return (
@@ -33,8 +37,9 @@ export default function Home() {
           <p className="label">Almaty · a traffic model in your browser</p>
           <h1 className={`display ${styles.heroTitle}`}>What happens to Almaty traffic if…</h1>
           <p className={`lead ${styles.heroLead}`}>
-            Close a street, give a lane to buses, retime the signals or build a housing estate. Then watch
-            275,000 morning car trips find new routes across the city’s real road network.
+            Close a street, give a lane to buses, retime the signals or build a housing estate. Then watch{" "}
+            {tripsAm} morning car trips find new routes across the city’s real road network, with rush hours
+            calibrated to measured Almaty traffic.
           </p>
           <div className={styles.heroActions}>
             <Link className="btn btn-primary" href="/lab">
@@ -92,7 +97,7 @@ export default function Home() {
         <section className={`page ${styles.section}`}>
           <div className={styles.sectionHead}>
             <p className="label">03</p>
-            <h2 className="title">What is real, and what is estimated</h2>
+            <h2 className="title">What is real, what is fitted, what is estimated</h2>
           </div>
           <dl className={styles.trust}>
             {TRUST_ITEMS.map((t) => (

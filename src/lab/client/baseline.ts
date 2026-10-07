@@ -13,36 +13,13 @@ export function baseCapacity(data: CityData): Float64Array {
 }
 
 const vcCache = new WeakMap<CityData, Map<PeriodId, Float64Array>>();
-const timeCache = new WeakMap<CityData, Map<PeriodId, Float64Array>>();
-
-/**
- * Congested travel time per edge (minutes) for today's baseline, with the
- * engine's default link parameters: BPR curve + Webster delay at 50 % green.
- */
-export function baselineTime(data: CityData, period: PeriodId): Float64Array {
-  let byPeriod = timeCache.get(data);
-  if (!byPeriod) {
-    byPeriod = new Map();
-    timeCache.set(data, byPeriod);
-  }
-  let time = byPeriod.get(period);
-  if (!time) {
-    const { edges, nodes } = data.graph;
-    const cap = baseCapacity(data);
-    const flow = baselineFlow(data, period);
-    const signalDelay = (0.5 * 90 * 0.25) / 60;
-    time = Float64Array.from(flow, (f, e) => {
-      const t0 = (edges.length[e] / 1000 / edges.freeSpeed[e]) * 60;
-      const r = f / cap[e];
-      return t0 * (1 + 0.15 * r * r * r * r) + (nodes.signal[edges.to[e]] ? signalDelay : 0);
-    });
-    byPeriod.set(period, time);
-  }
-  return time;
-}
-
 export function baselineFlow(data: CityData, period: PeriodId): number[] {
   return data.baseline.periods[period].flow;
+}
+
+/** Congested travel time per edge (minutes) for today's baseline, precomputed by the engine. */
+export function baselineTime(data: CityData, period: PeriodId): number[] {
+  return data.baseline.periods[period].time;
 }
 
 export function baselineVc(data: CityData, period: PeriodId): Float64Array {

@@ -36,7 +36,7 @@ export default function HomeMap() {
       <div className={styles.mapCaption}>
         <p className="label">Morning peak · today</p>
         <p className={styles.mapCaptionValue}>
-          {data ? formatInt(Math.round(data.baseline.periods.am.metrics.trips / 1000) * 1000) : "275,000"} car trips
+          {data ? formatInt(Math.round(data.baseline.periods.am.metrics.trips / 1000) * 1000) : "—"} car trips
         </p>
         <p className="small">
           Average {data ? data.baseline.periods.am.metrics.avgSpeedKmh.toFixed(0) : "27"} km/h on main roads

@@ -157,6 +157,10 @@
   color: var(--ink);
 }
 
+.level_fitted {
+  color: var(--less);
+}
+
 .level_standard {
   color: var(--ink-2);
 }

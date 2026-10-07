@@ -6,7 +6,7 @@ import { linkParams, type CityModel } from "./model";
 import { applyChanges, canonicalJson, sha256Hex } from "./scenario";
 import type { AssignmentResult, Metrics, Scenario, StreetDelta } from "./types";
 
-export const ENGINE_VERSION = "1.0.0";
+export const ENGINE_VERSION = "2.0.0";
 
 export * from "./types";
 export { buildModel } from "./model";
@@ -73,7 +73,7 @@ export function compare(
   return {
     baseline,
     scenario: result,
-    streets: streetDeltas(model, baseline, result, changedStreets(model, scenario)),
+    streets: streetDeltas(model, baseline, result, changedStreets(model, scenario), 50, applyChanges(model, scenario.changes).closed),
   };
 }
 

@@ -8,7 +8,7 @@ export const DATA_URL = "/model";
 export interface BaselineFile {
   engineVersion: string;
   dataHash: string;
-  periods: Record<PeriodId, { flow: number[]; metrics: Metrics }>;
+  periods: Record<PeriodId, { flow: number[]; time: number[]; metrics: Metrics }>;
 }
 
 export interface Manifest {

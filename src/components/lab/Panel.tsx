@@ -85,7 +85,7 @@ export function SearchBox({ data, onPick }: { data: CityData; onPick: (section: 
 const STEPS = [
   ["01", "Pick a street", "Click any coloured road on the map, or search for it."],
   ["02", "Change it", "Close it, give a lane to buses, retime its signals…"],
-  ["03", "See what happens", "275,000 morning trips find new routes in your browser."],
+  ["03", "See what happens", "Hundreds of thousands of trips find new routes in your browser."],
 ];
 
 export function Intro({

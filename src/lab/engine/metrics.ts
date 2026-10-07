@@ -1,4 +1,4 @@
-import type { CityModel, LinkParams } from "./model";
+import { effectiveCapacity, type CityModel, type LinkParams } from "./model";
 import type { Metrics, StreetDelta } from "./types";
 
 export const CONGESTED_VC = 0.9;
@@ -29,10 +29,10 @@ export function computeMetrics(
   for (let i = 0; i < m; i++) {
     const km = model.length[i] / 1000;
     if (params.closed[i]) continue;
-    vc[i] = flow[i] / params.cap[i];
+    vc[i] = flow[i] / effectiveCapacity(params, i);
     tt += flow[i] * time[i];
     vkm += flow[i] * km;
-    if (vc[i] > CONGESTED_VC) congested += km;
+    if (vc[i] > CONGESTED_VC && !params.detour[i]) congested += km;
     const speed = time[i] > 0 ? km / (time[i] / 60) : 0;
     co2 += flow[i] * km * co2GramsPerKm(speed);
   }
@@ -54,13 +54,13 @@ export function computeMetrics(
 }
 
 /** Vehicle-km and flow-weighted minutes-per-km for every named street. */
-function streetTotals(model: CityModel, flow: Float64Array, time: Float64Array) {
+function streetTotals(model: CityModel, flow: Float64Array, time: Float64Array, exclude?: Uint8Array) {
   const count = model.graph.streets.length;
   const vkm = new Float64Array(count);
   const minutes = new Float64Array(count);
   for (let i = 0; i < model.edgeCount; i++) {
     const s = model.street[i];
-    if (s < 0) continue;
+    if (s < 0 || exclude?.[i]) continue;
     vkm[s] += flow[i] * (model.length[i] / 1000);
     minutes[s] += flow[i] * time[i];
   }
@@ -74,9 +74,11 @@ export function streetDeltas(
   next: { flow: Float64Array; time: Float64Array },
   changedStreets: Set<number>,
   minBaseVehKm = 50,
+  /** Links whose scenario traffic is not on the street itself (closed roads used as side-street detours). */
+  detour?: Uint8Array,
 ): StreetDelta[] {
   const a = streetTotals(model, base.flow, base.time);
-  const b = streetTotals(model, next.flow, next.time);
+  const b = streetTotals(model, next.flow, next.time, detour);
   const out: StreetDelta[] = [];
   for (let s = 0; s < model.graph.streets.length; s++) {
     const before = a.vkm[s];

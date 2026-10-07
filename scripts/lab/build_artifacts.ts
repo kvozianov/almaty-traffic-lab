@@ -14,7 +14,7 @@ import type { Calibration, RawCityGraph, RawDemand } from "../../src/lab/engine"
 const DIR = "public/model";
 const sha = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
 
-const files = ["city-graph.json", "demand.json", "calibration.json"] as const;
+const files = ["city-graph.json", "demand.json", "calibration.json", "observations.json"] as const;
 const raw = Object.fromEntries(files.map((f) => [f, readFileSync(`${DIR}/${f}`)])) as Record<(typeof files)[number], Buffer>;
 const graph = JSON.parse(raw["city-graph.json"].toString("utf8")) as RawCityGraph;
 const demand = JSON.parse(raw["demand.json"].toString("utf8")) as RawDemand;
@@ -24,11 +24,13 @@ const model = buildModel(graph, demand, calibration);
 const inputs = Object.fromEntries(files.map((f) => [f, { sha256: sha(raw[f]), bytes: raw[f].length }]));
 const dataHash = sha(canonicalJson(inputs));
 
-const baseline: Record<string, { flow: number[]; metrics: unknown; iterations: number; relativeGap: number }> = {};
+const baseline: Record<string, { flow: number[]; time: number[]; metrics: unknown; iterations: number; relativeGap: number }> = {};
 for (const period of PERIODS) {
   const r = runAssignment(model, emptyScenario(period));
   baseline[period] = {
     flow: Array.from(r.flow, (v) => Math.round(v)),
+    // Congested minutes per link, so the page can animate today's traffic before the worker is ready.
+    time: Array.from(r.time, (v) => Math.round(v * 1e4) / 1e4),
     metrics: r.metrics,
     iterations: r.convergence.iterations,
     relativeGap: r.convergence.relativeGap,
