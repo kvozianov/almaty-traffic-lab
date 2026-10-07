@@ -19,7 +19,9 @@ export default function ResultView({
   onLayer,
   onEdit,
   onReset,
-  onFocusStreet,
+  highlightStreet,
+  onPickStreet,
+  onHoverStreet,
 }: {
   data: CityData;
   result: RunResult;
@@ -27,11 +29,14 @@ export default function ResultView({
   onLayer: (l: ResultLayer) => void;
   onEdit: () => void;
   onReset: () => void;
-  onFocusStreet: (street: number) => void;
+  highlightStreet: number | null;
+  onPickStreet: (street: number) => void;
+  onHoverStreet: (street: number | null) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const { baseline, metrics } = result;
   const streets = notableStreets(result.streets, 6);
+  const maxPct = Math.max(1, ...streets.map((s) => Math.abs(s.trafficPct)));
   const encoded = encodeScenario(result.scenario);
   const trips = metrics.trips - baseline.trips;
 
@@ -110,22 +115,41 @@ export default function ResultView({
         {streets.length === 0 ? (
           <p className="small">No street changed by more than a few percent.</p>
         ) : (
-          <ul className={styles.streetList}>
-            {streets.map((s) => (
-              <li key={s.street}>
-                <button type="button" onClick={() => onFocusStreet(s.street)}>
-                  <span>
-                    {s.name}
-                    {s.changed && <span className={styles.inlineMuted}> · your change</span>}
-                  </span>
-                  <span className={`num ${s.trafficPct > 0 ? styles.worse : styles.better}`}>
-                    <Icon name={s.trafficPct > 0 ? "up" : "down"} size={14} />
-                    {formatSigned(s.trafficPct, 0, "%")}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className={styles.streetList} onMouseLeave={() => onHoverStreet(null)}>
+              {streets.map((s) => {
+                const share = Math.min(1, Math.abs(s.trafficPct) / maxPct);
+                return (
+                  <li key={s.street}>
+                    <button
+                      type="button"
+                      aria-pressed={highlightStreet === s.street}
+                      onClick={() => onPickStreet(s.street)}
+                      onMouseEnter={() => onHoverStreet(s.street)}
+                      onFocus={() => onHoverStreet(s.street)}
+                      onBlur={() => onHoverStreet(null)}
+                    >
+                      <span className={styles.streetName}>
+                        {s.name}
+                        {s.changed && <span className={styles.inlineMuted}> · your change</span>}
+                      </span>
+                      <span className={styles.streetBar} aria-hidden="true">
+                        <span
+                          className={s.trafficPct > 0 ? styles.barMore : styles.barLess}
+                          style={{ transform: `scaleX(${Math.max(share, 0.04)})` }}
+                        />
+                      </span>
+                      <span className={`num ${styles.streetPct} ${s.trafficPct > 0 ? styles.worse : styles.better}`}>
+                        <Icon name={s.trafficPct > 0 ? "up" : "down"} size={14} />
+                        {formatSigned(s.trafficPct, 0, "%")}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="small">Point at a street to see it on the map; click to keep it highlighted.</p>
+          </>
         )}
       </div>
 

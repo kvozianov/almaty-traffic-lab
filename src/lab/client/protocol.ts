@@ -18,6 +18,9 @@ export interface RunResult {
   flow: Float64Array;
   /** Per directed edge, demand / capacity. */
   vc: Float64Array;
+  /** Per directed edge, congested travel time in minutes (before / after). */
+  baseTime: Float64Array;
+  time: Float64Array;
   streets: StreetDelta[];
   passport: RunPassport;
 }

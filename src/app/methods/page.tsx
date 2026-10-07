@@ -151,6 +151,13 @@ export default function MethodsPage() {
                 <dd className="body">Kilometres of one-way links where demand is above 90% of capacity.</dd>
               </div>
               <div>
+                <dt>Moving dots on the map</dt>
+                <dd className="body">
+                  Each dot stands for a group of cars. More dots mean more vehicle-km on that road; dots move at the
+                  modelled congested speed, with one second of animation showing 1.5 minutes of traffic.
+                </dd>
+              </div>
+              <div>
                 <dt>CO₂ from traffic</dt>
                 <dd className="body">
                   Vehicle-km × a speed-dependent emission rate (about 165 g/km at 50 km/h, 340 g/km at 10 km/h). A

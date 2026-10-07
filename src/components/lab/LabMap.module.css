@@ -21,3 +21,90 @@
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
+
+.particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.animateToggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.animateToggle:hover {
+  color: var(--ink);
+}
+
+.animateDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.animateToggle[aria-pressed="true"] .animateDot {
+  background: var(--ink);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.streetPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 1px 3px rgba(20, 20, 19, 0.12);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.streetPill:hover,
+.streetPillActive {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.pillMore {
+  font-family: var(--font-mono);
+  color: var(--more);
+}
+
+.pillLess {
+  font-family: var(--font-mono);
+  color: var(--less);
+}
+
+.streetPill:hover .pillMore,
+.streetPill:hover .pillLess,
+.streetPillActive .pillMore,
+.streetPillActive .pillLess {
+  color: inherit;
+}

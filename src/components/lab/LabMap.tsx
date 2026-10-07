@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Map as MapLibre, type MapRef } from "@vis.gl/react-maplibre";
+import { Map as MapLibre, Marker, type MapRef } from "@vis.gl/react-maplibre";
 import type { FeatureCollection, LineString } from "geojson";
 import { setWorkerUrl, type GeoJSONSource, type Map as MaplibreMap, type MapMouseEvent } from "maplibre-gl";
 import type { CityData } from "@/lab/client/data";
 import type { Change } from "@/lab/engine/types";
-import { diffColor, loadColor, type RGBA } from "./colors";
+import { DIFF_MIN_SHARE, DIFF_MIN_VEHICLES, diffColor, loadColor, type RGBA } from "./colors";
+import FlowParticles, { TONES } from "./FlowParticles";
 import styles from "./LabMap.module.css";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
@@ -16,9 +17,22 @@ if (typeof window !== "undefined") setWorkerUrl("/vendor/maplibre/maplibre-gl-wo
 export const ALMATY_VIEW = { longitude: 76.915, latitude: 43.245, zoom: 11.2 };
 const INK = "#141413";
 
+/** `time` is congested travel time per edge (minutes), used by the traffic animation. */
 export type MapColoring =
-  | { kind: "load"; flow: ArrayLike<number>; vc: ArrayLike<number> }
-  | { kind: "diff"; before: ArrayLike<number>; after: ArrayLike<number> };
+  | { kind: "load"; flow: ArrayLike<number>; vc: ArrayLike<number>; time: ArrayLike<number> }
+  | { kind: "diff"; before: ArrayLike<number>; after: ArrayLike<number>; time: ArrayLike<number> };
+
+/** A pill on the map naming a street whose traffic changed. */
+export interface StreetLabel {
+  street: number;
+  name: string;
+  pct: number;
+  lon: number;
+  lat: number;
+}
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export interface LabMapProps {
   data: CityData;
@@ -31,6 +45,11 @@ export interface LabMapProps {
   focus?: [number, number, number, number] | null;
   /** A building location chosen but not yet added to the scenario. */
   pendingPoint?: { lon: number; lat: number } | null;
+  /** Street to emphasise: drawn with a dark outline while other roads fade. */
+  highlightStreet?: number | null;
+  streetLabels?: StreetLabel[];
+  onPickStreet?: (street: number) => void;
+  onHoverStreet?: (street: number | null) => void;
   onPickSection?: (section: number) => void;
   onPickPoint?: (lon: number, lat: number) => void;
   onClear?: () => void;
@@ -62,7 +81,7 @@ function roadsGeoJson(data: CityData): FeatureCollection<LineString> {
     features: data.paths.map((coordinates, e) => ({
       type: "Feature",
       id: e,
-      properties: { section: data.graph.edges.section[e] },
+      properties: { section: data.graph.edges.section[e], street: data.graph.edges.street[e] },
       geometry: { type: "LineString", coordinates },
     })),
   };
@@ -82,6 +101,10 @@ export default function LabMap({
   interactive = true,
   focus = null,
   pendingPoint = null,
+  highlightStreet = null,
+  streetLabels = [],
+  onPickStreet,
+  onHoverStreet,
   onPickSection,
   onPickPoint,
   onClear,
@@ -89,6 +112,8 @@ export default function LabMap({
   const mapRef = useRef<MapRef>(null);
   const [ready, setReady] = useState(false);
   const [hoverSection, setHoverSection] = useState<number | null>(null);
+  const [mapInstance, setMapInstance] = useState<MaplibreMap | null>(null);
+  const [animate, setAnimate] = useState(() => !prefersReducedMotion());
   const edgeCount = data.graph.edges.from.length;
 
   // Latest callbacks for the imperative map listeners.
@@ -142,6 +167,17 @@ export default function LabMap({
     map.addLayer(
       {
         id: "roads-halo",
+        type: "line",
+        source: "roads",
+        filter: none as never,
+        layout: round,
+        paint: { "line-color": INK, "line-width": haloWidth as never, "line-offset": offset as never },
+      },
+      before,
+    );
+    map.addLayer(
+      {
+        id: "roads-street",
         type: "line",
         source: "roads",
         filter: none as never,
@@ -236,6 +272,7 @@ export default function LabMap({
       if (s >= 0) h.onPickSection?.(s);
       else h.onClear?.();
     });
+    setMapInstance(map);
     setReady(true);
   };
 
@@ -269,6 +306,31 @@ export default function LabMap({
   }, [ready, selectedSection, changedSections, closedSections, hoverSection, placing, developments, pendingPoint]);
 
   useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!ready || !map) return;
+    const on = highlightStreet !== null;
+    map.setFilter("roads-street", ["==", ["get", "street"], on ? highlightStreet : -2] as never);
+    map.setPaintProperty(
+      "roads",
+      "line-opacity",
+      (on ? ["case", ["==", ["get", "street"], highlightStreet], 1, 0.28] : 1) as never,
+    );
+  }, [ready, highlightStreet]);
+
+  // Particle colour follows the map: dark "cars" on the load map; red/blue where traffic grew/shrank.
+  const tones = useMemo(() => {
+    const out = new Uint8Array(edgeCount).fill(TONES.indexOf("ink"));
+    if (coloring.kind === "diff") {
+      for (let e = 0; e < edgeCount; e++) {
+        const d = coloring.after[e] - coloring.before[e];
+        const noise = Math.abs(d) < DIFF_MIN_VEHICLES || Math.abs(d) / Math.max(coloring.before[e], 100) < DIFF_MIN_SHARE;
+        out[e] = TONES.indexOf(noise ? "same" : d > 0 ? "more" : "less");
+      }
+    }
+    return out;
+  }, [coloring, edgeCount]);
+
+  useEffect(() => {
     if (!focus || !mapRef.current) return;
     const [x0, y0, x1, y1] = focus;
     mapRef.current.fitBounds(
@@ -295,7 +357,47 @@ export default function LabMap({
         maxZoom={17}
         attributionControl={{ compact: true }}
         style={{ width: "100%", height: "100%" }}
+      >
+        {streetLabels.map((l) => (
+          <Marker key={l.street} longitude={l.lon} latitude={l.lat} anchor="bottom">
+            <button
+              type="button"
+              className={`${styles.streetPill} ${highlightStreet === l.street ? styles.streetPillActive : ""}`}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                onPickStreet?.(l.street);
+              }}
+              onMouseEnter={() => onHoverStreet?.(l.street)}
+              onMouseLeave={() => onHoverStreet?.(null)}
+            >
+              <span>{l.name.replace(/ (Street|Avenue|Boulevard|Highway)$/, "")}</span>
+              <span className={l.pct > 0 ? styles.pillMore : styles.pillLess}>
+                {l.pct > 0 ? "▲" : "▼"} {Math.abs(l.pct).toFixed(0)}%
+              </span>
+            </button>
+          </Marker>
+        ))}
+      </MapLibre>
+      <FlowParticles
+        map={mapInstance}
+        data={data}
+        flow={coloring.kind === "load" ? coloring.flow : coloring.after}
+        time={coloring.time}
+        tones={tones}
+        focusStreet={highlightStreet}
+        enabled={animate && ready}
       />
+      {ready && (
+        <button
+          type="button"
+          className={styles.animateToggle}
+          aria-pressed={animate}
+          onClick={() => setAnimate((a) => !a)}
+        >
+          <span className={styles.animateDot} aria-hidden="true" />
+          {animate ? "Traffic moving" : "Show moving traffic"}
+        </button>
+      )}
       {!ready && (
         <p className={`label ${styles.loading}`} role="status">
           Loading map…

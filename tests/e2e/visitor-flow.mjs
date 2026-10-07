@@ -55,6 +55,14 @@ for (const device of [
     assert.match(await headline.innerText(), /average morning trip/);
     await page.getByText("Where traffic moved").waitFor();
     assert.match(page.url(), /[?&]s=/, "scenario is kept in the URL");
+    // Streets that changed are labelled on the map and can be pinned from the list.
+    const pills = page.locator(".maplibregl-marker button");
+    assert.ok((await pills.count()) >= 3, "affected streets are labelled on the map");
+    const row = page.locator("ul button", { hasText: "Satbayev" }).first();
+    await row.click();
+    assert.equal(await row.getAttribute("aria-pressed"), "true");
+    const toggle = page.getByRole("button", { name: /moving traffic|Traffic moving/ });
+    assert.equal(await toggle.getAttribute("aria-pressed"), "true", "traffic animation is on by default");
     await noSeriousA11yIssues(page, "lab result");
   });
 

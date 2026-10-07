@@ -23,6 +23,7 @@ Then make your own: click any coloured road, pick *Close for repairs*, *Give a l
 | **Estimated demand** | 275,000 morning-peak car trips between 135 zones, from a gravity model on homes (residential street length) and jobs (street length, boosted towards the centre). |
 | **Equilibrium routing** | Every driver takes the fastest route given everyone else’s choices (Wardrop user equilibrium, BPR travel-time curves, Webster signal delay), solved by path-based gradient projection. |
 | **Instant scenarios** | A change starts from today’s routes, so only affected trips move: results in about a second on a laptop, in a Web Worker, with no server. |
+| **Visible traffic** | Moving dots show where cars go and how fast (density = traffic, speed = modelled speed); the streets that gained or lost traffic are labelled on the map and highlighted when you point at them. |
 | **Honest output** | Plain-English headline, city-wide metrics, streets that gained or lost traffic, and a “How much to trust this” note that separates real data from estimates. |
 | **Reproducible** | Data files are rebuilt byte-for-byte from the snapshot and listed with SHA-256 hashes; the engine is deterministic across browsers, so the same link gives the same result hash. |
 

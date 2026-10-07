@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { baselineFlow, baselineVc, streetBbox } from "@/lab/client/baseline";
+import { baselineFlow, baselineTime, baselineVc, streetBbox } from "@/lab/client/baseline";
 import { useCityData, type CityData } from "@/lab/client/data";
 import type { RunResult } from "@/lab/client/protocol";
 import { useEngine } from "@/lab/client/useEngine";
 import { decodeScenario, encodeScenario, emptyScenario } from "@/lab/engine/scenario";
 import type { Change, PeriodId, Scenario } from "@/lab/engine/types";
 import { EXAMPLES, resolveExample } from "@/lab/examples";
-import LabMap, { type MapColoring } from "./LabMap";
+import LabMap, { type MapColoring, type StreetLabel } from "./LabMap";
+import { notableStreets } from "@/lab/summary";
 import { DevelopmentCard, Intro, ScenarioBar, SearchBox, SectionCard } from "./Panel";
 import ResultView from "./ResultView";
 import styles from "./Lab.module.css";
@@ -60,6 +61,10 @@ function Lab({ data }: { data: CityData }) {
   const [layer, setLayer] = useState<ResultLayer>("change");
   const [focus, setFocus] = useState<[number, number, number, number] | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
+  // Street emphasised on the map: hover wins over a clicked (pinned) street.
+  const [hoverStreet, setHoverStreet] = useState<number | null>(null);
+  const [pinnedStreet, setPinnedStreet] = useState<number | null>(null);
+  const highlightStreet = hoverStreet ?? pinnedStreet;
 
   const scenarioKey = encodeScenario(scenario);
   const showingResult = result !== null && encodeScenario(result.scenario) === scenarioKey;
@@ -87,6 +92,8 @@ function Lab({ data }: { data: CityData }) {
       const r = await engine.run(scenario);
       setResult(r);
       setLayer("change");
+      setPinnedStreet(null);
+      setHoverStreet(null);
       setFocus(resultBbox(data, r));
     } catch (e) {
       setRunError(e instanceof Error ? e.message : "The model could not finish this scenario.");
@@ -126,11 +133,51 @@ function Lab({ data }: { data: CityData }) {
 
   const coloring: MapColoring = useMemo(() => {
     if (showingResult && result) {
-      if (layer === "change") return { kind: "diff", before: result.baseFlow, after: result.flow };
-      if (layer === "after") return { kind: "load", flow: result.flow, vc: result.vc };
+      if (layer === "change") return { kind: "diff", before: result.baseFlow, after: result.flow, time: result.time };
+      if (layer === "after") return { kind: "load", flow: result.flow, vc: result.vc, time: result.time };
     }
-    return { kind: "load", flow: baselineFlow(data, scenario.period), vc: baselineVc(data, scenario.period) };
+    return {
+      kind: "load",
+      flow: baselineFlow(data, scenario.period),
+      vc: baselineVc(data, scenario.period),
+      time: baselineTime(data, scenario.period),
+    };
   }, [showingResult, result, layer, data, scenario.period]);
+
+  // Pills on the map where the most-affected streets changed most.
+  const streetLabels: StreetLabel[] = useMemo(() => {
+    if (!showingResult || !result || layer === "before") return [];
+    const { street: edgeStreet } = data.graph.edges;
+    // For each street, the link where its traffic changed most, skipping spots
+    // too close to a label already placed so pills do not overlap.
+    const placed: [number, number][] = [];
+    const MIN_APART_M = 900;
+    const apart = (lon: number, lat: number) =>
+      placed.every(([x, y]) => Math.hypot((lon - x) * 81_095.6, (lat - y) * 111_132) > MIN_APART_M);
+    const labels: StreetLabel[] = [];
+    for (const s of notableStreets(result.streets, 6)) {
+      const candidates: [number, number][] = [];
+      for (let e = 0; e < edgeStreet.length; e++) {
+        if (edgeStreet[e] === s.street) candidates.push([Math.abs(result.flow[e] - result.baseFlow[e]), e]);
+      }
+      candidates.sort((a, b) => b[0] - a[0]);
+      for (const [, e] of candidates.slice(0, 40)) {
+        const path = data.paths[e];
+        const [lon, lat] = path[Math.floor(path.length / 2)];
+        if (!apart(lon, lat)) continue;
+        placed.push([lon, lat]);
+        labels.push({ street: s.street, name: s.name, pct: s.trafficPct, lon, lat });
+        break;
+      }
+    }
+    return labels;
+  }, [showingResult, result, layer, data]);
+
+  const pickStreet = (street: number) => {
+    const next = pinnedStreet === street ? null : street;
+    setPinnedStreet(next);
+    if (next !== null) setFocus(streetBbox(data, next));
+  };
 
   const selectSection = (id: number) => {
     setPlacing(false);
@@ -148,6 +195,10 @@ function Lab({ data }: { data: CityData }) {
           placing={placing}
           focus={focus}
           pendingPoint={placing && selection?.kind === "point" ? selection : null}
+          highlightStreet={showingResult ? highlightStreet : null}
+          streetLabels={streetLabels}
+          onPickStreet={pickStreet}
+          onHoverStreet={setHoverStreet}
           onPickSection={selectSection}
           onPickPoint={(lon, lat) => setSelection({ kind: "point", lon, lat })}
           onClear={() => !placing && setSelection(null)}
@@ -163,9 +214,14 @@ function Lab({ data }: { data: CityData }) {
             result={result}
             layer={layer}
             onLayer={setLayer}
-            onEdit={() => setResult(null)}
+            onEdit={() => {
+              setResult(null);
+              setPinnedStreet(null);
+            }}
             onReset={reset}
-            onFocusStreet={(street) => setFocus(streetBbox(data, street))}
+            highlightStreet={highlightStreet}
+            onPickStreet={pickStreet}
+            onHoverStreet={setHoverStreet}
           />
         ) : (
           <>

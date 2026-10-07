@@ -423,7 +423,54 @@
 }
 
 .streetList button {
-  padding: 10px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px 64px;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -8px;
+  width: calc(100% + 16px);
+  padding: 10px 8px;
+  border-radius: 6px;
+}
+
+.streetList button:hover,
+.streetList button[aria-pressed="true"] {
+  background: var(--fill);
+}
+
+.streetList button[aria-pressed="true"] .streetName {
+  font-weight: 500;
+}
+
+.streetName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.streetBar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.streetBar > span {
+  display: block;
+  height: 100%;
+  transform-origin: left;
+}
+
+.barMore {
+  background: var(--more);
+}
+
+.barLess {
+  background: var(--less);
+}
+
+.streetPct {
+  justify-content: flex-end;
 }
 
 .streetList .num {
