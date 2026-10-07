@@ -1,16 +1,19 @@
 """Build the zone system and morning-peak trip matrix for the traffic lab.
 
-All values are *proxy* estimates; Almaty has no public origin-destination
-survey. The method is transparent and documented in /methods:
+Almaty has no public origin-destination survey, so trips are estimated, but
+constrained by the city's own published figures (public/model/observations.json):
 
 * Zones: a 2 km grid over the road graph; cells without graph nodes are dropped.
-* Productions (homes): length of residential streets in the cell (OSM).
-* Attractions (jobs, services): length of all streets in the cell, boosted
-  towards the central business district.
-* Distribution: production-constrained gravity model on free-flow travel time.
+* Productions (homes): length of residential streets in the cell (OSM), rescaled
+  so that 55 % of residents live outside the centre (Almaty transport master
+  plan 2023; centre = Raiymbek–Al-Farabi × Sain–Dostyk).
+* Attractions (jobs, services): length of all streets in the cell, rescaled so
+  that 60 % of jobs are in the centre (same source).
+* Distribution: production-constrained gravity model on free-flow travel time;
+  the distance-decay ``beta`` is fitted to measured speeds by calibrate.ts.
 
 Output public/model/demand.json holds a normalised matrix (sum = 1). The engine
-multiplies it by ``totalTrips`` from data/lab/calibration.json.
+multiplies it by the trip totals in public/model/calibration.json.
 """
 
 from __future__ import annotations
@@ -35,10 +38,9 @@ LAT0 = 43.24
 M_PER_DEG_LAT = 111_132.0
 M_PER_DEG_LON = 111_320.0 * math.cos(math.radians(LAT0))
 
-CBD = (76.945, 43.245)  # Almaty "golden square": Abay / Dostyk / Al-Farabi
-CBD_BOOST = 3.0
-CBD_RADIUS_M = 3500.0
-BETA_PER_MIN = 0.10
+OBSERVATIONS = Path("public/model/observations.json")
+CALIBRATION = Path("public/model/calibration.json")
+DEFAULT_BETA_PER_MIN = 0.10
 CONNECTORS = 3
 ACCESS_SPEED_KMH = 20.0
 MIN_ZONE_WEIGHT_SHARE = 0.002
@@ -108,7 +110,24 @@ def multi_source_dijkstra(adj, sources: list[tuple[int, float]]):
     return dist
 
 
-def build(graph_path: Path, snapshot: Path) -> dict:
+def in_box(lon: float, lat: float, box: list[float]) -> bool:
+    return box[0] <= lon <= box[2] and box[1] <= lat <= box[3]
+
+
+def rescale_share(zones: list[dict], key: str, inside: list[bool], target_inside: float) -> None:
+    """Scale a zone attribute so that the zones flagged ``inside`` hold ``target_inside`` of the total."""
+    total_in = sum(z[key] for z, i in zip(zones, inside) if i)
+    total_out = sum(z[key] for z, i in zip(zones, inside) if not i)
+    if total_in == 0 or total_out == 0:
+        return
+    total = total_in + total_out
+    for z, i in zip(zones, inside):
+        z[key] *= (target_inside * total / total_in) if i else ((1 - target_inside) * total / total_out)
+
+
+def build(graph_path: Path, snapshot: Path, beta: float = DEFAULT_BETA_PER_MIN, observations: Path = OBSERVATIONS) -> dict:
+    structure = json.loads(observations.read_text(encoding="utf-8"))["structure"]
+    centre = structure["centre"]["bbox"]
     graph = json.loads(graph_path.read_text(encoding="utf-8"))
     lon, lat = graph["nodes"]["lon"], graph["nodes"]["lat"]
     origin = (min(lon), min(lat))
@@ -124,20 +143,24 @@ def build(graph_path: Path, snapshot: Path) -> dict:
     for cell in sorted(nodes_in_cell):
         cx = origin[0] + (cell[0] + 0.5) * CELL_M / M_PER_DEG_LON
         cy = origin[1] + (cell[1] + 0.5) * CELL_M / M_PER_DEG_LAT
-        d_cbd = haversine_m(cx, cy, *CBD)
-        boost = 1.0 + CBD_BOOST * math.exp(-((d_cbd / CBD_RADIUS_M) ** 2))
         raw.append({
             "cell": cell,
             "center": (cx, cy),
             "production": homes.get(cell, 0.0),
-            "attraction": streets.get(cell, 0.0) * boost,
+            "attraction": streets.get(cell, 0.0),
         })
-    total_p = sum(z["production"] for z in raw)
-    total_a = sum(z["attraction"] for z in raw)
+    # Drop negligible zones first, then rescale, so the published shares hold exactly.
+    raw_p = sum(z["production"] for z in raw)
+    raw_a = sum(z["attraction"] for z in raw)
     zones = [
         z for z in raw
-        if z["production"] / total_p >= MIN_ZONE_WEIGHT_SHARE or z["attraction"] / total_a >= MIN_ZONE_WEIGHT_SHARE
+        if z["production"] / raw_p >= MIN_ZONE_WEIGHT_SHARE or z["attraction"] / raw_a >= MIN_ZONE_WEIGHT_SHARE
     ]
+    inside = [in_box(*z["center"], centre) for z in zones]
+    rescale_share(zones, "production", inside, 1 - structure["residentsOutsideCentreShare"])
+    rescale_share(zones, "attraction", inside, structure["jobsInCentreShare"])
+    total_p = sum(z["production"] for z in zones)
+    total_a = sum(z["attraction"] for z in zones)
 
     # Connectors: nearest graph nodes to the zone's centre, within the cell.
     adj = free_flow_graph(graph)
@@ -168,7 +191,7 @@ def build(graph_path: Path, snapshot: Path) -> dict:
             if i == j or not math.isfinite(times[i][j]):
                 weights.append(0.0)
             else:
-                weights.append(zd["attraction"] * math.exp(-BETA_PER_MIN * times[i][j]))
+                weights.append(zd["attraction"] * math.exp(-beta * times[i][j]))
         s = sum(weights)
         if s == 0 or zo["production"] == 0:
             continue
@@ -183,11 +206,12 @@ def build(graph_path: Path, snapshot: Path) -> dict:
         "claimLevel": "proxy",
         "method": {
             "cellM": CELL_M,
-            "production": "residential + living_street length (OSM)",
-            "attraction": f"all street length x (1 + {CBD_BOOST} * exp(-(d_cbd/{CBD_RADIUS_M:.0f} m)^2))",
-            "distribution": f"production-constrained gravity, exp(-{BETA_PER_MIN} * free-flow minutes)",
+            "production": "residential + living_street length (OSM), 55 % outside the centre (master plan 2023)",
+            "attraction": "all street length (OSM), 60 % of jobs in the centre (master plan 2023)",
+            "distribution": f"production-constrained gravity, exp(-{beta} * free-flow minutes)",
+            "beta": beta,
+            "centre": centre,
             "connectors": f"{CONNECTORS} nearest graph nodes, access at {ACCESS_SPEED_KMH:.0f} km/h",
-            "cbd": CBD,
         },
         "periods": {
             "am": {"label": "Morning peak", "factor": 1.0, "transpose": False},
@@ -213,8 +237,14 @@ def main() -> None:
     parser.add_argument("--graph", type=Path, default=GRAPH)
     parser.add_argument("--snapshot", type=Path, default=DEFAULT_SNAPSHOT)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--beta", type=float, default=None, help="distance decay per minute; default: fitted value in calibration.json")
     args = parser.parse_args()
-    demand = build(args.graph, args.snapshot)
+    beta = args.beta
+    if beta is None:
+        beta = DEFAULT_BETA_PER_MIN
+        if CALIBRATION.exists():
+            beta = json.loads(CALIBRATION.read_text(encoding="utf-8")).get("beta", beta)
+    demand = build(args.graph, args.snapshot, beta)
     args.out.write_text(json.dumps(demand, separators=(",", ":")), encoding="utf-8")
     print(f"zones={len(demand['zones'])} od_pairs={len(demand['matrix'])}")
     print(f"wrote {args.out} ({args.out.stat().st_size / 1e3:.0f} kB)")

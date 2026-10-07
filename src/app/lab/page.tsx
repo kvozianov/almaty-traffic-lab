@@ -5,7 +5,7 @@ import SiteHeader from "@/components/site/SiteHeader";
 
 export const metadata: Metadata = {
   title: "Lab",
-  description: "Pick a street in Almaty, change it, and watch 275,000 morning trips find new routes.",
+  description: "Pick a street in Almaty, change it, and watch the morning rush find new routes.",
 };
 
 export default function LabPage() {

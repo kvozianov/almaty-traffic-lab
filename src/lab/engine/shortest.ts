@@ -1,19 +1,52 @@
 import type { Zone } from "./demand";
 import { MinHeap } from "./heap";
-import { BPR_ALPHA, type CityModel, type LinkParams } from "./model";
+import { ANALYSIS_PERIOD_H, BPR_ALPHA, SIGNAL_CYCLE_S, type CityModel, type LinkParams } from "./model";
 
-/** Congested travel time (minutes) on edge i with flow v: BPR + fixed signal delay. */
+const CYCLE_MIN = SIGNAL_CYCLE_S / 60;
+const T = ANALYSIS_PERIOD_H;
+
+/**
+ * Congested travel time (minutes) on edge i with flow v.
+ *
+ * Mid-block: BPR curve on the full lane capacity. At a signalised link end:
+ * HCM 2000 control delay = uniform delay d1 (Webster, grows as the green fills)
+ * + incremental delay d2 (the queue that builds when demand nears or exceeds the
+ * approach capacity over the analysis period). Uses only +, ×, ÷ and sqrt, so it
+ * is deterministic across browsers.
+ */
 export function edgeTime(p: LinkParams, i: number, v: number): number {
   const r = v / p.cap[i];
   const r2 = r * r;
-  return p.t0[i] * (1 + BPR_ALPHA * r2 * r2) + p.delay[i];
+  const link = p.t0[i] * (1 + BPR_ALPHA * r2 * r2);
+  const c = p.sigCap[i];
+  if (c === 0) return link;
+  const g = p.green[i];
+  const x = v / c;
+  const red = 1 - g;
+  const d1 = (0.5 * CYCLE_MIN * red * red) / (1 - (x < 1 ? x : 1) * g);
+  const xm = x - 1;
+  const d2 = 15 * T * (xm + Math.sqrt(xm * xm + (4 * x) / (c * T))); // HCM: 900·T seconds = 15·T minutes
+  return link + d1 + d2;
 }
 
-/** d t / d v of the BPR term. */
+/** d t / d v of edgeTime. */
 export function edgeTimeDerivative(p: LinkParams, i: number, v: number): number {
-  const c = p.cap[i];
-  const r = v / c;
-  return (4 * BPR_ALPHA * p.t0[i] * r * r * r) / c;
+  const cap = p.cap[i];
+  const r = v / cap;
+  let d = (4 * BPR_ALPHA * p.t0[i] * r * r * r) / cap;
+  const c = p.sigCap[i];
+  if (c === 0) return d;
+  const g = p.green[i];
+  const x = v / c;
+  const red = 1 - g;
+  if (x < 1) {
+    const q = 1 - x * g;
+    d += (0.5 * CYCLE_MIN * red * red * g) / (q * q) / c;
+  }
+  const xm = x - 1;
+  const k = 4 / (c * T);
+  d += (15 * T * (1 + (xm + k / 2) / Math.sqrt(xm * xm + k * x))) / c;
+  return d;
 }
 
 /**
@@ -60,44 +93,6 @@ export class ShortestPathTree {
         if (closed[e]) continue;
         const v = edgeTo[e];
         const nd = d + cost[e];
-        if (nd < dist[v]) {
-          dist[v] = nd;
-          pred[v] = e;
-          heap.push(nd, v);
-        }
-      }
-    }
-    this.settled = settled;
-  }
-
-  /** Same as build(), but computes congested edge times from flows on the fly. */
-  buildFromFlows(origin: Zone, params: LinkParams, flow: Float64Array): void {
-    const { dist, pred, order, heap } = this;
-    const { outStart, outEdges, edgeTo } = this.model;
-    const { closed, t0, cap, delay } = params;
-    dist.fill(Infinity);
-    pred.fill(-1);
-    heap.clear();
-    for (const [node, access] of origin.connectors) {
-      if (access < dist[node]) {
-        dist[node] = access;
-        heap.push(access, node);
-      }
-    }
-    let settled = 0;
-    while (heap.size > 0) {
-      const d = heap.peekKey();
-      const u = heap.peekNode();
-      heap.pop();
-      if (d > dist[u]) continue;
-      order[settled++] = u;
-      for (let k = outStart[u]; k < outStart[u + 1]; k++) {
-        const e = outEdges[k];
-        if (closed[e]) continue;
-        const v = edgeTo[e];
-        const r = flow[e] / cap[e];
-        const r2 = r * r;
-        const nd = d + (t0[e] * (1 + BPR_ALPHA * r2 * r2) + delay[e]);
         if (nd < dist[v]) {
           dist[v] = nd;
           pred[v] = e;

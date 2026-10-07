@@ -65,7 +65,7 @@ function ReportBody({ data, scenario, encoded }: { data: CityData; scenario: Sce
     return (
       <div className={styles.message} role="status" aria-live="polite">
         <p className="label">Computing</p>
-        <p className="title">Re-routing 275,000 trips for this report…</p>
+        <p className="title">Re-routing the city for this report…</p>
         {engine.progress && engine.progress.iteration > 0 && (
           <p className="small">Iteration {engine.progress.iteration}</p>
         )}

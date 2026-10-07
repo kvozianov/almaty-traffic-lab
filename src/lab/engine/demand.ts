@@ -56,7 +56,7 @@ function nearestZone(model: CityModel, lon: number, lat: number): number {
 export function buildDemand(model: CityModel, period: PeriodId, changes: Change[]): DemandSet {
   const raw = model.demand;
   const p = raw.periods[period];
-  const total = model.calibration.totalTrips * p.factor;
+  const total = model.calibration.totalTrips * (model.calibration.periodFactors?.[period] ?? p.factor);
   const baseZones = raw.zones.length;
 
   // pairs[o] -> Map(dest -> trips)

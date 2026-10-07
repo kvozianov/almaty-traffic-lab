@@ -1,4 +1,246 @@
 {
-  "totalTrips": 275000,
-  "note": "Plausibility scale: morning-peak car trips on the main network chosen so that the average network speed is about 27 km/h. Not fitted to observed counts."
+  "totalTrips": 212000,
+  "periodFactors": {
+    "am": 1,
+    "midday": 0.892,
+    "pm": 1.256,
+    "night": 0.15
+  },
+  "beta": 0.18,
+  "note": "Fitted to published Almaty measurements (observations.json): corridor speeds from Sergek ITS and a year-long Abay Avenue commute log, and the Yandex Traffic weekday profile. Night volume is assumed.",
+  "fit": [
+    {
+      "id": "tti-am",
+      "label": "City-wide congestion, 9:00",
+      "period": "am",
+      "hours": "9:00",
+      "observed": 1.5,
+      "model": 1.77,
+      "unit": "travel time index",
+      "source": "yandex-profile"
+    },
+    {
+      "id": "abay-am",
+      "label": "Abay Avenue, central 6 km",
+      "period": "am",
+      "hours": "7:30–8:30",
+      "observed": 12,
+      "model": 15.1,
+      "unit": "km/h",
+      "source": "kolesa-abay-2025"
+    },
+    {
+      "id": "tti-midday",
+      "label": "City-wide congestion, 12:00–17:00",
+      "period": "midday",
+      "hours": "12:00–17:00",
+      "observed": 1.4,
+      "model": 1.4,
+      "unit": "travel time index",
+      "source": "yandex-profile"
+    },
+    {
+      "id": "tti-pm",
+      "label": "City-wide congestion, 18:30–19:30",
+      "period": "pm",
+      "hours": "18:30–19:30",
+      "observed": 1.7,
+      "model": 2.28,
+      "unit": "travel time index",
+      "source": "yandex-profile"
+    },
+    {
+      "id": "al-farabi-east-pm",
+      "label": "Al-Farabi Avenue, eastbound",
+      "period": "pm",
+      "hours": "17:00–18:00",
+      "observed": 46,
+      "model": 41.8,
+      "unit": "km/h",
+      "source": "sergek-2025-03"
+    },
+    {
+      "id": "sain-south-pm",
+      "label": "Sain Street, southbound",
+      "period": "pm",
+      "hours": "17:00–18:00",
+      "observed": 27,
+      "model": 47.3,
+      "unit": "km/h",
+      "source": "sergek-2025-03"
+    },
+    {
+      "id": "abay-pm",
+      "label": "Abay Avenue, central 6 km",
+      "period": "pm",
+      "hours": "17:00–18:00",
+      "observed": 6.4,
+      "model": 9.2,
+      "unit": "km/h",
+      "source": "kolesa-abay-2025"
+    },
+    {
+      "id": "tti-night",
+      "label": "City-wide congestion, late evening",
+      "period": "night",
+      "hours": "late evening",
+      "observed": 1,
+      "model": 1.02,
+      "unit": "travel time index",
+      "source": "yandex-profile"
+    }
+  ],
+  "speedErrorMedian": 0.348,
+  "validation": {
+    "description": "Hold-out: Sergek ITS top-15 congested junctions (Feb 2025), ranked by modelled evening delay.",
+    "matched": 14,
+    "inTop10Percent": 6,
+    "inTop25Percent": 11,
+    "medianPercentile": 0.893,
+    "junctions": [
+      {
+        "streets": [
+          "Abay Avenue",
+          "Rozybakiev Street"
+        ],
+        "percentile": 0.996,
+        "rank": 2
+      },
+      {
+        "streets": [
+          "Abay Avenue",
+          "Nazarbayev Avenue"
+        ],
+        "percentile": 0.528,
+        "rank": 232
+      },
+      {
+        "streets": [
+          "Tole Bi Street",
+          "Rozybakiev Street"
+        ],
+        "percentile": 0.961,
+        "rank": 19
+      },
+      {
+        "streets": [
+          "Abay Avenue",
+          "Seyfullin Avenue"
+        ],
+        "percentile": 0.797,
+        "rank": 100
+      },
+      {
+        "streets": [
+          "Abay Avenue",
+          "Baitursynuly Street"
+        ],
+        "percentile": 0.813,
+        "rank": 92
+      },
+      {
+        "streets": [
+          "Seyfullin Avenue",
+          "Satbayev Street"
+        ],
+        "percentile": 0.998,
+        "rank": 1
+      },
+      {
+        "streets": [
+          "Tole Bi Street",
+          "Nazarbayev Avenue"
+        ],
+        "percentile": 0.673,
+        "rank": 161
+      },
+      {
+        "streets": [
+          "Raiymbek Avenue",
+          "Seyfullin Avenue"
+        ],
+        "percentile": null,
+        "rank": null
+      },
+      {
+        "streets": [
+          "Abay Avenue",
+          "Zheltoksan Street"
+        ],
+        "percentile": 0.535,
+        "rank": 229
+      },
+      {
+        "streets": [
+          "Satbayev Street",
+          "Auezov Street"
+        ],
+        "percentile": 0.931,
+        "rank": 34
+      },
+      {
+        "streets": [
+          "Satbayev Street",
+          "Rozybakiev Street"
+        ],
+        "percentile": 0.882,
+        "rank": 58
+      },
+      {
+        "streets": [
+          "Raiymbek Avenue",
+          "Nazarbayev Avenue"
+        ],
+        "percentile": 0.898,
+        "rank": 50
+      },
+      {
+        "streets": [
+          "Tole Bi Street",
+          "Auezov Street"
+        ],
+        "percentile": 0.888,
+        "rank": 55
+      },
+      {
+        "streets": [
+          "Abay Avenue",
+          "Brusilovsky Street"
+        ],
+        "percentile": 0.994,
+        "rank": 3
+      },
+      {
+        "streets": [
+          "Abay Avenue",
+          "Auezov Street"
+        ],
+        "percentile": 0.955,
+        "rank": 22
+      }
+    ]
+  },
+  "search": [
+    {
+      "beta": 0.12,
+      "total": 203000,
+      "midday": 0.888,
+      "pm": 1.191,
+      "error": 0.5417802501202545
+    },
+    {
+      "beta": 0.15,
+      "total": 210000,
+      "midday": 0.882,
+      "pm": 1.205,
+      "error": 0.5341160764690044
+    },
+    {
+      "beta": 0.18,
+      "total": 212000,
+      "midday": 0.892,
+      "pm": 1.256,
+      "error": 0.531131993282985
+    }
+  ]
 }

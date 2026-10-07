@@ -29,6 +29,16 @@ export const EXAMPLES: Example[] = [
     ],
   },
   {
+    id: "al-farabi-evening",
+    title: "Al-Farabi closes in the evening rush",
+    question: "Four central kilometres of the city's busiest expressway shut at 7 pm. Where does that traffic go?",
+    period: "pm",
+    changes: [
+      { type: "close", street: "Al-Farabi Avenue", from: "Ergozhin St" },
+      { type: "close", street: "Al-Farabi Avenue", from: "Zein Shashkin St" },
+    ],
+  },
+  {
     id: "tole-bi-bus-lane",
     title: "A bus lane on Tole Bi Street",
     question: "One lane in each direction goes to buses between Rozybakiev and Zheltoksan.",

@@ -212,7 +212,7 @@ export function assignPaths(
   }
 
   // Clear floating-point dust (e.g. 1e-12 vehicles left on a closed road).
-  for (let i = 0; i < m; i++) if (closed[i] || x[i] < 1e-6) x[i] = 0;
+  for (let i = 0; i < m; i++) if (x[i] < 1e-6) x[i] = 0;
   const time = new Float64Array(m);
   for (let i = 0; i < m; i++) time[i] = edgeTime(params, i, x[i]);
   return { flow: x, time, iterations, relativeGap: gap, unservedTrips: unserved, routes };

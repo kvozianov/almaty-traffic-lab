@@ -1,7 +1,7 @@
 {
   "schema": "almaty-traffic-lab/manifest/v1",
-  "engineVersion": "1.0.0",
-  "dataHash": "b3403c791af3ba35877c26c65db8e902ce2a1d105005cb930167709291e8b2b7",
+  "engineVersion": "2.0.0",
+  "dataHash": "ac7d0be7901df03b16e9d931929cec910936fac51b71e40ed08bfe2d0a6110ac",
   "osmTimestamp": "2026-04-27T13:12:05Z",
   "attribution": "© OpenStreetMap contributors",
   "license": "ODbL-1.0",
@@ -18,18 +18,22 @@
       "bytes": 867539
     },
     "demand.json": {
-      "sha256": "ebaff803ed113f8d60c12313e207ac16ec4647e590a70f5ff7db123b166b2108",
-      "bytes": 361733
+      "sha256": "0b8857f90a867baa1683734d9c16f350bc793935b9768ba55f88d0ba4d8e6982",
+      "bytes": 358472
     },
     "calibration.json": {
-      "sha256": "16975547bcf2df09bc2b77efadf389f4fc2fdb98d3a1bd09a6a2e395019524f5",
-      "bytes": 193
+      "sha256": "3098e3e73119f9f3a798db3227725b0ae70b3fab0b5325e81142794783fee6cd",
+      "bytes": 5327
+    },
+    "observations.json": {
+      "sha256": "9d39ceff2b7058793b72c8255fe993f9fd458e64ac0c0cbc6b36508b8f7bd0d4",
+      "bytes": 5277
     }
   },
   "outputs": {
     "baseline.json": {
-      "sha256": "f085497ff1903abdf2797b245410eac2f144920f115f0171b96ccff7e91c2f2e",
-      "bytes": 104545
+      "sha256": "f017560974c1ff89160820852a49083b3acf2fdb5e95730d13b5567dec636134",
+      "bytes": 291977
     }
   },
   "stats": {

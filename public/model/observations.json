@@ -1,0 +1,208 @@
+{
+  "schema": "almaty-traffic-lab/observations/v1",
+  "note": "Published measurements of Almaty traffic used to calibrate (fit) and validate (hold-out) the model. Collected 2026-10-07 from the sources listed; values are copied as published.",
+  "sources": [
+    {
+      "id": "masterplan-2023",
+      "title": "Master plan of the transport framework of Almaty until 2030",
+      "publisher": "Akimat of Almaty (gov.kz)",
+      "date": "2023-12",
+      "url": "https://www.gov.kz/uploads/2024/1/22/5a61eaf18bcf0d92ed0aaff6f3d99b96_original.3904904.pdf"
+    },
+    {
+      "id": "yandex-profile",
+      "title": "Yandex Traffic weekday congestion profile for Almaty (10-point scale), as reported",
+      "publisher": "Yandex Traffic via trezviy-voditel.kz",
+      "date": "n.d.",
+      "url": "https://trezviy-voditel.kz/blog/kogda-i-gde-v-almaty-samye-bolshie-probki"
+    },
+    {
+      "id": "sergek-2025-03",
+      "title": "Evening peak shift in Almaty, early March 2025 vs February (Sergek ITS analysis)",
+      "publisher": "Tengrinews / Kursiv citing Sergek ITS",
+      "date": "2025-03-17",
+      "url": "https://tengrinews.kz/autoroads/probki-auyizasharu-izmenilos-dvijenie-almatyi-nachalom-565294/"
+    },
+    {
+      "id": "kolesa-abay-2025",
+      "title": "A year of commuting along Abay Avenue (6 km route, one driver's log)",
+      "publisher": "Kolesa.kz",
+      "date": "2025",
+      "url": "https://kolesa.kz/content/articles/put-po-abaya-odin-kilometr-za-30-minut/"
+    },
+    {
+      "id": "sergek-2025-02",
+      "title": "Top-15 most congested intersections of Almaty (Sergek ITS study)",
+      "publisher": "BES.media / Informburo citing Sergek ITS",
+      "date": "2025-02-05",
+      "url": "https://bes.media/news/kakie-perekryostki-v-almati-samie-zagruzhennie-issledovanie-sergek-its/"
+    }
+  ],
+  "structure": {
+    "source": "masterplan-2023",
+    "centre": {
+      "description": "Raiymbek Avenue to Al-Farabi Avenue, Sain Street to Dostyk Avenue",
+      "bbox": [
+        76.845,
+        43.218,
+        76.96,
+        43.262
+      ]
+    },
+    "jobsInCentreShare": 0.6,
+    "residentsOutsideCentreShare": 0.55,
+    "carTripShare": 0.68
+  },
+  "timeProfile": {
+    "source": "yandex-profile",
+    "scale": "Yandex points, 0 (free) to 10 (standstill), weekdays",
+    "points": [
+      {
+        "period": "am",
+        "hours": "9:00",
+        "points": 5
+      },
+      {
+        "period": "midday",
+        "hours": "12:00–17:00",
+        "points": 4
+      },
+      {
+        "period": "pm",
+        "hours": "18:30–19:30",
+        "points": 7
+      },
+      {
+        "period": "night",
+        "hours": "late evening",
+        "points": 0,
+        "assumed": true,
+        "note": "Not published; assumed near free flow."
+      }
+    ]
+  },
+  "corridorSpeeds": [
+    {
+      "id": "al-farabi-east-pm",
+      "label": "Al-Farabi Avenue, eastbound",
+      "street": "Al-Farabi Avenue",
+      "direction": "east",
+      "period": "pm",
+      "hours": "17:00–18:00",
+      "speedKmh": 46,
+      "source": "sergek-2025-03",
+      "weight": 1,
+      "use": "fit"
+    },
+    {
+      "id": "sain-south-pm",
+      "label": "Sain Street, southbound",
+      "street": "Sain Street",
+      "direction": "south",
+      "period": "pm",
+      "hours": "17:00–18:00",
+      "speedKmh": 27,
+      "source": "sergek-2025-03",
+      "weight": 1,
+      "use": "fit"
+    },
+    {
+      "id": "abay-am",
+      "label": "Abay Avenue, central 6 km",
+      "street": "Abay Avenue",
+      "direction": "both",
+      "between": [
+        "Altynsarin Ave",
+        "Zheltoksan St"
+      ],
+      "period": "am",
+      "hours": "7:30–8:30",
+      "speedKmh": 12,
+      "source": "kolesa-abay-2025",
+      "weight": 0.5,
+      "use": "fit"
+    },
+    {
+      "id": "abay-pm",
+      "label": "Abay Avenue, central 6 km",
+      "street": "Abay Avenue",
+      "direction": "both",
+      "between": [
+        "Altynsarin Ave",
+        "Zheltoksan St"
+      ],
+      "period": "pm",
+      "hours": "17:00–18:00",
+      "speedKmh": 6.4,
+      "source": "kolesa-abay-2025",
+      "weight": 0.5,
+      "use": "fit"
+    }
+  ],
+  "congestedJunctions": {
+    "source": "sergek-2025-02",
+    "use": "validate",
+    "ranked": [
+      [
+        "Abay Avenue",
+        "Rozybakiev Street"
+      ],
+      [
+        "Abay Avenue",
+        "Nazarbayev Avenue"
+      ],
+      [
+        "Tole Bi Street",
+        "Rozybakiev Street"
+      ],
+      [
+        "Abay Avenue",
+        "Seyfullin Avenue"
+      ],
+      [
+        "Abay Avenue",
+        "Baitursynuly Street"
+      ],
+      [
+        "Seyfullin Avenue",
+        "Satbayev Street"
+      ],
+      [
+        "Tole Bi Street",
+        "Nazarbayev Avenue"
+      ],
+      [
+        "Raiymbek Avenue",
+        "Seyfullin Avenue"
+      ],
+      [
+        "Abay Avenue",
+        "Zheltoksan Street"
+      ],
+      [
+        "Satbayev Street",
+        "Auezov Street"
+      ],
+      [
+        "Satbayev Street",
+        "Rozybakiev Street"
+      ],
+      [
+        "Raiymbek Avenue",
+        "Nazarbayev Avenue"
+      ],
+      [
+        "Tole Bi Street",
+        "Auezov Street"
+      ],
+      [
+        "Abay Avenue",
+        "Brusilovsky Street"
+      ],
+      [
+        "Abay Avenue",
+        "Auezov Street"
+      ]
+    ]
+  }
+}

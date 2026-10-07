@@ -52,6 +52,10 @@ export interface RawDemand {
 export interface Calibration {
   /** Car trips on the main road network in the morning peak hour. */
   totalTrips: number;
+  /** Trips in each period relative to the morning peak (fitted); falls back to demand.json periods. */
+  periodFactors?: Partial<Record<PeriodId, number>>;
+  /** Gravity-model distance decay per free-flow minute used to build demand.json. */
+  beta?: number;
   note: string;
 }
 
