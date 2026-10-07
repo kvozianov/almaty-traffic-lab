@@ -89,10 +89,12 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
             baseFlow: base.flow.slice(),
             flow: c.scenario.flow,
             vc: c.scenario.vc,
+            baseTime: base.time.slice(),
+            time: c.scenario.time,
             streets: c.streets.slice(0, 40),
             passport: await passport(dataHash, scenario, c.scenario.metrics),
           };
-          post({ type: "result", result }, [result.baseFlow.buffer, result.flow.buffer, result.vc.buffer]);
+          post({ type: "result", result }, [result.baseFlow.buffer, result.flow.buffer, result.vc.buffer, result.baseTime.buffer, result.time.buffer]);
         } catch (error) {
           post({ type: "error", id, message: error instanceof Error ? error.message : String(error) });
         }

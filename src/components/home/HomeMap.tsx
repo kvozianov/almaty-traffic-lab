@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
-import { baselineFlow, baselineVc } from "@/lab/client/baseline";
+import { baselineFlow, baselineTime, baselineVc } from "@/lab/client/baseline";
 import { useCityData } from "@/lab/client/data";
 import { prewarmEngine } from "@/lab/client/useEngine";
 import { formatInt } from "@/lab/format";
@@ -12,6 +12,13 @@ import styles from "./Home.module.css";
 /** Static preview of the morning peak, computed by the same engine as the lab. */
 export default function HomeMap() {
   const { data } = useCityData();
+  const coloring = useMemo(
+    () =>
+      data
+        ? ({ kind: "load", flow: baselineFlow(data, "am"), vc: baselineVc(data, "am"), time: baselineTime(data, "am") } as const)
+        : null,
+    [data],
+  );
   // Compute today's baseline routes in the background while the visitor reads,
   // so the lab and the example questions open without a wait.
   useEffect(() => {
@@ -21,12 +28,8 @@ export default function HomeMap() {
   }, [data]);
   return (
     <div className={styles.mapFrame}>
-      {data ? (
-        <LabMap
-          data={data}
-          interactive={false}
-          coloring={{ kind: "load", flow: baselineFlow(data, "am"), vc: baselineVc(data, "am") }}
-        />
+      {data && coloring ? (
+        <LabMap data={data} interactive={false} coloring={coloring} />
       ) : (
         <div className={styles.mapPlaceholder} />
       )}
