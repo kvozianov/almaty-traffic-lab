@@ -3,7 +3,7 @@
 **Pick any street in Almaty, change it, and see how city traffic redistributes.**
 A traffic-assignment model of the city's real road network that runs entirely in your browser.
 
-**Live demo:** _link added after the first deployment_ (the **How it works** page there explains the method in plain English)
+**Live demo:** [almaty-traffic-lab.vercel.app](https://almaty-traffic-lab.vercel.app) (the **How it works** page there explains the method in plain English)
 
 ![Closing two blocks of Abay Avenue: blue streets lose traffic, red streets take it](docs/assets/lab-result.jpg)
 
@@ -61,7 +61,7 @@ flowchart LR
 
 ## Run it locally
 
-Requires Node.js 22 and, only for rebuilding the data, Python 3.11+.
+Requires Node.js 22 and, only for rebuilding the data, Python 3.14+.
 
 ```bash
 npm ci
@@ -79,7 +79,7 @@ npm run lab:data && npm run lab:artifacts
 ## Tests
 
 ```bash
-npm run test:engine                                   # 16 engine tests: equilibrium, interventions, determinism, speed
+npm run test:engine                                   # 19 engine tests: equilibrium, interventions, determinism, speed
 python3 -m unittest tests/test_lab_data.py            # data rebuilds byte-for-byte
 npm run build && npm run start -- -p 3100             # then, in another terminal:
 BASE_URL=http://localhost:3100 node tests/e2e/visitor-flow.mjs
