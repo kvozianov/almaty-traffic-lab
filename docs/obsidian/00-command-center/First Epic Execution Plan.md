@@ -102,7 +102,6 @@ Expected generated artifacts:
 - Update [[Artifact Registry]] for every created artifact, route, export, manifest, or evidence file.
 - Update [[Claim Ledger]] only when evidence changes a claim level. Do not silently upgrade claims.
 - Keep all high-level vault note references as wikilinks.
-- Checkpoint `.omx/ultragoal/ledger.jsonl` after each completed OMX story with fresh Codex goal state.
 
 ## Current Risks
 
@@ -130,7 +129,7 @@ If interrupted, the next agent should resume from this note, then read the lates
 
 ### 2026-06-05 - Plan Created
 
-- Changed: created this execution plan from AGENTS.md, command-center notes, council audit, registries, corridor pack, and G001/G005/G004/G002 goal notes.
+- Changed: created this execution plan from the project brief, command-center notes, council audit, registries, corridor pack, and G001/G005/G004/G002 goal notes.
 - Files touched: `docs/obsidian/00-command-center/First Epic Execution Plan.md`.
 - Verification: pending implementation.
 - Unresolved risks: implementation details still need repo inspection and target-command discovery.
@@ -251,7 +250,7 @@ If interrupted, the next agent should resume from this note, then read the lates
 - Claim labels changed: reproducible clean run moved to `demo`; no `procurement-ready` claim was added.
 - Blocked verification: `docker compose config` remains blocked because Docker is not installed in this shell.
 - Unresolved risks: Docker validation remains unavailable in this shell; timestamps/git dirty count vary per machine; trajectory CSV is hourly analytics output, not raw vehicle trajectories; road geometry `real-data` evidence depends on the source snapshot being present.
-- Next action: run the final Ultragoal cleanup/review/QA gate before marking the aggregate Codex goal complete.
+- Next action: run the final Ultragoal cleanup/review/QA gate before marking the epic complete.
 
 ### 2026-06-05 - G012 Final Cleanup Review Gate
 

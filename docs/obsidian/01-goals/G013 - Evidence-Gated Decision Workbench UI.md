@@ -7,7 +7,7 @@ goal_title: Evidence-Gated Decision Workbench UI
 goal_status: implemented
 product_status: implemented_verified
 priority: P0
-owner: Codex
+owner: kvozianov
 first_epic: true
 claim_level: demo
 depends_on:

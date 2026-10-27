@@ -10,15 +10,6 @@
       "height": 260
     },
     {
-      "id": "manual",
-      "type": "file",
-      "file": "docs/obsidian/00-command-center/AI Agent Operating Manual.md",
-      "x": -520,
-      "y": 0,
-      "width": 420,
-      "height": 260
-    },
-    {
       "id": "council",
       "type": "file",
       "file": "docs/obsidian/02-council/LLM Council - Implementation Audit.md",
@@ -65,13 +56,6 @@
     }
   ],
   "edges": [
-    {
-      "id": "edge-command-manual",
-      "fromNode": "command-center",
-      "fromSide": "left",
-      "toNode": "manual",
-      "toSide": "right"
-    },
     {
       "id": "edge-command-council",
       "fromNode": "command-center",

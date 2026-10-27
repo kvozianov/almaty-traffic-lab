@@ -2,9 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ARTIFACT_TOOL_PATH =
-  process.env.ARTIFACT_TOOL_PATH ||
-  "/Users/kirill/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/.pnpm/@oai+artifact-tool@file+local-deps+-oai-artifact-tool-oai-artifact_tool-2.8.11.tgz/node_modules/@oai/artifact-tool/dist/artifact_tool.mjs";
+const ARTIFACT_TOOL_PATH = process.env.ARTIFACT_TOOL_PATH;
+if (!ARTIFACT_TOOL_PATH) {
+  throw new Error("Set ARTIFACT_TOOL_PATH to the presentation library module before running this script.");
+}
 
 const { Presentation, PresentationFile } = await import(ARTIFACT_TOOL_PATH);
 
@@ -14,7 +15,7 @@ const WORKSPACE =
   process.env.PRESENTATION_WORKSPACE ||
   path.join(
     "/tmp",
-    "codex-presentations",
+    "presentations",
     "manual-ain2026",
     "almaty-mobility-lab",
   );

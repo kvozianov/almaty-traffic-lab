@@ -43,7 +43,6 @@ If a task does not improve one link in this chain, treat it as lower priority.
 
 ## Workbench
 
-- [[AI Agent Operating Manual]]
 - [[Obsidian Vault Contract]]
 - [[Akimat Application Readiness Plan]]
 - [[LLM Council - Implementation Audit]]

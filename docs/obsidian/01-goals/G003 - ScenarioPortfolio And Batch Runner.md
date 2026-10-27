@@ -7,7 +7,7 @@ goal_title: ScenarioPortfolio And Batch Runner
 goal_status: completed
 product_status: implemented
 priority: P1
-owner: Jules
+owner: kvozianov
 first_epic: false
 claim_level: proxy
 depends_on:

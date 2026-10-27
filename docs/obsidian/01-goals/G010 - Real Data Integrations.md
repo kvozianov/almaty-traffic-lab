@@ -7,7 +7,7 @@ goal_title: Real Data Integrations
 goal_status: completed
 product_status: implemented
 priority: P1
-owner: Jules
+owner: kvozianov
 first_epic: false
 claim_level: partial_real_data
 depends_on:

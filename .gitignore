@@ -69,9 +69,9 @@ htmlcov/
 test-results/
 playwright-report/
 
-# Claude Code local state (launch config is shared)
-.claude/*
-!.claude/launch.json
+# Local tool state
+.claude/
+.obsidian/workspace.json
 
 # Copied from node_modules by scripts/copy-maplibre-worker.mjs
 public/vendor/
